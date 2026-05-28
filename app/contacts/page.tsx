@@ -13,20 +13,28 @@ import {
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus } from 'lucide-react';
 
-const COUNTRY_CODES = [
-  { code: '+91', country: 'India', flag: '🇮🇳' },
-  { code: '+971', country: 'UAE', flag: '🇦🇪' },
-  { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
-  { code: '+44', country: 'UK', flag: '🇬🇧' },
-  { code: '+255', country: 'Tanzania', flag: '🇹🇿' },
-  { code: '+254', country: 'Kenya', flag: '🇰🇪' },
+�' },
+  { code: '+962', country: 'Jordan', flag: '🇯🇴' },
+  { code: '+963', country: 'Syria', flag: '🇸🇾' },
+  { code: '+964', country: 'Iraq', flag: '🇮🇶' },
   { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
   { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: '+967', country: 'Yemen', flag: '🇾🇪' },
   { code: '+968', country: 'Oman', flag: '🇴🇲' },
+  { code: '+970', country: 'Palestine', flag: '🇵🇸' },
+  { code: '+971', country: 'United Arab Emirates', flag: '🇦🇪' },
+  { code: '+972', country: 'Israel', flag: '🇮🇱' },
   { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
-  { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
-  { code: '+261', country: 'Madagascar', flag: '🇲🇬' },
-  { code: '+33', country: 'France', flag: '🇫🇷' },
+  { code: '+974', country: 'Qatar', flag: '🇶🇦' },
+  { code: '+975', country: 'Bhutan', flag: '🇧🇹' },
+  { code: '+976', country: 'Mongolia', flag: '🇲🇳' },
+  { code: '+977', country: 'Nepal', flag: '🇳🇵' },
+  { code: '+992', country: 'Tajikistan', flag: '🇹🇯' },
+  { code: '+993', country: 'Turkmenistan', flag: '🇹🇲' },
+  { code: '+994', country: 'Azerbaijan', flag: '🇦🇿' },
+  { code: '+995', country: 'Georgia', flag: '🇬🇪' },
+  { code: '+996', country: 'Kyrgyzstan', flag: '🇰🇬' },
+  { code: '+998', country: 'Uzbekistan', flag: '🇺🇿' },
 ];
 
 const parsePhoneNumber = (fullPhone: string) => {
