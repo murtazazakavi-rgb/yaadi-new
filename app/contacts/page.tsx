@@ -11,8 +11,9 @@ import {
   getRelationships 
 } from './actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
+import { bulkImportContacts } from './importActions';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<any[]>([]);
@@ -51,6 +52,215 @@ export default function ContactsPage() {
   const [activeContactId, setActiveContactId] = useState<string | null>(null);
   const [relPartnerId, setRelPartnerId] = useState('');
   const [relType, setRelType] = useState<'spouse' | 'parent'>('spouse');
+
+  // Import CSV States
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [parsedContacts, setParsedContacts] = useState<any[]>([]);
+  const [importError, setImportError] = useState('');
+  const [importResult, setImportResult] = useState<any>(null);
+  const [importing, setImporting] = useState(false);
+
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result.map(val => val.replace(/^["']|["']$/g, ''));
+  };
+
+  const parseCSV = (text: string) => {
+    const lines = text.split(/\r?\n/);
+    if (lines.length === 0) return [];
+
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+
+    if (!headers.includes('first name') || !headers.includes('last name')) {
+      throw new Error('CSV must contain "First Name" and "Last Name" columns.');
+    }
+
+    const results: any[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const values = parseCSVLine(line);
+      const rowData: any = {};
+      headers.forEach((header, index) => {
+        rowData[header] = values[index] || '';
+      });
+
+      const contact: any = {
+        firstName: rowData['first name'] || '',
+        middleName: rowData['middle name'] || '',
+        lastName: rowData['last name'] || '',
+        phoneNumber: rowData['phone number'] || rowData['phone_number'] || '',
+        email: rowData['email'] || '',
+        notes: rowData['notes'] || '',
+        events: []
+      };
+
+      // Gregorian Birthday
+      const gBday = rowData['gregorian birthday (yyyy-mm-dd)'] || rowData['gregorian birthday'] || '';
+      if (gBday) {
+        const parts = gBday.split('-');
+        if (parts.length === 3) {
+          contact.events.push({
+            eventType: 'birthday_gregorian',
+            gYear: parseInt(parts[0]),
+            gMonth: parseInt(parts[1]),
+            gDay: parseInt(parts[2])
+          });
+        }
+      }
+
+      // Hijri Birthday
+      const hBDayVal = rowData['hijri birthday day (1-30)'] || rowData['hijri birthday day'] || '';
+      const hBMonthVal = rowData['hijri birthday month (1-12)'] || rowData['hijri birthday month'] || '';
+      const hBYearVal = rowData['hijri birthday year (1000-2000)'] || rowData['hijri birthday year'] || '';
+      if (hBDayVal && hBMonthVal && hBYearVal) {
+        contact.events.push({
+          eventType: 'birthday_hijri',
+          hDay: parseInt(hBDayVal),
+          hMonth: parseInt(hBMonthVal), // 1-indexed in CSV, will be mapped to 0-11 in import action
+          hYear: parseInt(hBYearVal)
+        });
+      }
+
+      // Wedding Anniversary
+      const gAnniv = rowData['anniversary date (yyyy-mm-dd)'] || rowData['anniversary date'] || '';
+      if (gAnniv) {
+        const parts = gAnniv.split('-');
+        if (parts.length === 3) {
+          contact.events.push({
+            eventType: 'anniversary',
+            gYear: parseInt(parts[0]),
+            gMonth: parseInt(parts[1]),
+            gDay: parseInt(parts[2])
+          });
+        }
+      }
+
+      // Deceased relative death events
+      const isDeceased = (rowData['deceased (true/false)'] || rowData['deceased'] || '').toLowerCase() === 'true';
+      if (isDeceased) {
+        const gDVal = rowData['deceased gregorian death date (yyyy-mm-dd)'] || rowData['deceased gregorian death date'] || '';
+        if (gDVal) {
+          const parts = gDVal.split('-');
+          if (parts.length === 3) {
+            contact.events.push({
+              eventType: 'death_gregorian',
+              gYear: parseInt(parts[0]),
+              gMonth: parseInt(parts[1]),
+              gDay: parseInt(parts[2])
+            });
+          }
+        }
+
+        const hDDayVal = rowData['deceased hijri death day (1-30)'] || rowData['deceased hijri death day'] || '';
+        const hDMonthVal = rowData['deceased hijri death month (1-12)'] || rowData['deceased hijri death month'] || '';
+        const hDYearVal = rowData['deceased hijri death year (1000-2000)'] || rowData['deceased hijri death year'] || '';
+        if (hDDayVal && hDMonthVal && hDYearVal) {
+          contact.events.push({
+            eventType: 'death_hijri',
+            hDay: parseInt(hDDayVal),
+            hMonth: parseInt(hDMonthVal), // 1-indexed in CSV, mapped to 0-11 in import action
+            hYear: parseInt(hDYearVal)
+          });
+        }
+      }
+
+      results.push(contact);
+    }
+
+    return results;
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      'First Name', 'Middle Name', 'Last Name', 'Phone Number', 'Email', 'Notes',
+      'Gregorian Birthday (YYYY-MM-DD)', 'Hijri Birthday Day (1-30)', 'Hijri Birthday Month (1-12)', 'Hijri Birthday Year (1000-2000)',
+      'Anniversary Date (YYYY-MM-DD)', 'Deceased (true/false)', 'Deceased Gregorian Death Date (YYYY-MM-DD)',
+      'Deceased Hijri Death Day (1-30)', 'Deceased Hijri Death Month (1-12)', 'Deceased Hijri Death Year (1000-2000)'
+    ];
+
+    const dummyRow = [
+      'Murtaza', 'Juzer', 'Zakavi', '+919825535907', 'murtaza@zakavi.com', 'Example close family friend',
+      '1988-11-21', '22', '2', '1371',
+      '2015-05-28', 'false', '', '', '', ''
+    ];
+
+    const csvContent = [headers.join(','), dummyRow.map(val => `"${val.replace(/"/g, '""')}"`).join(',')].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'yaadi_contacts_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFile(file);
+    setImportError('');
+    setImportResult(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = parseCSV(text);
+        if (parsed.length === 0) {
+          throw new Error('CSV is empty or contains no data rows.');
+        }
+        setParsedContacts(parsed);
+      } catch (err: any) {
+        setImportError(err.message || 'Failed to parse CSV.');
+        setParsedContacts([]);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportSubmit = async () => {
+    if (parsedContacts.length === 0) return;
+    setImporting(true);
+    setImportError('');
+    try {
+      const res = await bulkImportContacts(parsedContacts);
+      setImportResult(res);
+      loadAllData();
+    } catch (err: any) {
+      setImportError(err.message || 'Failed to import contacts.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleOpenImport = () => {
+    setImportFile(null);
+    setParsedContacts([]);
+    setImportError('');
+    setImportResult(null);
+    setShowImportModal(true);
+  };
 
   useEffect(() => {
     loadAllData();
@@ -368,9 +578,22 @@ export default function ContactsPage() {
             Manage family directory, dates, and family connections.
           </p>
         </div>
-        <button className="btn btn-secondary" style={{ width: 'auto', padding: '8px 12px' }} onClick={handleOpenAdd}>
-          <UserPlus size={16} />
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="btn btn-secondary" 
+            style={{ width: 'auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }} 
+            onClick={handleOpenImport}
+          >
+            <Upload size={14} /> Import CSV
+          </button>
+          <button 
+            className="btn btn-primary" 
+            style={{ width: 'auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }} 
+            onClick={handleOpenAdd}
+          >
+            <UserPlus size={16} /> Add Contact
+          </button>
+        </div>
       </div>
 
       {/* Directory Search */}
@@ -818,6 +1041,122 @@ export default function ContactsPage() {
                 Save Contact
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Import Modal */}
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3 className="serif-font" style={{ fontSize: '22px' }}>
+                Import Contacts via CSV
+              </h3>
+              <button className="modal-close" onClick={() => setShowImportModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '4px 0' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
+                Upload a CSV spreadsheet containing your family directory. Download our pre-formatted template with dummy rows to see the exact structure.
+              </p>
+
+              <button 
+                type="button" 
+                onClick={handleDownloadTemplate} 
+                className="btn btn-secondary" 
+                style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start', padding: '8px 14px', fontSize: '12px' }}
+              >
+                <Download size={14} /> Download CSV Template
+              </button>
+
+              <div style={{ border: '1px dashed var(--color-gold-light)', padding: '20px', borderRadius: '8px', backgroundColor: '#FCFBFA', textAlign: 'center' }}>
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleFileChange} 
+                  id="csv-file-input"
+                  style={{ display: 'none' }} 
+                />
+                <label 
+                  htmlFor="csv-file-input" 
+                  style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
+                >
+                  <Upload size={24} style={{ color: 'var(--color-gold)' }} />
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                    {importFile ? importFile.name : 'Select CSV File to Upload'}
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {importFile ? `${(importFile.size / 1024).toFixed(1)} KB` : 'Click to browse files'}
+                  </span>
+                </label>
+              </div>
+
+              {/* Error Display */}
+              {importError && (
+                <div style={{ padding: '10px 12px', backgroundColor: 'var(--color-rose-light)', color: 'var(--color-rose)', borderRadius: '6px', fontSize: '12px' }}>
+                  {importError}
+                </div>
+              )}
+
+              {/* Success Result Display */}
+              {importResult && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ padding: '10px 12px', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', borderRadius: '6px', fontSize: '12px', fontWeight: '500' }}>
+                    Successfully imported {importResult.successCount} contacts!
+                  </div>
+                  {importResult.errors && importResult.errors.length > 0 && (
+                    <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: '6px', padding: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--color-rose)', display: 'block', marginBottom: '4px' }}>
+                        Row Failures ({importResult.errors.length}):
+                      </span>
+                      {importResult.errors.map((err: any, idx: number) => (
+                        <div key={idx} style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' }}>
+                          Row {err.row} ({err.name}): {err.error}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Preview parsed contacts if loaded and not processed yet */}
+              {parsedContacts.length > 0 && !importResult && (
+                <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #ECEBE6', padding: '12px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
+                    File Preview: Ready to Import
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Parsed <strong>{parsedContacts.length}</strong> contacts from the spreadsheet. Click "Begin Import" below to merge them into your directory.
+                  </span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px', borderTop: 'var(--border-light)', paddingTop: '16px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ flex: 1 }} 
+                  onClick={() => setShowImportModal(false)}
+                >
+                  Close
+                </button>
+                {parsedContacts.length > 0 && !importResult && (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary" 
+                    style={{ flex: 1 }} 
+                    disabled={importing}
+                    onClick={handleImportSubmit}
+                  >
+                    {importing ? 'Importing...' : 'Begin Import'}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

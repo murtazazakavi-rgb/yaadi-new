@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getDashboardData } from './actions';
+import { getDashboardData, triggerManualEmailDigest } from './actions';
 import { HijriDate, getNextGregorianEvent, getNextHijriEvent, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X } from 'lucide-react';
+import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X, Mail } from 'lucide-react';
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>({ contacts: [], events: [], templates: [] });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sendingDigest, setSendingDigest] = useState(false);
   
   // WhatsApp Modal States
   const [showModal, setShowModal] = useState(false);
@@ -38,6 +39,19 @@ export default function DashboardPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendTestDigest = async () => {
+    setSendingDigest(true);
+    try {
+      const res = await triggerManualEmailDigest();
+      alert(`Test Email Digest sent successfully to ${res.email}!`);
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Failed to send test email digest.');
+    } finally {
+      setSendingDigest(false);
     }
   };
 
@@ -186,12 +200,24 @@ export default function DashboardPage() {
     <div style={{ padding: '20px 0' }}>
       {/* Welcome Greeting Section */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
-        <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '4px' }}>
-          Assalamu Alaikum!
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <span>{gregorianTodayStr}</span>
-          <span style={{ color: 'var(--color-gold)', fontWeight: '500' }}>{hijriTodayStr}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+              Assalamu Alaikum!
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <span>{gregorianTodayStr}</span>
+              <span style={{ color: 'var(--color-gold)', fontWeight: '500' }}>{hijriTodayStr}</span>
+            </div>
+          </div>
+          <button 
+            onClick={handleSendTestDigest}
+            disabled={sendingDigest}
+            className="btn btn-secondary"
+            style={{ width: 'auto', padding: '8px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}
+          >
+            <Mail size={14} /> {sendingDigest ? 'Sending...' : 'Test Email Digest'}
+          </button>
         </div>
       </div>
 
