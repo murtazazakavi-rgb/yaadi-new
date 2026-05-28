@@ -222,9 +222,8 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
             style={{ 
               height: 'auto', 
               width: '100%',
-              maxWidth: '220px',
+              maxWidth: '130px',
               objectFit: 'contain',
-              mixBlendMode: 'multiply',
               marginBottom: '8px'
             }} 
           />

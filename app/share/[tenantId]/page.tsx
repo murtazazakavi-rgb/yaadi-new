@@ -23,7 +23,7 @@ export default async function SharePage({ params }: PageProps) {
         justifyContent: 'center'
       }}>
         <div style={{ maxWidth: '360px' }}>
-          <img src="/logo.png" alt="Yaadi Logo" style={{ height: '60px', marginBottom: '16px' }} />
+          <img src="/logo.png" alt="Yaadi Logo" style={{ width: '130px', height: 'auto', objectFit: 'contain', marginBottom: '16px' }} />
           <h2 className="serif-font" style={{ fontSize: '26px', color: 'var(--color-rose)', marginBottom: '8px' }}>
             Invitation Expired
           </h2>

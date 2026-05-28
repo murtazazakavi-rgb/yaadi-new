@@ -60,21 +60,11 @@ export default function LoginPage() {
             style={{ 
               height: 'auto', 
               width: '100%',
-              maxWidth: '280px',
+              maxWidth: '180px',
               objectFit: 'contain',
-              mixBlendMode: 'multiply',
               marginBottom: '8px'
             }} 
           />
-          <p style={{ 
-            fontFamily: 'var(--font-serif)',
-            fontStyle: 'italic',
-            fontSize: '16px', 
-            color: 'var(--text-secondary)',
-            marginTop: '0px'
-          }}>
-            Celebrating life's milestones together.
-          </p>
         </div>
 
         {/* Login Card */}

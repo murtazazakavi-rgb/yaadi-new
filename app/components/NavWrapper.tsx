@@ -35,16 +35,15 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   return (
     <div className="app-container">
       {/* Top Header */}
-      <header className="app-header" style={{ padding: '8px 20px', height: '60px' }}>
+      <header className="app-header" style={{ padding: '6px 20px', height: '60px' }}>
         <div className="brand-wrapper" style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
           <img 
             src="/logo.png" 
             alt="Yaadi Logo" 
             style={{ 
-              height: '44px', 
+              height: '48px', 
               width: 'auto',
-              objectFit: 'contain',
-              mixBlendMode: 'multiply'
+              objectFit: 'contain'
             }} 
           />
         </div>
