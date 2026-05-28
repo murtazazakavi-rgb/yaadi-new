@@ -223,13 +223,30 @@ export async function getRelationships() {
   const tenantId = session.userId;
 
   const res = await query(
-    `SELECT r.id, r.contact_a_id, r.contact_b_id, r.relation_type,
+    `SELECT DISTINCT r.id, r.contact_a_id, r.contact_b_id, r.relation_type,
             c1.first_name as a_first, c1.last_name as a_last,
             c2.first_name as b_first, c2.last_name as b_last
      FROM relationships r
      JOIN contacts c1 ON r.contact_a_id = c1.id
      JOIN contacts c2 ON r.contact_b_id = c2.id
-     WHERE r.tenant_id = $1`,
+     WHERE r.tenant_id = $1
+        OR (
+          r.tenant_id IN (
+            SELECT CASE WHEN requester_id = $1 THEN receiver_id ELSE requester_id END
+            FROM tenant_connections
+            WHERE (requester_id = $1 OR receiver_id = $1) AND status = 'accepted'
+          )
+          AND (c1.tenant_id = $1 OR c1.id IN (
+            SELECT sc.contact_id FROM shared_contacts sc 
+            JOIN tenant_connections tc ON sc.connection_id = tc.id
+            WHERE tc.status = 'accepted' AND ((tc.requester_id = $1 AND sc.shared_by = tc.receiver_id) OR (tc.receiver_id = $1 AND sc.shared_by = tc.requester_id))
+          ))
+          AND (c2.tenant_id = $1 OR c2.id IN (
+            SELECT sc.contact_id FROM shared_contacts sc 
+            JOIN tenant_connections tc ON sc.connection_id = tc.id
+            WHERE tc.status = 'accepted' AND ((tc.requester_id = $1 AND sc.shared_by = tc.receiver_id) OR (tc.receiver_id = $1 AND sc.shared_by = tc.requester_id))
+          ))
+        )`,
     [tenantId]
   );
 

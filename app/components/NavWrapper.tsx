@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut } from 'lucide-react';
+import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2 } from 'lucide-react';
 
 interface NavWrapperProps {
   children: React.ReactNode;
@@ -83,6 +83,11 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
         <Link href="/tree" className={`nav-item ${pathname === '/tree' ? 'active' : ''}`}>
           <Network />
           <span>Family Tree</span>
+        </Link>
+        
+        <Link href="/connections" className={`nav-item ${pathname === '/connections' ? 'active' : ''}`}>
+          <Share2 />
+          <span>Connections</span>
         </Link>
         
         <Link href="/templates" className={`nav-item ${pathname === '/templates' ? 'active' : ''}`}>

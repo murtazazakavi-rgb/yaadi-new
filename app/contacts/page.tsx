@@ -388,6 +388,7 @@ export default function ContactsPage() {
           filteredContacts.map((c) => {
             const isActive = activeContactId === c.id;
             const cRels = getContactRelationships(c.id);
+            const isOwn = c.is_owner !== false;
 
             return (
               <div 
@@ -408,8 +409,21 @@ export default function ContactsPage() {
                     onClick={() => setActiveContactId(isActive ? null : c.id)} 
                     style={{ cursor: 'pointer', flex: 1 }}
                   >
-                    <h3 className="serif-font" style={{ fontSize: '18px', color: 'var(--text-primary)', fontWeight: '600' }}>
+                    <h3 className="serif-font" style={{ fontSize: '18px', color: 'var(--text-primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       {c.first_name} {c.last_name}
+                      {!isOwn && (
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 'normal',
+                          backgroundColor: 'rgba(197, 160, 89, 0.1)',
+                          color: 'var(--color-gold)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(197, 160, 89, 0.2)'
+                        }}>
+                          Shared by {c.owner_name}
+                        </span>
+                      )}
                     </h3>
                     <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {getContactEventsSummary(c.id)}
@@ -417,20 +431,28 @@ export default function ContactsPage() {
                   </div>
                   
                   {/* Edit/Delete icons */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
-                      onClick={() => handleOpenEdit(c)}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-rose)' }}
-                      onClick={() => handleDelete(c.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  {isOwn ? (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        onClick={() => handleOpenEdit(c)}
+                        title="Edit Contact"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-rose)' }}
+                        onClick={() => handleDelete(c.id)}
+                        title="Delete Contact"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', alignSelf: 'center' }}>
+                      Read-only
+                    </div>
+                  )}
                 </div>
 
                 {/* Expanded Details (Phone, Email, Notes, Relationships) */}
@@ -480,51 +502,56 @@ export default function ContactsPage() {
                             return (
                               <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: '#FAF9F6', borderRadius: '6px', fontSize: '12px' }}>
                                 <span><strong>{relLabel}</strong> {partnerName}</span>
-                                <button 
-                                  onClick={() => handleRemoveRelationship(r.id)}
-                                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-rose)' }}
-                                >
-                                  <Unlink size={14} />
-                                </button>
+                                {isOwn && (
+                                  <button 
+                                    onClick={() => handleRemoveRelationship(r.id)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-rose)' }}
+                                    title="Remove Relationship"
+                                  >
+                                    <Unlink size={14} />
+                                  </button>
+                                )}
                               </div>
                             );
                           })}
                         </div>
                       )}
-
+ 
                       {/* Add Relationship Linker Form */}
-                      <form onSubmit={handleAddRelationship} style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <select 
-                          className="form-select" 
-                          style={{ height: '34px', padding: '4px 8px', fontSize: '12px' }}
-                          value={relType}
-                          onChange={(e: any) => setRelType(e.target.value)}
-                        >
-                          <option value="spouse">Spouse</option>
-                          <option value="parent">Parent Of</option>
-                        </select>
-
-                        <select 
-                          className="form-select" 
-                          style={{ height: '34px', padding: '4px 8px', fontSize: '12px' }}
-                          required
-                          value={relPartnerId}
-                          onChange={(e) => setRelPartnerId(e.target.value)}
-                        >
-                          <option value="">Select Contact...</option>
-                          {contacts
-                            .filter((item) => item.id !== c.id)
-                            .map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.first_name} {item.last_name}
-                              </option>
-                            ))}
-                        </select>
-
-                        <button type="submit" className="btn btn-secondary" style={{ width: 'auto', height: '34px', padding: '0 12px' }}>
-                          Link
-                        </button>
-                      </form>
+                      {isOwn && (
+                        <form onSubmit={handleAddRelationship} style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <select 
+                            className="form-select" 
+                            style={{ height: '34px', padding: '4px 8px', fontSize: '12px' }}
+                            value={relType}
+                            onChange={(e: any) => setRelType(e.target.value)}
+                          >
+                            <option value="spouse">Spouse</option>
+                            <option value="parent">Parent Of</option>
+                          </select>
+ 
+                          <select 
+                            className="form-select" 
+                            style={{ height: '34px', padding: '4px 8px', fontSize: '12px' }}
+                            required
+                            value={relPartnerId}
+                            onChange={(e) => setRelPartnerId(e.target.value)}
+                          >
+                            <option value="">Select Contact...</option>
+                            {contacts
+                              .filter((item) => item.id !== c.id)
+                              .map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.first_name} {item.last_name}
+                                </option>
+                              ))}
+                          </select>
+ 
+                          <button type="submit" className="btn btn-secondary" style={{ width: 'auto', height: '34px', padding: '0 12px' }}>
+                            Link
+                          </button>
+                        </form>
+                      )}
                     </div>
 
                   </div>
