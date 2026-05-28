@@ -29,6 +29,12 @@ async function ensureTables() {
           UNIQUE(connection_id, contact_id)
       );
     `);
+    await sql.query(`
+      ALTER TABLE contacts ADD COLUMN IF NOT EXISTS middle_name VARCHAR(100);
+    `);
+    await sql.query(`
+      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS middle_name VARCHAR(100);
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

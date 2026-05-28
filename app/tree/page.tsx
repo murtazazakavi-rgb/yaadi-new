@@ -148,7 +148,7 @@ export default function FamilyTreePage() {
           <div>
             <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600' }}>Select Tree Root</span>
             <h4 className="serif-font" style={{ fontSize: '16px', color: 'var(--text-primary)' }}>
-              {selectedRootContact ? `${selectedRootContact.first_name} ${selectedRootContact.last_name}'s Tree` : 'No contact selected'}
+              {selectedRootContact ? `${selectedRootContact.first_name}${selectedRootContact.middle_name ? ' ' + selectedRootContact.middle_name : ''} ${selectedRootContact.last_name}'s Tree` : 'No contact selected'}
             </h4>
           </div>
           <select 
@@ -159,7 +159,7 @@ export default function FamilyTreePage() {
           >
             {contacts.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name}
+                {c.first_name}{c.middle_name ? ' ' + c.middle_name : ''} {c.last_name}
               </option>
             ))}
           </select>

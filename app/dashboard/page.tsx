@@ -84,7 +84,7 @@ export default function DashboardPage() {
   .filter(Boolean)
   // Filter by search query
   .filter((r: any) => {
-    const name = `${r.contact.first_name} ${r.contact.last_name}`.toLowerCase();
+    const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`.toLowerCase();
     return name.includes(searchQuery.toLowerCase());
   })
   // Sort chronologically by remaining days
@@ -101,7 +101,7 @@ export default function DashboardPage() {
     setSelectedReminder(reminder);
 
     const type = reminder.eventType;
-    const name = `${reminder.contact.first_name} ${reminder.contact.last_name}`;
+    const name = `${reminder.contact.first_name}${reminder.contact.middle_name ? ' ' + reminder.contact.middle_name : ''} ${reminder.contact.last_name}`;
     const ordinalStr = getOrdinalSuffix(reminder.ordinal);
 
     // Look for custom template in database
@@ -279,7 +279,7 @@ export default function DashboardPage() {
             <div style={{ marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <span className="serif-font" style={{ fontSize: '16px', fontWeight: '600' }}>
-                  {selectedReminder.contact.first_name} {selectedReminder.contact.last_name}
+                  {selectedReminder.contact.first_name}{selectedReminder.contact.middle_name ? ' ' + selectedReminder.contact.middle_name : ''} {selectedReminder.contact.last_name}
                 </span>
                 <span className={`badge ${getEventBadgeClass(selectedReminder.eventType)}`}>
                   {getEventLabel(selectedReminder)}
@@ -401,7 +401,7 @@ function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
         {/* Contact Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
           <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
-            {r.contact.first_name} {r.contact.last_name}
+            {r.contact.first_name}{r.contact.middle_name ? ' ' + r.contact.middle_name : ''} {r.contact.last_name}
           </h4>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span className={`badge ${getEventBadgeClass(r.eventType)}`}>

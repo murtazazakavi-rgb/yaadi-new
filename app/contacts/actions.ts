@@ -17,6 +17,7 @@ async function requireAuth() {
  */
 export async function createContact(formData: {
   firstName: string;
+  middleName?: string;
   lastName: string;
   phoneNumber?: string;
   email?: string;
@@ -34,7 +35,7 @@ export async function createContact(formData: {
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { firstName, lastName, phoneNumber, email, notes, events } = formData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, events } = formData;
 
   if (!firstName || !lastName) {
     throw new Error('First name and last name are required.');
@@ -42,9 +43,9 @@ export async function createContact(formData: {
 
   // Insert contact
   const contactRes = await query(
-    `INSERT INTO contacts (tenant_id, first_name, last_name, phone_number, email, notes) 
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-    [tenantId, firstName.trim(), lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null]
+    `INSERT INTO contacts (tenant_id, first_name, middle_name, last_name, phone_number, email, notes) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [tenantId, firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null]
   );
 
   const contactId = contactRes.rows[0].id;
@@ -80,6 +81,7 @@ export async function updateContact(
   contactId: string,
   formData: {
     firstName: string;
+    middleName?: string;
     lastName: string;
     phoneNumber?: string;
     email?: string;
@@ -98,7 +100,7 @@ export async function updateContact(
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { firstName, lastName, phoneNumber, email, notes, events } = formData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, events } = formData;
 
   // Verify ownership
   const check = await query('SELECT id FROM contacts WHERE id = $1 AND tenant_id = $2', [contactId, tenantId]);
@@ -109,9 +111,9 @@ export async function updateContact(
   // Update contact details
   await query(
     `UPDATE contacts 
-     SET first_name = $1, last_name = $2, phone_number = $3, email = $4, notes = $5 
-     WHERE id = $6`,
-    [firstName.trim(), lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null, contactId]
+     SET first_name = $1, middle_name = $2, last_name = $3, phone_number = $4, email = $5, notes = $6 
+     WHERE id = $7`,
+    [firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null, contactId]
   );
 
   // Clear existing events
@@ -224,8 +226,8 @@ export async function getRelationships() {
 
   const res = await query(
     `SELECT DISTINCT r.id, r.contact_a_id, r.contact_b_id, r.relation_type,
-            c1.first_name as a_first, c1.last_name as a_last,
-            c2.first_name as b_first, c2.last_name as b_last
+            c1.first_name as a_first, c1.middle_name as a_middle, c1.last_name as a_last,
+            c2.first_name as b_first, c2.middle_name as b_middle, c2.last_name as b_last
      FROM relationships r
      JOIN contacts c1 ON r.contact_a_id = c1.id
      JOIN contacts c2 ON r.contact_b_id = c2.id

@@ -5,6 +5,37 @@ import { getPendingSubmissions, approveSubmission, rejectSubmission } from '@/ap
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Check, X, ShieldAlert, Eye, User, Calendar, Save } from 'lucide-react';
 
+const COUNTRY_CODES = [
+  { code: '+91', country: 'India', flag: '🇮🇳' },
+  { code: '+971', country: 'UAE', flag: '🇦🇪' },
+  { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+255', country: 'Tanzania', flag: '🇹🇿' },
+  { code: '+254', country: 'Kenya', flag: '🇰🇪' },
+  { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
+  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: '+968', country: 'Oman', flag: '🇴🇲' },
+  { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
+  { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
+  { code: '+261', country: 'Madagascar', flag: '🇲🇬' },
+  { code: '+33', country: 'France', flag: '🇫🇷' },
+];
+
+const parsePhoneNumber = (fullPhone: string) => {
+  if (!fullPhone) return { code: '+91', local: '' };
+  const sortedCodes = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length);
+  for (const c of sortedCodes) {
+    if (fullPhone.startsWith(c.code)) {
+      return { code: c.code, local: fullPhone.slice(c.code.length) };
+    }
+    const rawCode = c.code.replace('+', '');
+    if (fullPhone.startsWith(rawCode)) {
+      return { code: c.code, local: fullPhone.slice(rawCode.length) };
+    }
+  }
+  return { code: '+91', local: fullPhone };
+};
+
 export default function ApprovalsPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,8 +47,10 @@ export default function ApprovalsPage() {
 
   // Form Fields for modification during approval review
   const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [localNumber, setLocalNumber] = useState('');
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -52,8 +85,11 @@ export default function ApprovalsPage() {
   const handleOpenReview = (sub: any) => {
     setSelectedSub(sub);
     setFirstName(sub.first_name);
+    setMiddleName(sub.middle_name || '');
     setLastName(sub.last_name);
-    setPhone(sub.phone_number || '');
+    const { code, local } = parsePhoneNumber(sub.phone_number || '');
+    setCountryCode(code);
+    setLocalNumber(local);
 
     // Parse event data JSON
     let parsedEvents: any[] = [];
@@ -162,10 +198,12 @@ export default function ApprovalsPage() {
       });
     }
 
+    const combinedPhone = localNumber.trim() ? `${countryCode}${localNumber.trim()}` : '';
     const payload = {
       firstName,
+      middleName,
       lastName,
-      phoneNumber: phone,
+      phoneNumber: combinedPhone,
       email,
       notes,
       events: finalEvents
@@ -302,8 +340,7 @@ export default function ApprovalsPage() {
               >
                 <div style={{ flex: 1 }}>
                   <h4 className="serif-font" style={{ fontSize: '18px', color: 'var(--text-primary)', fontWeight: '600' }}>
-                    {sub.first_name} {sub.last_name}
-                  </h4>
+                    {sub.first_name}{sub.middle_name ? ' ' + sub.middle_name : ''} {sub.last_name}</h4>
                   <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>
                     Phone: {sub.phone_number || 'None'} • Submits: {infoSummary}
                   </span>
@@ -340,8 +377,8 @@ export default function ApprovalsPage() {
 
             <form onSubmit={(e) => e.preventDefault()}>
               {/* Name Details */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
                   <label className="form-label">First Name</label>
                   <input 
                     type="text" 
@@ -350,7 +387,16 @@ export default function ApprovalsPage() {
                     onChange={(e) => setFirstName(e.target.value)}
                   />
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
+                  <label className="form-label">Middle Name (Opt)</label>
+                  <input 
+                    type="text" 
+                    className="form-input"
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
                   <label className="form-label">Last Name</label>
                   <input 
                     type="text" 
@@ -362,20 +408,36 @@ export default function ApprovalsPage() {
               </div>
 
               {/* Contact Details */}
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
                   <label className="form-label">WhatsApp Phone</label>
-                  <input 
-                    type="text" 
-                    className="form-input"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select 
+                      className="form-select" 
+                      style={{ width: '90px', flexShrink: 0, paddingRight: '4px' }}
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                    >
+                      {COUNTRY_CODES.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.flag} {item.code}
+                        </option>
+                      ))}
+                    </select>
+                    <input 
+                      type="tel" 
+                      className="form-input"
+                      placeholder="e.g. 9825535907"
+                      value={localNumber}
+                      onChange={(e) => setLocalNumber(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
                   <label className="form-label">Email</label>
                   <input 
                     type="email" 
+                    required
                     className="form-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

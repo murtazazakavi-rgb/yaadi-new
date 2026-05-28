@@ -32,6 +32,7 @@ export async function submitGuestDetails(
   tenantId: string,
   guestData: {
     firstName: string;
+    middleName?: string;
     lastName: string;
     phoneNumber?: string;
     email?: string;
@@ -47,7 +48,7 @@ export async function submitGuestDetails(
     }>;
   }
 ) {
-  const { firstName, lastName, phoneNumber, email, notes, events } = guestData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, events } = guestData;
 
   if (!firstName || !lastName) {
     throw new Error('First name and last name are required.');
@@ -66,9 +67,9 @@ export async function submitGuestDetails(
   });
 
   await query(
-    `INSERT INTO submissions (tenant_id, first_name, last_name, phone_number, event_data, status) 
-     VALUES ($1, $2, $3, $4, $5, 'pending')`,
-    [tenantId, firstName.trim(), lastName.trim(), phoneNumber?.trim() || null, eventData]
+    `INSERT INTO submissions (tenant_id, first_name, middle_name, last_name, phone_number, event_data, status) 
+     VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+    [tenantId, firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, eventData]
   );
 
   return { success: true };
@@ -82,7 +83,7 @@ export async function getPendingSubmissions() {
   const tenantId = session.userId;
 
   const res = await query(
-    `SELECT id, first_name, last_name, phone_number, event_data, status, created_at 
+    `SELECT id, first_name, middle_name, last_name, phone_number, event_data, status, created_at 
      FROM submissions 
      WHERE tenant_id = $1 AND status = 'pending' 
      ORDER BY created_at DESC`,
@@ -99,6 +100,7 @@ export async function approveSubmission(
   submissionId: string,
   approvedData: {
     firstName: string;
+    middleName?: string;
     lastName: string;
     phoneNumber?: string;
     email?: string;
@@ -126,13 +128,13 @@ export async function approveSubmission(
     throw new Error('Submission not found or already processed.');
   }
 
-  const { firstName, lastName, phoneNumber, email, notes, events } = approvedData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, events } = approvedData;
 
   // 1. Create Contact
   const contactRes = await query(
-    `INSERT INTO contacts (tenant_id, first_name, last_name, phone_number, email, notes) 
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-    [tenantId, firstName.trim(), lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null]
+    `INSERT INTO contacts (tenant_id, first_name, middle_name, last_name, phone_number, email, notes) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    [tenantId, firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null]
   );
   const contactId = contactRes.rows[0].id;
 

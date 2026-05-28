@@ -5,6 +5,22 @@ import { submitGuestDetails } from '../actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Send, CheckCircle, Calendar, Plus, X } from 'lucide-react';
 
+const COUNTRY_CODES = [
+  { code: '+91', country: 'India', flag: '🇮🇳' },
+  { code: '+971', country: 'UAE', flag: '🇦🇪' },
+  { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
+  { code: '+44', country: 'UK', flag: '🇬🇧' },
+  { code: '+255', country: 'Tanzania', flag: '🇹🇿' },
+  { code: '+254', country: 'Kenya', flag: '🇰🇪' },
+  { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
+  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
+  { code: '+968', country: 'Oman', flag: '🇴🇲' },
+  { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
+  { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
+  { code: '+261', country: 'Madagascar', flag: '🇲🇬' },
+  { code: '+33', country: 'France', flag: '🇫🇷' },
+];
+
 interface ShareFormClientProps {
   tenantId: string;
   tenantName: string;
@@ -17,8 +33,10 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
 
   // Contact Inputs
   const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
+  const [localNumber, setLocalNumber] = useState('');
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -161,10 +179,12 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
         finalNotes = `${notes ? notes + '\n' : ''}Submitted deceased relative: ${decFirstName} ${decLastName}.`;
       }
 
+      const combinedPhone = localNumber.trim() ? `${countryCode}${localNumber.trim()}` : '';
       await submitGuestDetails(tenantId, {
         firstName,
+        middleName,
         lastName,
-        phoneNumber: phone,
+        phoneNumber: combinedPhone,
         email,
         notes: finalNotes,
         events: finalEvents
@@ -247,26 +267,37 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
             Contact Details
           </h3>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <div className="form-group" style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
               <label className="form-label">First Name</label>
               <input 
                 type="text" 
                 required 
                 className="form-input" 
-                placeholder="e.g. Fatima"
+                placeholder="e.g. Murtaza"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 disabled={loading}
               />
             </div>
-            <div className="form-group" style={{ flex: 1 }}>
+            <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
+              <label className="form-label">Middle Name (Opt)</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="e.g. Juzer"
+                value={middleName}
+                onChange={(e) => setMiddleName(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
               <label className="form-label">Last Name</label>
               <input 
                 type="text" 
                 required 
                 className="form-input" 
-                placeholder="e.g. Syed"
+                placeholder="e.g. Zakavi"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 disabled={loading}
@@ -274,29 +305,46 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">WhatsApp Phone Number</label>
-            <input 
-              type="text" 
-              required
-              className="form-input" 
-              placeholder="e.g. 919876543210 (with country code)"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
+              <label className="form-label">WhatsApp Phone Number</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <select 
+                  className="form-select" 
+                  style={{ width: '90px', flexShrink: 0, paddingRight: '4px' }}
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  disabled={loading}
+                >
+                  {COUNTRY_CODES.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.flag} {item.code}
+                    </option>
+                  ))}
+                </select>
+                <input 
+                  type="tel" 
+                  className="form-input" 
+                  placeholder="e.g. 9825535907" 
+                  value={localNumber}
+                  onChange={(e) => setLocalNumber(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            </div>
 
-          <div className="form-group">
-            <label className="form-label">Email (Optional)</label>
-            <input 
-              type="email" 
-              className="form-input" 
-              placeholder="you@domain.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
+            <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+              <label className="form-label">Email</label>
+              <input 
+                type="email" 
+                required
+                className="form-input" 
+                placeholder="murtaza@zakavi.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* Birthday Calendar Sync Section */}
