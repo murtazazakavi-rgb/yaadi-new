@@ -178,8 +178,8 @@ export default function ConnectionsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSendRequest} style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+        <form onSubmit={handleSendRequest} style={{ display: 'flex', flexDirection: 'row', gap: '12px', alignItems: 'flex-end', width: '100%', flexWrap: 'wrap' }}>
+          <div className="form-group" style={{ flex: '1 1 240px', marginBottom: 0 }}>
             <label className="form-label">Email of family user to connect with</label>
             <input 
               type="email" 
@@ -189,9 +189,15 @@ export default function ConnectionsPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={formLoading}
+              style={{ width: '100%' }}
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ height: '42px', padding: '0 20px' }} disabled={formLoading}>
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ height: '42px', padding: '0 20px', width: 'auto', flex: '0 0 auto' }} 
+            disabled={formLoading}
+          >
             Send Request
           </button>
         </form>
@@ -286,7 +292,7 @@ export default function ConnectionsPage() {
         )}
       </div>
 
-      {/* Sharing Selection Modal Drawer */}
+      {/* Sharing Selection Modal */}
       {showSharingModal && selectedConnection && (
         <div style={{
           position: 'fixed',
@@ -294,24 +300,23 @@ export default function ConnectionsPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'flex-end',
-          zIndex: 1000
+          alignItems: 'center',
+          zIndex: 2000,
+          padding: '20px'
         }}>
           <div style={{
             backgroundColor: '#FFFFFF',
             width: '100%',
-            maxWidth: '500px',
-            borderTopLeftRadius: '24px',
-            borderTopRightRadius: '24px',
+            maxWidth: '440px',
+            borderRadius: '24px',
             padding: '24px',
-            boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
             display: 'flex',
             flexDirection: 'column',
-            maxHeight: '85vh',
-            animation: 'slideUp 0.3s ease-out'
+            maxHeight: '80vh'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>

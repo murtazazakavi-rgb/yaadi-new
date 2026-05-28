@@ -35,10 +35,18 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   return (
     <div className="app-container">
       {/* Top Header */}
-      <header className="app-header">
-        <div className="brand-wrapper">
-          <img src="/logo.png" alt="Yaadi Logo" className="brand-logo" />
-          <span className="brand-title">Yaadi</span>
+      <header className="app-header" style={{ padding: '8px 20px', height: '60px' }}>
+        <div className="brand-wrapper" style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+          <img 
+            src="/logo.png" 
+            alt="Yaadi Logo" 
+            style={{ 
+              height: '44px', 
+              width: 'auto',
+              objectFit: 'contain',
+              mixBlendMode: 'multiply'
+            }} 
+          />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {user && (
