@@ -121,42 +121,61 @@ export class HijriDate {
   }
 
   dayOfYear(): number {
-    return (this.month === 0) ? this.day : (DAYS_IN_YEAR[this.month - 1] + this.day);
+    const monthDays = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
+    let days = this.day;
+    for (let m = 0; m < this.month; m++) {
+      days += monthDays[m];
+    }
+    return days;
   }
 
   static fromAJD(ajd: number): HijriDate {
-    let left = Math.floor(ajd - 1948083.5);
-    const y30 = Math.floor(left / 10631.0);
-    left -= y30 * 10631;
-
-    let i = 0;
-    while (left > DAYS_IN_30_YEARS[i]) {
-      i += 1;
+    let days = Math.floor(ajd - 1948438.0 + 0.5);
+    
+    const cycles = Math.floor((days - 1) / 10631);
+    days -= cycles * 10631;
+    
+    let yearsInCycle = 0;
+    while (true) {
+      const yearLength = HijriDate.isKabisa(yearsInCycle + 1) ? 355 : 354;
+      if (days <= yearLength) {
+        break;
+      }
+      days -= yearLength;
+      yearsInCycle += 1;
     }
-
-    const year = Math.round(y30 * 30.0 + i);
-    if (i > 0) {
-      left -= DAYS_IN_30_YEARS[i - 1];
+    
+    const year = cycles * 30 + yearsInCycle + 1;
+    
+    const monthDays = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29];
+    if (HijriDate.isKabisa(year)) {
+      monthDays[11] = 30;
     }
-
-    i = 0;
-    while (left > DAYS_IN_YEAR[i]) {
-      i += 1;
+    
+    let month = 0;
+    while (days > monthDays[month]) {
+      days -= monthDays[month];
+      month += 1;
     }
-
-    const month = Math.round(i);
-    const date = (i > 0) ? Math.round(left - DAYS_IN_YEAR[i - 1]) : Math.round(left);
-
-    return new HijriDate(year, month, date);
+    
+    const day = days;
+    return new HijriDate(year, month, day);
   }
 
   toAJD(): number {
-    const y30 = Math.floor(this.year / 30.0);
-    let ajd = 1948083.5 + y30 * 10631 + this.dayOfYear();
-    if (this.year % 30 !== 0) {
-      ajd += DAYS_IN_30_YEARS[this.year - y30 * 30 - 1];
+    const precedingYears = this.year - 1;
+    const cycles = Math.floor(precedingYears / 30);
+    const yearsInCycle = precedingYears % 30;
+    
+    let days = cycles * 10631 + yearsInCycle * 354;
+    for (let y = 1; y <= yearsInCycle; y++) {
+      if (HijriDate.isKabisa(y)) {
+        days += 1;
+      }
     }
-    return ajd;
+    days += this.dayOfYear();
+    
+    return 1948438.0 + days;
   }
 
   static fromGregorian(date: Date): HijriDate {
