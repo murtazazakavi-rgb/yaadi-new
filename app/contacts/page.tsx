@@ -612,7 +612,7 @@ export default function ContactsPage() {
       </div>
 
       {/* Contacts List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="contacts-grid" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {filteredContacts.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
             No contacts found in directory.
@@ -626,7 +626,7 @@ export default function ContactsPage() {
             return (
               <div 
                 key={c.id} 
-                className="card"
+                className="card contact-card"
                 style={{
                   margin: '0 16px',
                   padding: '16px',

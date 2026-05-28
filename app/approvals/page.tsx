@@ -282,7 +282,7 @@ export default function ApprovalsPage() {
       )}
 
       {/* Submissions queue */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '0 16px' }}>
+      <div className="approvals-grid" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '0 16px' }}>
         {submissions.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
             No pending submissions to review.
@@ -298,7 +298,7 @@ export default function ApprovalsPage() {
             return (
               <div 
                 key={sub.id} 
-                className="card"
+                className="card approval-card"
                 style={{
                   margin: 0,
                   padding: '16px',

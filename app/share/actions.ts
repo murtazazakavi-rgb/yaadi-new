@@ -3,6 +3,7 @@
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { sendEmail } from '@/lib/mail';
 
 async function requireAuth() {
   const session = await getSession();
@@ -54,11 +55,12 @@ export async function submitGuestDetails(
     throw new Error('First name and last name are required.');
   }
 
-  // Validate tenant exists
-  const tenantExists = await getTenantName(tenantId);
-  if (!tenantExists) {
+  // Validate tenant exists and get email/display_name
+  const tenantRes = await query('SELECT email, display_name FROM tenants WHERE id = $1', [tenantId]);
+  if (tenantRes.rows.length === 0) {
     throw new Error('Invalid invitation link.');
   }
+  const { email: tenantEmail, display_name: tenantName } = tenantRes.rows[0];
 
   const eventData = JSON.stringify({
     email: email || null,
@@ -71,6 +73,66 @@ export async function submitGuestDetails(
      VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
     [tenantId, firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, eventData]
   );
+
+  // Send email alert to the directory owner
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://yaadi-five.vercel.app/';
+    const emailBody = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>New Approval Request</title>
+        </head>
+        <body style="background-color: #F6F5F2; margin: 0; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+          <div style="max-width: 500px; background-color: #ffffff; border: 1px solid #EAE8E2; border-radius: 12px; padding: 32px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+            
+            <!-- Header -->
+            <div style="text-align: center; border-bottom: 1px solid #ECEBE6; padding-bottom: 20px; margin-bottom: 24px;">
+              <div style="font-size: 26px; font-weight: 700; color: #3C3935; font-family: 'Playfair Display', Georgia, serif; letter-spacing: -0.5px;">
+                Yaadi
+              </div>
+              <div style="font-size: 12px; color: #8C8984; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-weight: 600;">
+                New Entry Submitted
+              </div>
+            </div>
+
+            <!-- Body -->
+            <p style="font-size: 14px; color: #55514C; line-height: 1.6; margin-bottom: 24px;">
+              Hello <strong>${tenantName}</strong>,
+            </p>
+            <p style="font-size: 14px; color: #55514C; line-height: 1.6; margin-bottom: 24px;">
+              A new contact entry has been submitted for your directory: <strong>${firstName} ${lastName}</strong>.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${appUrl}approvals" style="display: inline-block; background-color: #3C3935; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 6px; font-family: sans-serif;">
+                Review and Approve Entry
+              </a>
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 32px; border-top: 1px solid #ECEBE6; padding-top: 16px; text-align: center; font-size: 11px; color: #8C8984;">
+              This is an automated notification email from your Yaadi Family Directory.
+              <br />
+              <a href="${appUrl}" style="color: #8C8984; text-decoration: underline; margin-top: 6px; display: inline-block;">
+                Manage your directory
+              </a>
+            </div>
+
+          </div>
+        </body>
+      </html>
+    `;
+
+    await sendEmail({
+      to: tenantEmail,
+      subject: `New Approval Request: ${firstName} ${lastName}`,
+      html: emailBody
+    });
+  } catch (emailErr) {
+    console.error('Failed to send approval email notification:', emailErr);
+  }
 
   return { success: true };
 }

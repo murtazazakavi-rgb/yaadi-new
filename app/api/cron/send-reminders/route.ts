@@ -13,8 +13,12 @@ export async function GET(request: Request) {
 
     // Verify security secret if configured
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret && triggerKey !== cronSecret) {
-      return new NextResponse('Unauthorized', { status: 401 });
+    if (cronSecret) {
+      const authHeader = request.headers.get('authorization');
+      const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+      if (triggerKey !== cronSecret && bearerToken !== cronSecret) {
+        return new NextResponse('Unauthorized', { status: 401 });
+      }
     }
 
     // Fetch all tenants

@@ -144,68 +144,70 @@ export default function TemplatesPage() {
           </p>
         </div>
 
-        {/* Gregorian Birthday Template */}
-        <div className="card">
-          <label className="form-label" style={{ marginBottom: '8px' }}>Gregorian Birthday Template</label>
-          <textarea 
-            className="form-input" 
-            style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
-            placeholder="Happy {ordinal} Birthday, {name}! Wishing you a blessed day..."
-            value={tBirthdayG}
-            onChange={(e) => setTBirthdayG(e.target.value)}
-          />
+        <div className="templates-grid">
+          {/* Gregorian Birthday Template */}
+          <div className="card">
+            <label className="form-label" style={{ marginBottom: '8px' }}>Gregorian Birthday Template</label>
+            <textarea 
+              className="form-input" 
+              style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
+              placeholder="Happy {ordinal} Birthday, {name}! Wishing you a blessed day..."
+              value={tBirthdayG}
+              onChange={(e) => setTBirthdayG(e.target.value)}
+            />
+          </div>
+
+          {/* Hijri Birthday Template */}
+          <div className="card">
+            <label className="form-label" style={{ marginBottom: '8px' }}>Hijri Birthday (Waras) Template</label>
+            <textarea 
+              className="form-input" 
+              style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
+              placeholder="Mubarak on your {ordinal} Waras, {name}! Sending prayers and love..."
+              value={tBirthdayH}
+              onChange={(e) => setTBirthdayH(e.target.value)}
+            />
+          </div>
+
+          {/* Wedding Anniversary Template */}
+          <div className="card">
+            <label className="form-label" style={{ marginBottom: '8px' }}>Wedding Anniversary Template</label>
+            <textarea 
+              className="form-input" 
+              style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
+              placeholder="Happy {ordinal} Anniversary, {name}! Wishing you a lifetime of joy..."
+              value={tAnniversary}
+              onChange={(e) => setTAnniversary(e.target.value)}
+            />
+          </div>
+
+          {/* Gregorian Death Anniversary Template */}
+          <div className="card">
+            <label className="form-label" style={{ marginBottom: '8px' }}>Gregorian Death Anniversary Template</label>
+            <textarea 
+              className="form-input" 
+              style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
+              placeholder="Remembering {name} on their {ordinal} death anniversary..."
+              value={tDeathG}
+              onChange={(e) => setTDeathG(e.target.value)}
+            />
+          </div>
+
+          {/* Hijri Death Anniversary Template */}
+          <div className="card">
+            <label className="form-label" style={{ marginBottom: '8px' }}>Hijri Death (Wafaat) Template</label>
+            <textarea 
+              className="form-input" 
+              style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
+              placeholder="Remembering {name} on their {ordinal} Wafaat anniversary..."
+              value={tDeathH}
+              onChange={(e) => setTDeathH(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Hijri Birthday Template */}
-        <div className="card">
-          <label className="form-label" style={{ marginBottom: '8px' }}>Hijri Birthday (Waras) Template</label>
-          <textarea 
-            className="form-input" 
-            style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
-            placeholder="Mubarak on your {ordinal} Waras, {name}! Sending prayers and love..."
-            value={tBirthdayH}
-            onChange={(e) => setTBirthdayH(e.target.value)}
-          />
-        </div>
-
-        {/* Wedding Anniversary Template */}
-        <div className="card">
-          <label className="form-label" style={{ marginBottom: '8px' }}>Wedding Anniversary Template</label>
-          <textarea 
-            className="form-input" 
-            style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
-            placeholder="Happy {ordinal} Anniversary, {name}! Wishing you a lifetime of joy..."
-            value={tAnniversary}
-            onChange={(e) => setTAnniversary(e.target.value)}
-          />
-        </div>
-
-        {/* Gregorian Death Anniversary Template */}
-        <div className="card">
-          <label className="form-label" style={{ marginBottom: '8px' }}>Gregorian Death Anniversary Template</label>
-          <textarea 
-            className="form-input" 
-            style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
-            placeholder="Remembering {name} on their {ordinal} death anniversary..."
-            value={tDeathG}
-            onChange={(e) => setTDeathG(e.target.value)}
-          />
-        </div>
-
-        {/* Hijri Death Anniversary Template */}
-        <div className="card">
-          <label className="form-label" style={{ marginBottom: '8px' }}>Hijri Death (Wafaat) Template</label>
-          <textarea 
-            className="form-input" 
-            style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
-            placeholder="Remembering {name} on their {ordinal} Wafaat anniversary..."
-            value={tDeathH}
-            onChange={(e) => setTDeathH(e.target.value)}
-          />
-        </div>
-
-        <div style={{ padding: '0 16px 24px 16px' }}>
-          <button type="submit" className="btn btn-primary">
+        <div style={{ padding: '0 16px 24px 16px', marginTop: '16px' }}>
+          <button type="submit" className="btn btn-primary" style={{ width: 'auto', minWidth: '180px' }}>
             <Save size={16} /> Save Templates
           </button>
         </div>

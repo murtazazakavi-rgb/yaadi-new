@@ -189,7 +189,7 @@ export function generateHtmlDigest(
           <div style="margin-top: 32px; border-top: 1px solid #ECEBE6; padding-top: 16px; text-align: center; font-size: 11px; color: #8C8984;">
             This is an automated reminder email from your Yaadi Family Directory.
             <br />
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://yaadi.com'}" style="color: #8C8984; text-decoration: underline; margin-top: 6px; display: inline-block;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://yaadi-five.vercel.app/'}" style="color: #8C8984; text-decoration: underline; margin-top: 6px; display: inline-block;">
               Manage your directory
             </a>
           </div>
