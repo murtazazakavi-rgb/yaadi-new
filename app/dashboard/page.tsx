@@ -46,7 +46,11 @@ export default function DashboardPage() {
     setSendingDigest(true);
     try {
       const res = await triggerManualEmailDigest();
-      alert(`Test Email Digest sent successfully to ${res.email}!`);
+      if (res.success) {
+        alert(`Test Email Digest sent successfully to ${res.email}!`);
+      } else {
+        alert(`Failed to send email digest:\n\n${res.error}`);
+      }
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Failed to send test email digest.');

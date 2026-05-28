@@ -168,7 +168,7 @@ export async function triggerManualEmailDigest() {
   });
 
   if (!result.success) {
-    throw new Error(result.error || 'Failed to send email.');
+    return { success: false, error: result.error || 'Failed to send email.' };
   }
 
   return { success: true, email: tenant.email };
