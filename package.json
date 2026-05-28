@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export:web": "next build"
+    "export:web": "next build",
+    "deploy": "git add . && git commit -m \"Update app\" && git push"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
