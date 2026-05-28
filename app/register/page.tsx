@@ -59,8 +59,9 @@ export default function RegisterPage() {
             src="/logo.png" 
             alt="Yaadi Logo" 
             style={{ 
-              height: '140px', 
-              width: '140px', 
+              height: 'auto', 
+              width: '100%',
+              maxWidth: '220px',
               objectFit: 'contain',
               mixBlendMode: 'multiply',
               marginBottom: '8px'

@@ -58,8 +58,9 @@ export default function LoginPage() {
             src="/logo.png" 
             alt="Yaadi Logo" 
             style={{ 
-              height: '180px', 
-              width: '180px', 
+              height: 'auto', 
+              width: '100%',
+              maxWidth: '280px',
               objectFit: 'contain',
               mixBlendMode: 'multiply',
               marginBottom: '8px'
