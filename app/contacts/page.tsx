@@ -12,45 +12,7 @@ import {
 } from './actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus } from 'lucide-react';
-
-�' },
-  { code: '+962', country: 'Jordan', flag: '🇯🇴' },
-  { code: '+963', country: 'Syria', flag: '🇸🇾' },
-  { code: '+964', country: 'Iraq', flag: '🇮🇶' },
-  { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
-  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: '+967', country: 'Yemen', flag: '🇾🇪' },
-  { code: '+968', country: 'Oman', flag: '🇴🇲' },
-  { code: '+970', country: 'Palestine', flag: '🇵🇸' },
-  { code: '+971', country: 'United Arab Emirates', flag: '🇦🇪' },
-  { code: '+972', country: 'Israel', flag: '🇮🇱' },
-  { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
-  { code: '+974', country: 'Qatar', flag: '🇶🇦' },
-  { code: '+975', country: 'Bhutan', flag: '🇧🇹' },
-  { code: '+976', country: 'Mongolia', flag: '🇲🇳' },
-  { code: '+977', country: 'Nepal', flag: '🇳🇵' },
-  { code: '+992', country: 'Tajikistan', flag: '🇹🇯' },
-  { code: '+993', country: 'Turkmenistan', flag: '🇹🇲' },
-  { code: '+994', country: 'Azerbaijan', flag: '🇦🇿' },
-  { code: '+995', country: 'Georgia', flag: '🇬🇪' },
-  { code: '+996', country: 'Kyrgyzstan', flag: '🇰🇬' },
-  { code: '+998', country: 'Uzbekistan', flag: '🇺🇿' },
-];
-
-const parsePhoneNumber = (fullPhone: string) => {
-  if (!fullPhone) return { code: '+91', local: '' };
-  const sortedCodes = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length);
-  for (const c of sortedCodes) {
-    if (fullPhone.startsWith(c.code)) {
-      return { code: c.code, local: fullPhone.slice(c.code.length) };
-    }
-    const rawCode = c.code.replace('+', '');
-    if (fullPhone.startsWith(rawCode)) {
-      return { code: c.code, local: fullPhone.slice(rawCode.length) };
-    }
-  }
-  return { code: '+91', local: fullPhone };
-};
+import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<any[]>([]);

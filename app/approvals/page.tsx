@@ -4,37 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getPendingSubmissions, approveSubmission, rejectSubmission } from '@/app/share/actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Check, X, ShieldAlert, Eye, User, Calendar, Save } from 'lucide-react';
-
-const COUNTRY_CODES = [
-  { code: '+91', country: 'India', flag: '🇮🇳' },
-  { code: '+971', country: 'UAE', flag: '🇦🇪' },
-  { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
-  { code: '+44', country: 'UK', flag: '🇬🇧' },
-  { code: '+255', country: 'Tanzania', flag: '🇹🇿' },
-  { code: '+254', country: 'Kenya', flag: '🇰🇪' },
-  { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
-  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: '+968', country: 'Oman', flag: '🇴🇲' },
-  { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
-  { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
-  { code: '+261', country: 'Madagascar', flag: '🇲🇬' },
-  { code: '+33', country: 'France', flag: '🇫🇷' },
-];
-
-const parsePhoneNumber = (fullPhone: string) => {
-  if (!fullPhone) return { code: '+91', local: '' };
-  const sortedCodes = [...COUNTRY_CODES].sort((a, b) => b.code.length - a.code.length);
-  for (const c of sortedCodes) {
-    if (fullPhone.startsWith(c.code)) {
-      return { code: c.code, local: fullPhone.slice(c.code.length) };
-    }
-    const rawCode = c.code.replace('+', '');
-    if (fullPhone.startsWith(rawCode)) {
-      return { code: c.code, local: fullPhone.slice(rawCode.length) };
-    }
-  }
-  return { code: '+91', local: fullPhone };
-};
+import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 
 export default function ApprovalsPage() {
   const [submissions, setSubmissions] = useState<any[]>([]);
@@ -97,12 +67,12 @@ export default function ApprovalsPage() {
     let parsedNotes = '';
 
     try {
-      const dataObj = JSON.parse(sub.event_data);
+      const dataObj = typeof sub.event_data === 'string' ? JSON.parse(sub.event_data) : sub.event_data;
       parsedEvents = dataObj.events || [];
       parsedEmail = dataObj.email || '';
       parsedNotes = dataObj.notes || '';
     } catch (e) {
-      console.error('Failed to parse event_data JSON');
+      console.error('Failed to parse event_data JSON', e);
     }
 
     setEmail(parsedEmail);
@@ -321,7 +291,7 @@ export default function ApprovalsPage() {
           submissions.map((sub) => {
             let infoSummary = 'No events';
             try {
-              const obj = JSON.parse(sub.event_data);
+              const obj = typeof sub.event_data === 'string' ? JSON.parse(sub.event_data) : sub.event_data;
               infoSummary = obj.events.map((e: any) => e.eventType.replace('_', ' ')).join(', ') || 'No events';
             } catch (e) {}
 

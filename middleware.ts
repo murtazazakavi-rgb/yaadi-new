@@ -47,7 +47,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect non-admins away from admin/approvals routes
-  const adminRoutes = ['/admin', '/approvals'];
+  const adminRoutes = ['/admin'];
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
 
   if (session && isAdminRoute && !session.isAdmin) {

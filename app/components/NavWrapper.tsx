@@ -102,13 +102,13 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
           <span>Templates</span>
         </Link>
 
+        <Link href="/approvals" className={`nav-item ${pathname === '/approvals' ? 'active' : ''}`}>
+          <CheckSquare />
+          <span>Approvals</span>
+        </Link>
+
         {user?.isAdmin && (
           <>
-            <Link href="/approvals" className={`nav-item ${pathname === '/approvals' ? 'active' : ''}`}>
-              <CheckSquare />
-              <span>Approvals</span>
-            </Link>
-            
             <Link href="/admin" className={`nav-item ${pathname === '/admin' ? 'active' : ''}`}>
               <ShieldAlert />
               <span>Admin</span>

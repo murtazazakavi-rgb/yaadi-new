@@ -4,22 +4,7 @@ import React, { useState } from 'react';
 import { submitGuestDetails } from '../actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Send, CheckCircle, Calendar, Plus, X } from 'lucide-react';
-
-const COUNTRY_CODES = [
-  { code: '+91', country: 'India', flag: '🇮🇳' },
-  { code: '+971', country: 'UAE', flag: '🇦🇪' },
-  { code: '+1', country: 'USA/Canada', flag: '🇺🇸' },
-  { code: '+44', country: 'UK', flag: '🇬🇧' },
-  { code: '+255', country: 'Tanzania', flag: '🇹🇿' },
-  { code: '+254', country: 'Kenya', flag: '🇰🇪' },
-  { code: '+965', country: 'Kuwait', flag: '🇰🇼' },
-  { code: '+966', country: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: '+968', country: 'Oman', flag: '🇴🇲' },
-  { code: '+973', country: 'Bahrain', flag: '🇧🇭' },
-  { code: '+92', country: 'Pakistan', flag: '🇵🇰' },
-  { code: '+261', country: 'Madagascar', flag: '🇲🇬' },
-  { code: '+33', country: 'France', flag: '🇫🇷' },
-];
+import { COUNTRY_CODES } from '@/lib/countries';
 
 interface ShareFormClientProps {
   tenantId: string;
