@@ -326,6 +326,35 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                 </Link>
               )}
 
+              {/* PWA Install Button */}
+              <div 
+                onClick={() => {
+                  setShowInstallPrompt(true);
+                  setShowMoreMenu(false);
+                }} 
+                className="btn-press"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '14px 18px', 
+                  borderRadius: '12px', 
+                  backgroundColor: 'var(--color-gold-light)',
+                  color: 'var(--color-gold)',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  marginTop: '8px'
+                }}
+              >
+                <img 
+                  src="/logo.png" 
+                  alt="Yaadi Logo" 
+                  style={{ width: '18px', height: '18px', borderRadius: '4px', objectFit: 'contain' }} 
+                />
+                <span>Install Yaadi App</span>
+              </div>
+
               {/* Theme Toggle for Mobile Drawer */}
               <div 
                 onClick={toggleTheme} 
@@ -383,17 +412,24 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
             </div>
 
             {isIOS ? (
-              <div style={{ fontSize: '11px', color: 'var(--text-primary)', borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ fontSize: '11.5px', color: 'var(--text-primary)', borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '9px' }}>1</span>
-                  <span>Tap the share button <Share2 size={12} style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> in Safari</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '10px', flexShrink: 0 }}>1</span>
+                  <span style={{ lineHeight: '1.4' }}>
+                    Tap the Share button 
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: 'middle', margin: '0 4px', color: '#007AFF' }}>
+                      <rect x="5" y="9" width="14" height="11" rx="2" ry="2" />
+                      <path d="M12 3v13M9 6l3-3 3 3" />
+                    </svg>
+                    in Safari's toolbar.
+                  </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '9px' }}>2</span>
-                  <span>Scroll down and select <strong>Add to Home Screen</strong></span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '10px', flexShrink: 0 }}>2</span>
+                  <span style={{ lineHeight: '1.4' }}>Scroll down and select <strong>Add to Home Screen</strong>.</span>
                 </div>
               </div>
-            ) : (
+            ) : deferredPrompt ? (
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
                 <button 
                   onClick={handleDismissPrompt} 
@@ -418,6 +454,17 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                 >
                   Install Now
                 </button>
+              </div>
+            ) : (
+              <div style={{ fontSize: '11.5px', color: 'var(--text-primary)', borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '10px', flexShrink: 0 }}>1</span>
+                  <span style={{ lineHeight: '1.4' }}>Tap the browser's menu button (usually three vertical dots <MoreHorizontal size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />).</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '10px', flexShrink: 0 }}>2</span>
+                  <span style={{ lineHeight: '1.4' }}>Select <strong>Add to Home Screen</strong> or <strong>Install App</strong>.</span>
+                </div>
               </div>
             )}
           </div>
