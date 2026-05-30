@@ -5,7 +5,7 @@ import NavWrapper from '@/app/components/NavWrapper';
 
 export const metadata = {
   title: 'Yaadi - Premium Family Reminders',
-  description: 'Track birthdays, waras, anniversaries, wafaat, and family connections in a classy British pastel dashboard.',
+  description: 'A secure family workspace to track birthdays, waras, wedding anniversaries, wafaat, and manage important family documents.',
 };
 
 export const viewport = {
