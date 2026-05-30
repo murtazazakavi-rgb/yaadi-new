@@ -264,7 +264,7 @@ export default function ApprovalsPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }}>
+    <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>

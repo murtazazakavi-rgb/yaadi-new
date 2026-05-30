@@ -11,7 +11,7 @@ import {
   getRelationships 
 } from './actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
 
@@ -21,6 +21,72 @@ export default function ContactsPage() {
   const [relationships, setRelationships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterTab, setFilterTab] = useState<'all' | 'withEvents' | 'familyTree'>('all');
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.onstart = () => {};
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+    };
+    recognition.onerror = () => {
+      alert("Voice search encountered an error.");
+    };
+    recognition.start();
+  };
+
+  const renderEventChips = (contactId: string) => {
+    const cEvs = events.filter((e) => e.contact_id === contactId);
+    if (cEvs.length === 0) {
+      return <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No events registered</span>;
+    }
+    
+    return (
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+        {cEvs.map((e) => {
+          let label = '';
+          let badgeClass = '';
+          switch (e.event_type) {
+            case 'birthday_gregorian':
+              label = `Birthday (${e.g_day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][e.g_month - 1]})`;
+              badgeClass = 'badge-birthday';
+              break;
+            case 'birthday_hijri':
+              label = `Waras (${e.h_day} ${['Moharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II', 'Rajab', 'Shabaan', 'Ramadaan', 'Shawwal', 'Zilqadah', 'Zilhaj'][e.h_month]})`;
+              badgeClass = 'badge-waras';
+              break;
+            case 'anniversary':
+              label = `Anniversary (${e.g_day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][e.g_month - 1]})`;
+              badgeClass = 'badge-anniversary';
+              break;
+            case 'death_gregorian':
+              label = `Death (${e.g_day} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][e.g_month - 1]})`;
+              badgeClass = 'badge-death';
+              break;
+            case 'death_hijri':
+              label = `Wafaat (${e.h_day} ${['Moharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II', 'Rajab', 'Shabaan', 'Ramadaan', 'Shawwal', 'Zilqadah', 'Zilhaj'][e.h_month]})`;
+              badgeClass = 'badge-death';
+              break;
+            default:
+              label = e.event_type;
+              badgeClass = 'badge-death';
+          }
+          return (
+            <span key={e.id} className={`badge ${badgeClass}`} style={{ fontSize: '9px', padding: '2px 8px' }}>
+              {label}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
 
   // Form Drawer States
   const [showForm, setShowForm] = useState(false);
@@ -540,7 +606,16 @@ export default function ContactsPage() {
   // Filtered contacts list
   const filteredContacts = contacts.filter((c) => {
     const fullName = `${c.first_name}${c.middle_name ? ' ' + c.middle_name : ''} ${c.last_name}`.toLowerCase();
-    return fullName.includes(searchQuery.toLowerCase());
+    const matchesSearch = fullName.includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    
+    if (filterTab === 'withEvents') {
+      return events.some((e) => e.contact_id === c.id);
+    }
+    if (filterTab === 'familyTree') {
+      return relationships.some((r) => r.contact_a_id === c.id || r.contact_b_id === c.id);
+    }
+    return true;
   });
 
   const getContactEventsSummary = (contactId: string) => {
@@ -567,7 +642,7 @@ export default function ContactsPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }}>
+    <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Page Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -603,12 +678,38 @@ export default function ContactsPage() {
           <input 
             type="text"
             className="form-input"
-            style={{ paddingLeft: '36px', height: '42px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: 'var(--border-thin)', boxShadow: 'var(--shadow-soft)' }}
+            style={{ paddingLeft: '36px', paddingRight: '36px', height: '42px', borderRadius: '12px', backgroundColor: 'var(--bg-card)', border: 'var(--border-thin)', boxShadow: 'var(--shadow-soft)' }}
             placeholder="Search directory..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <Mic size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={handleVoiceSearch} />
         </div>
+      </div>
+
+      {/* Segmented Filter Control */}
+      <div className="segmented-control" style={{ margin: '0 16px 16px 16px', width: 'calc(100% - 32px)' }}>
+        <button 
+          type="button"
+          onClick={() => setFilterTab('all')} 
+          className={`segmented-control-item ${filterTab === 'all' ? 'active' : ''}`}
+        >
+          All
+        </button>
+        <button 
+          type="button"
+          onClick={() => setFilterTab('withEvents')} 
+          className={`segmented-control-item ${filterTab === 'withEvents' ? 'active' : ''}`}
+        >
+          With Events
+        </button>
+        <button 
+          type="button"
+          onClick={() => setFilterTab('familyTree')} 
+          className={`segmented-control-item ${filterTab === 'familyTree' ? 'active' : ''}`}
+        >
+          Family Connections
+        </button>
       </div>
 
       {/* Contacts List */}
@@ -633,7 +734,7 @@ export default function ContactsPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '8px',
-                  backgroundColor: isActive ? '#FAF9F6' : '#FFFFFF',
+                  backgroundColor: isActive ? 'var(--bg-card-active)' : 'var(--bg-card)',
                   borderColor: isActive ? 'var(--color-gold)' : 'rgba(197, 160, 89, 0.15)'
                 }}
               >
@@ -658,9 +759,7 @@ export default function ContactsPage() {
                         </span>
                       )}
                     </h3>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      {getContactEventsSummary(c.id)}
-                    </p>
+                    {renderEventChips(c.id)}
                   </div>
                   
                   {/* Edit/Delete icons */}
@@ -735,7 +834,7 @@ export default function ContactsPage() {
                             }
 
                             return (
-                              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: '#FAF9F6', borderRadius: '6px', fontSize: '12px' }}>
+                              <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: 'var(--bg-card-active)', borderRadius: '6px', fontSize: '12px' }}>
                                 <span><strong>{relLabel}</strong> {partnerName}</span>
                                 {isOwn && (
                                   <button 
@@ -1072,7 +1171,7 @@ export default function ContactsPage() {
                 <Download size={14} /> Download CSV Template
               </button>
 
-              <div style={{ border: '1px dashed var(--color-gold-light)', padding: '20px', borderRadius: '8px', backgroundColor: '#FCFBFA', textAlign: 'center' }}>
+              <div style={{ border: '1px dashed var(--color-gold-light)', padding: '20px', borderRadius: '8px', backgroundColor: 'var(--bg-primary)', textAlign: 'center' }}>
                 <input 
                   type="file" 
                   accept=".csv" 
@@ -1124,7 +1223,7 @@ export default function ContactsPage() {
 
               {/* Preview parsed contacts if loaded and not processed yet */}
               {parsedContacts.length > 0 && !importResult && (
-                <div style={{ backgroundColor: '#F8F9FA', border: '1px solid #ECEBE6', padding: '12px', borderRadius: '8px' }}>
+                <div style={{ backgroundColor: 'var(--bg-primary)', border: 'var(--border-thin)', padding: '12px', borderRadius: '8px' }}>
                   <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>
                     File Preview: Ready to Import
                   </span>

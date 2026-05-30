@@ -431,7 +431,7 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
             </div>
 
             {hasDeceasedEvent && (
-              <div style={{ backgroundColor: '#FAF9F6', padding: '12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.03)' }}>
+              <div style={{ backgroundColor: 'var(--bg-card-active)', padding: '12px', borderRadius: '8px', border: 'var(--border-light)' }}>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                     <label className="form-label">Relative's First Name</label>

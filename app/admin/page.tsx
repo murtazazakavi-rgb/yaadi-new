@@ -101,7 +101,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }}>
+    <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Title Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -222,8 +222,8 @@ export default function AdminPage() {
                 marginTop: '8px',
                 padding: '8px 12px',
                 borderRadius: '8px',
-                backgroundColor: '#FAF9F6',
-                border: '1px solid rgba(0,0,0,0.03)',
+                backgroundColor: 'var(--bg-card-active)',
+                border: 'var(--border-light)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between'

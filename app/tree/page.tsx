@@ -122,6 +122,18 @@ export default function FamilyTreePage() {
   const treeGenerations = buildTree(rootId);
   const selectedRootContact = contacts.find((c) => c.id === rootId);
 
+  // Calculate statistics
+  let coupleCount = 0;
+  const uniqueMembers = new Set<string>();
+  treeGenerations.forEach(gen => {
+    gen.couples.forEach((c: any) => {
+      if (c.partnerB) coupleCount++;
+      if (c.partnerA) uniqueMembers.add(c.partnerA.id);
+      if (c.partnerB) uniqueMembers.add(c.partnerB.id);
+    });
+  });
+  const memberCount = uniqueMembers.size;
+
   if (loading) {
     return (
       <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -131,7 +143,7 @@ export default function FamilyTreePage() {
   }
 
   return (
-    <div style={{ padding: '20px 0', minHeight: '100vh' }}>
+    <div style={{ padding: '20px 0', minHeight: '100vh' }} className="page-transition">
       {/* Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -232,7 +244,7 @@ export default function FamilyTreePage() {
                       {/* Spouse Heart Divider */}
                       {partnerB && (
                         <>
-                          <Heart size={12} style={{ color: 'var(--color-rose)', fill: 'var(--color-rose-light)' }} />
+                          <Heart size={14} className="heart-pulse" style={{ color: 'var(--color-rose)', fill: 'var(--color-rose-light)', cursor: 'pointer' }} />
                           {/* Partner B */}
                           <div style={{ textAlign: 'center', minWidth: '80px' }}>
                             <span style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
@@ -260,26 +272,17 @@ export default function FamilyTreePage() {
                           overflow: 'visible'
                         }}
                       >
-                        {/* Vertical line down from parents */}
-                        <line x1="100" y1="0" x2="100" y2="20" stroke="var(--color-gold)" strokeWidth="1.5" />
-                        
-                        {/* Horizontal branch line */}
-                        <line x1="20" y1="20" x2="180" y2="20" stroke="var(--color-gold)" strokeWidth="1.5" />
-                        
-                        {/* Vertical lines down to children slots */}
                         {couple.children.map((_: any, idx: number, arr: any[]) => {
                           const childCount = arr.length;
                           const spacing = childCount > 1 ? 160 / (childCount - 1) : 0;
                           const x = childCount > 1 ? 20 + idx * spacing : 100;
                           return (
-                            <line 
-                              key={idx} 
-                              x1={x} 
-                              y1="20" 
-                              x2={x} 
-                              y2="40" 
-                              stroke="var(--color-gold)" 
-                              strokeWidth="1.5" 
+                            <path 
+                              key={idx}
+                              d={`M 100,0 C 100,20 ${x},20 ${x},40`}
+                              fill="transparent"
+                              stroke="var(--color-gold)"
+                              strokeWidth="1.5"
                             />
                           );
                         })}
@@ -292,6 +295,29 @@ export default function FamilyTreePage() {
           ))
         )}
       </div>
+
+      {/* Tree Statistics Card */}
+      {treeGenerations.length > 0 && (
+        <div className="card" style={{ margin: '20px 16px', padding: '20px' }}>
+          <h3 className="serif-font" style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', borderBottom: 'var(--border-light)', paddingBottom: '8px', marginBottom: '16px' }}>
+            Tree Statistics
+          </h3>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '120px', padding: '12px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: 'var(--border-card)', textAlign: 'center' }}>
+              <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>Generations</span>
+              <span className="serif-font" style={{ fontSize: '24px', color: 'var(--color-sage)', fontWeight: '700' }}>{treeGenerations.length}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: '120px', padding: '12px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: 'var(--border-card)', textAlign: 'center' }}>
+              <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>Marriages</span>
+              <span className="serif-font" style={{ fontSize: '24px', color: 'var(--color-gold)', fontWeight: '700' }}>{coupleCount}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: '120px', padding: '12px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: 'var(--border-card)', textAlign: 'center' }}>
+              <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>Total Family</span>
+              <span className="serif-font" style={{ fontSize: '24px', color: 'var(--color-blue)', fontWeight: '700' }}>{memberCount}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

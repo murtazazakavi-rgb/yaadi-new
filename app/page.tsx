@@ -38,7 +38,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
+    <div className="page-transition" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

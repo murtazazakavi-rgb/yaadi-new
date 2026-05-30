@@ -10,6 +10,53 @@ export default function TemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 2500);
+  };
+
+  const renderPreviewBubble = (templateText: string, defaultPlaceholderText: string) => {
+    const sampleName = "Murtaza Zakavi";
+    const sampleAge = "28";
+    const sampleOrdinal = "28th";
+    
+    const textToPreview = templateText || defaultPlaceholderText;
+    const interpolated = textToPreview
+      .replace(/{name}/g, sampleName)
+      .replace(/{age}/g, sampleAge)
+      .replace(/{ordinal}/g, sampleOrdinal);
+
+    return (
+      <div className="whatsapp-preview-container">
+        <span style={{ fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+          Live Message Preview
+        </span>
+        <div className="whatsapp-bubble">
+          {interpolated}
+          <span className="whatsapp-time">
+            {new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true })}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const handleSendTest = (templateText: string, defaultPlaceholderText: string) => {
+    const text = templateText || defaultPlaceholderText;
+    const sampleName = "Murtaza Zakavi";
+    const sampleAge = "28";
+    const sampleOrdinal = "28th";
+    
+    const interpolated = text
+      .replace(/{name}/g, sampleName)
+      .replace(/{age}/g, sampleAge)
+      .replace(/{ordinal}/g, sampleOrdinal);
+      
+    navigator.clipboard.writeText(interpolated);
+    triggerToast("Test message copied to clipboard!");
+  };
 
   // Template inputs
   const [tBirthdayG, setTBirthdayG] = useState('');
@@ -92,7 +139,7 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }}>
+    <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -105,7 +152,12 @@ export default function TemplatesPage() {
 
       {/* Share Invitation Link Section */}
       {shareUrl && (
-        <div className="card" style={{ padding: '16px', backgroundColor: 'var(--color-gold-light)' }}>
+        <div className="card" style={{ 
+          padding: '20px', 
+          border: '1.5px solid var(--color-gold)', 
+          background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--color-gold-light) 100%)',
+          boxShadow: '0 4px 12px rgba(196, 149, 58, 0.08)'
+        }}>
           <h4 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-gold)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Link2 size={14} /> Directory Invitation Link
           </h4>
@@ -118,12 +170,12 @@ export default function TemplatesPage() {
               type="text" 
               readOnly 
               className="form-input" 
-              style={{ flex: 1, backgroundColor: '#FFFFFF', fontSize: '12px', height: '36px' }}
+              style={{ flex: 1, backgroundColor: 'var(--bg-card)', fontSize: '12px', height: '36px' }}
               value={shareUrl}
             />
             <button 
-              onClick={handleCopyLink} 
-              className="btn btn-secondary" 
+              onClick={() => { handleCopyLink(); triggerToast("Invitation link copied!"); }} 
+              className="btn btn-secondary btn-press" 
               style={{ width: 'auto', padding: '0 12px', height: '36px' }}
             >
               {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -146,8 +198,13 @@ export default function TemplatesPage() {
 
         <div className="templates-grid">
           {/* Gregorian Birthday Template */}
-          <div className="card">
-            <label className="form-label" style={{ marginBottom: '8px' }}>Gregorian Birthday Template</label>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="form-label" style={{ margin: 0 }}>Gregorian Birthday Template</label>
+              <button type="button" onClick={() => handleSendTest(tBirthdayG, "Happy {ordinal} Birthday, {name}! Wishing you a wonderful year filled with love, laughter, and success.")} className="btn btn-secondary btn-press" style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', height: '24px' }}>
+                Send Test
+              </button>
+            </div>
             <textarea 
               className="form-input" 
               style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
@@ -155,11 +212,17 @@ export default function TemplatesPage() {
               value={tBirthdayG}
               onChange={(e) => setTBirthdayG(e.target.value)}
             />
+            {renderPreviewBubble(tBirthdayG, "Happy {ordinal} Birthday, {name}! Wishing you a wonderful year filled with love, laughter, and success.")}
           </div>
 
           {/* Hijri Birthday Template */}
-          <div className="card">
-            <label className="form-label" style={{ marginBottom: '8px' }}>Hijri Birthday (Waras) Template</label>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="form-label" style={{ margin: 0 }}>Hijri Birthday (Waras) Template</label>
+              <button type="button" onClick={() => handleSendTest(tBirthdayH, "Mubarak on your {ordinal} Waras, {name}! Wishing you a blessed year ahead filled with health and happiness.")} className="btn btn-secondary btn-press" style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', height: '24px' }}>
+                Send Test
+              </button>
+            </div>
             <textarea 
               className="form-input" 
               style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
@@ -167,11 +230,17 @@ export default function TemplatesPage() {
               value={tBirthdayH}
               onChange={(e) => setTBirthdayH(e.target.value)}
             />
+            {renderPreviewBubble(tBirthdayH, "Mubarak on your {ordinal} Waras, {name}! Wishing you a blessed year ahead filled with health and happiness.")}
           </div>
 
           {/* Wedding Anniversary Template */}
-          <div className="card">
-            <label className="form-label" style={{ marginBottom: '8px' }}>Wedding Anniversary Template</label>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="form-label" style={{ margin: 0 }}>Wedding Anniversary Template</label>
+              <button type="button" onClick={() => handleSendTest(tAnniversary, "Wishing you both a very Happy {ordinal} Wedding Anniversary, {name}! May your love continue to grow stronger each day.")} className="btn btn-secondary btn-press" style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', height: '24px' }}>
+                Send Test
+              </button>
+            </div>
             <textarea 
               className="form-input" 
               style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
@@ -179,11 +248,17 @@ export default function TemplatesPage() {
               value={tAnniversary}
               onChange={(e) => setTAnniversary(e.target.value)}
             />
+            {renderPreviewBubble(tAnniversary, "Wishing you both a very Happy {ordinal} Wedding Anniversary, {name}! May your love continue to grow stronger each day.")}
           </div>
 
           {/* Gregorian Death Anniversary Template */}
-          <div className="card">
-            <label className="form-label" style={{ marginBottom: '8px' }}>Gregorian Death Anniversary Template</label>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="form-label" style={{ margin: 0 }}>Gregorian Death Anniversary Template</label>
+              <button type="button" onClick={() => handleSendTest(tDeathG, "Remembering {name} on their {ordinal} death anniversary today. You are forever in our hearts.")} className="btn btn-secondary btn-press" style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', height: '24px' }}>
+                Send Test
+              </button>
+            </div>
             <textarea 
               className="form-input" 
               style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
@@ -191,11 +266,17 @@ export default function TemplatesPage() {
               value={tDeathG}
               onChange={(e) => setTDeathG(e.target.value)}
             />
+            {renderPreviewBubble(tDeathG, "Remembering {name} on their {ordinal} death anniversary today. You are forever in our hearts.")}
           </div>
 
           {/* Hijri Death Anniversary Template */}
-          <div className="card">
-            <label className="form-label" style={{ marginBottom: '8px' }}>Hijri Death (Wafaat) Template</label>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label className="form-label" style={{ margin: 0 }}>Hijri Death (Wafaat) Template</label>
+              <button type="button" onClick={() => handleSendTest(tDeathH, "Remembering {name} on their {ordinal} Wafaat anniversary today. Sending our deepest thoughts and prayers.")} className="btn btn-secondary btn-press" style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', height: '24px' }}>
+                Send Test
+              </button>
+            </div>
             <textarea 
               className="form-input" 
               style={{ height: '70px', resize: 'none', lineHeight: '1.5' }}
@@ -203,15 +284,23 @@ export default function TemplatesPage() {
               value={tDeathH}
               onChange={(e) => setTDeathH(e.target.value)}
             />
+            {renderPreviewBubble(tDeathH, "Remembering {name} on their {ordinal} Wafaat anniversary today. Sending our deepest thoughts and prayers.")}
           </div>
         </div>
 
         <div style={{ padding: '0 16px 24px 16px', marginTop: '16px' }}>
-          <button type="submit" className="btn btn-primary" style={{ width: 'auto', minWidth: '180px' }}>
+          <button type="submit" className="btn btn-primary btn-press" style={{ width: 'auto', minWidth: '180px' }}>
             <Save size={16} /> Save Templates
           </button>
         </div>
       </form>
+
+      {/* Toast Popup Notification */}
+      {toastMessage && (
+        <div className="toast-popup page-slide-up">
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

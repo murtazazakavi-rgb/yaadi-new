@@ -185,7 +185,7 @@ export default function DashboardPage() {
   const next30DaysCount = reminders.filter((r: any) => r.daysRemaining <= 30).length;
 
   return (
-    <div style={{ padding: '20px 0' }}>
+    <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Welcome Greeting Section */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <div>
@@ -200,16 +200,90 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Board */}
-      <div style={{ display: 'flex', gap: '12px', padding: '0 16px', marginBottom: '16px' }}>
-        <div className="card" style={{ flex: 1, margin: 0, padding: '16px', textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '4px' }}>Total Directory</span>
-          <span className="serif-font" style={{ fontSize: '28px', color: 'var(--color-sage)', fontWeight: '600' }}>{data.contacts.length}</span>
+      <div style={{ display: 'flex', gap: '16px', padding: '0 16px', marginBottom: '20px' }}>
+        <div className="card" style={{ flex: 1, margin: 0, padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>Total Directory</span>
+          <span className="serif-font" style={{ fontSize: '36px', color: 'var(--color-sage)', fontWeight: '700', lineHeight: 1 }}>{data.contacts.length}</span>
         </div>
-        <div className="card" style={{ flex: 1, margin: 0, padding: '16px', textAlign: 'center' }}>
-          <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '4px' }}>Next 30 Days</span>
-          <span className="serif-font" style={{ fontSize: '28px', color: 'var(--color-gold)', fontWeight: '600' }}>{next30DaysCount}</span>
+        <div className="card" style={{ flex: 1, margin: 0, padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>Next 30 Days</span>
+          <span className="serif-font" style={{ fontSize: '36px', color: 'var(--color-gold)', fontWeight: '700', lineHeight: 1 }}>{next30DaysCount}</span>
         </div>
       </div>
+
+      {/* Today's Celebration Banner (Conditional Amber Gradient Banner) */}
+      {todayEvents.length > 0 && (
+        <div className="card" style={{
+          background: 'linear-gradient(135deg, #DDAE4F 0%, #C4953A 100%)',
+          color: '#FFFFFF',
+          border: 'none',
+          padding: '20px',
+          margin: '0 16px 20px 16px',
+          borderRadius: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+          boxShadow: '0 8px 24px rgba(196, 149, 58, 0.25)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🎉</span>
+            <h3 className="serif-font" style={{ color: '#FFFFFF', fontSize: '20px', fontWeight: '700', margin: 0 }}>
+              Today's Celebrations!
+            </h3>
+          </div>
+          <p style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.4' }}>
+            You have {todayEvents.length} special family event{todayEvents.length > 1 ? 's' : ''} today. Send them your prayers and blessings!
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+            {todayEvents.map((r: any) => (
+              <div 
+                key={r.id} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)', 
+                  padding: '10px 14px', 
+                  borderRadius: '12px',
+                  backdropFilter: 'blur(5px)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="avatar-gradient" style={{ height: '30px', width: '30px', fontSize: '10px', flexShrink: 0 }}>
+                    {getInitials(r.contact)}
+                  </div>
+                  <div>
+                    <span style={{ display: 'block', fontSize: '13px', fontWeight: '600' }}>
+                      {r.contact.first_name} {r.contact.last_name}
+                    </span>
+                    <span style={{ fontSize: '11px', opacity: 0.85 }}>
+                      {getEventLabel(r)}
+                    </span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleOpenWhatsAppComposer(r)}
+                  className="btn btn-press"
+                  style={{ 
+                    width: 'auto', 
+                    padding: '6px 12px', 
+                    fontSize: '11px', 
+                    backgroundColor: '#FFFFFF', 
+                    color: '#C4953A',
+                    fontWeight: '600',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Send Dua
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Elegant Search bar */}
       <div style={{ padding: '0 16px 16px 16px', position: 'relative' }}>
@@ -218,7 +292,7 @@ export default function DashboardPage() {
           <input 
             type="text"
             className="form-input"
-            style={{ paddingLeft: '36px', height: '42px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: 'var(--border-thin)', boxShadow: 'var(--shadow-soft)' }}
+            style={{ paddingLeft: '36px', height: '42px', borderRadius: '12px', backgroundColor: 'var(--bg-card)', border: 'var(--border-thin)', boxShadow: 'var(--shadow-soft)' }}
             placeholder="Search friends & family..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -234,22 +308,56 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {/* TODAY Group */}
-            {todayEvents.length > 0 && (
-              <div>
-                <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--color-rose)', fontWeight: '600' }}>Today's Celebrations</h3>
-                <div className="reminders-grid">
-                  {todayEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
-                </div>
-              </div>
-            )}
-
-            {/* THIS WEEK Group */}
+            {/* THIS WEEK Group - Horizontally Scrollable Cards */}
             {weekEvents.length > 0 && (
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--color-sage)', fontWeight: '600' }}>Upcoming This Week</h3>
-                <div className="reminders-grid">
-                  {weekEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
+                <div className="horizontal-snap-scroll hide-scrollbar" style={{ 
+                  gap: '16px', 
+                  padding: '4px 20px 16px 20px'
+                }}>
+                  {weekEvents.map((r: any) => (
+                    <div 
+                      key={r.id} 
+                      className="card reminder-card horizontal-snap-item"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        padding: '16px',
+                        margin: 0,
+                        width: '260px',
+                        minWidth: '260px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+                        <div className="avatar-gradient" style={{ flexShrink: 0 }}>
+                          {getInitials(r.contact)}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                            {r.contact.first_name} {r.contact.last_name}
+                          </h4>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                        <span className={`badge ${getEventBadgeClass(r.eventType)}`} style={{ fontSize: '9px' }}>
+                          {getEventLabel(r)}
+                        </span>
+                        <button 
+                          className="btn-whatsapp btn-press" 
+                          onClick={() => handleOpenWhatsAppComposer(r)}
+                          style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+                        >
+                          <Send size={10} />
+                          <span>Dua</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -327,6 +435,23 @@ export default function DashboardPage() {
   );
 }
 
+// Sibling helper functions
+const formatDateDisplay = (r: any): string => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (r.eventType.includes('hijri')) {
+    const shortHijriMonths = ['Moharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II', 'Rajab', 'Shabaan', 'Ramadaan', 'Shawwal', 'Zilqadah', 'Zilhaj'];
+    return `${r.eventData.h_day} ${shortHijriMonths[r.eventData.h_month]}`;
+  } else {
+    return `${months[r.eventData.g_month - 1]} ${r.eventData.g_day}`;
+  }
+};
+
+const getCountdownText = (days: number): string => {
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  return `in ${days} days`;
+};
+
 // Sub-component card rendering helper
 function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
   const getInitials = (c: any) => {
@@ -363,22 +488,6 @@ function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
     }
   };
 
-  const formatDateDisplay = (r: any): string => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    if (r.eventType.includes('hijri')) {
-      const shortHijriMonths = ['Moharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II', 'Rajab', 'Shabaan', 'Ramadaan', 'Shawwal', 'Zilqadah', 'Zilhaj'];
-      return `${r.eventData.h_day} ${shortHijriMonths[r.eventData.h_month]}`;
-    } else {
-      return `${months[r.eventData.g_month - 1]} ${r.eventData.g_day}`;
-    }
-  };
-
-  const getCountdownText = (days: number): string => {
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    return `in ${days} days`;
-  };
-
   return (
     <div 
       key={r.id} 
@@ -394,19 +503,7 @@ function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
         {/* Compact Avatar */}
-        <div style={{
-          height: '36px',
-          width: '36px',
-          borderRadius: '50%',
-          backgroundColor: 'var(--color-gold-light)',
-          color: 'var(--color-gold)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: '600',
-          border: '1px solid rgba(197, 160, 89, 0.2)'
-        }}>
+        <div className="avatar-gradient" style={{ flexShrink: 0 }}>
           {getInitials(r.contact)}
         </div>
 
@@ -428,7 +525,7 @@ function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
 
       {/* Action WhatsApp Button */}
       <button 
-        className="btn-whatsapp" 
+        className="btn-whatsapp btn-press" 
         onClick={() => onWhatsAppOpen(r)}
         style={{ width: 'auto', flexShrink: 0 }}
       >

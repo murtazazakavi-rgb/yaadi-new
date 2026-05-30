@@ -5,33 +5,88 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
-  /* British Pastel Color Palette */
-  --bg-primary: #FAF9F5;      /* Ivory/Champagne warm background */
-  --bg-card: #FFFFFF;         /* Pure white card face */
-  --text-primary: #2E2D2A;    /* Slate Charcoal for headers */
-  --text-secondary: #5A5852;  /* Soft grey-brown for body copy */
-  --text-muted: #8E8B83;      /* Muted grey for subtext */
+  /* Modern Warm Cream Design Palette */
+  --bg-primary: #FAF8F4;      /* warm cream background */
+  --bg-card: #FFFFFF;         /* Pure white surface */
+  --text-primary: #1A1A1A;    /* Text Primary */
+  --text-secondary: #6B6B6B;  /* Text Secondary */
+  --text-muted: #9E9E9E;      /* Muted grey for subtext */
 
   /* Accents */
-  --color-gold: #C5A059;      /* Classy gold */
-  --color-gold-light: #F4EFE6;
-  --color-sage: #8A9A86;      /* Muted Sage Green */
-  --color-sage-light: #EBF0EA;
-  --color-blue: #8FAFC7;      /* Powder Blue */
-  --color-blue-light: #EBF1F5;
-  --color-rose: #D6A8A4;      /* Dusty Rose */
-  --color-rose-light: #FBF0EF;
-  --color-accent-hover: #768572;
+  --color-gold: #C4953A;      /* Accent: amber gold */
+  --color-gold-light: rgba(196, 149, 58, 0.1);
+  --color-sage: #6B8E6E;      /* Primary: sage green */
+  --color-sage-light: rgba(107, 142, 110, 0.1);
+  --color-blue: #4A6B8A;      /* Hijri Badge: blue */
+  --color-blue-light: rgba(74, 107, 138, 0.1);
+  --color-rose: #C45B7A;      /* Birthday Badge: rose */
+  --color-rose-light: rgba(196, 91, 122, 0.1);
+  
+  /* Anniversary Badge */
+  --color-anniversary: #8A6BC4; /* Anniversary Badge: purple */
+  --color-anniversary-light: rgba(138, 107, 196, 0.1);
+
+  --color-accent-hover: #59785B; /* Sage Green hover (slightly darker primary) */
 
   /* Layout and UI tokens */
-  --border-thin: 1px solid rgba(197, 160, 89, 0.12); /* Thin gold-tinted border */
+  --border-thin: 1px solid rgba(196, 149, 58, 0.12); /* Thin gold-tinted border */
   --border-light: 1px solid rgba(0, 0, 0, 0.05);
-  --shadow-soft: 0 6px 24px rgba(182, 172, 162, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02); /* Multi-layered soft drop shadow */
+  
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-soft: var(--shadow-card);
+  
   --radius-card: 16px;
   --radius-pill: 30px;
-  --radius-button: 8px;
+  --radius-button: 12px;      /* Updated to 12px */
+  --section-gap: 20px;        /* Added section gap */
   --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   --max-width-mobile: 480px;
+
+  /* Theme component values */
+  --border-card: 1px solid #E8E4DC;
+  --bg-input: #F5F3EF;
+  --bg-input-focus: #FFFFFF;
+  --bg-card-active: #FAF9F6;
+  --bg-badge-death: #ECEAE3;
+  --bg-bottom-nav: rgba(255, 255, 255, 0.95);
+  --bg-sidebar: #FFFFFF;
+  --bg-header: rgba(250, 248, 244, 0.8);
+}
+
+html.dark, .dark {
+  --bg-primary: #1A1A1A;
+  --bg-card: #2D2D2D;
+  --text-primary: #F5F3EF;
+  --text-secondary: #CFCFCF;
+  --text-muted: #888888;
+  
+  --color-sage: #8AB89A;
+  --color-sage-light: rgba(138, 184, 154, 0.15);
+  --color-gold: #D4A84A;
+  --color-gold-light: rgba(212, 168, 74, 0.15);
+  --color-accent-hover: #A5D6B6;
+  --color-blue: #6C8CAF;
+  --color-blue-light: rgba(108, 140, 175, 0.15);
+  --color-rose: #D67F99;
+  --color-rose-light: rgba(214, 127, 153, 0.15);
+  --color-anniversary: #A58CD9;
+  --color-anniversary-light: rgba(165, 140, 217, 0.15);
+
+  --border-card: 1px solid #3E3D39;
+  --border-thin: 1px solid rgba(212, 168, 74, 0.2);
+  --border-light: 1px solid rgba(255, 255, 255, 0.10);
+  
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.3);
+  
+  --bg-input: #363532;
+  --bg-input-focus: #222220;
+  --bg-card-active: #3D3D3D;
+  --bg-badge-death: #3E3D3A;
+  --bg-bottom-nav: rgba(45, 45, 45, 0.95);
+  --bg-sidebar: #2D2D2D;
+  --bg-header: rgba(26, 26, 26, 0.8);
 }
 
 * {
@@ -77,15 +132,17 @@ p, span, input, select, textarea, button {
 
 /* Header & Brand styling */
 .app-header {
-  padding: 16px 20px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: var(--border-light);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-header);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .brand-wrapper {
@@ -116,7 +173,7 @@ p, span, input, select, textarea, button {
   width: 100%;
   max-width: var(--max-width-mobile);
   height: 64px;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--bg-bottom-nav);
   backdrop-filter: blur(10px);
   border-top: var(--border-light);
   display: flex;
@@ -154,27 +211,33 @@ p, span, input, select, textarea, button {
   height: 4px;
   border-radius: 50%;
   background-color: transparent;
+  transform: scale(0);
+  opacity: 0;
   transition: var(--transition-smooth);
 }
 
 .nav-item.active::after {
   background-color: var(--color-gold);
+  transform: scale(1);
+  opacity: 1;
 }
 
 .nav-item svg {
   width: 20px;
   height: 20px;
   stroke-width: 1.8;
+  transition: var(--transition-smooth);
 }
 
 .nav-item.active svg {
   color: var(--color-gold);
+  transform: translateY(-3px);
 }
 
 /* Card components */
 .card {
   background-color: var(--bg-card);
-  border: var(--border-thin);
+  border: var(--border-card);
   border-radius: var(--radius-card);
   padding: 16px;
   margin: 12px 16px;
@@ -182,8 +245,13 @@ p, span, input, select, textarea, button {
   transition: var(--transition-smooth);
 }
 
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
 .card:active {
-  transform: scale(0.99);
+  transform: translateY(0) scale(0.99);
 }
 
 /* Form Styles */
@@ -205,8 +273,8 @@ p, span, input, select, textarea, button {
   width: 100%;
   padding: 10px 12px;
   border-radius: var(--radius-button);
-  border: 1px solid rgba(197, 160, 89, 0.2);
-  background-color: #FFFFFF;
+  border: var(--border-thin);
+  background-color: var(--bg-input);
   color: var(--text-primary);
   font-size: 13px;
   transition: var(--transition-smooth);
@@ -215,8 +283,8 @@ p, span, input, select, textarea, button {
 
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: var(--color-gold);
-  background-color: #FFFFFF;
-  box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.1);
+  background-color: var(--bg-input-focus);
+  box-shadow: 0 0 0 4px rgba(196, 149, 58, 0.15);
 }
 
 /* Buttons */
@@ -243,23 +311,56 @@ p, span, input, select, textarea, button {
 .btn-primary {
   background-color: var(--color-sage);
   color: #FFFFFF;
-  box-shadow: 0 2px 8px rgba(138, 154, 134, 0.2);
+  box-shadow: 0 2px 8px rgba(107, 142, 110, 0.2);
 }
 
 .btn-primary:hover {
   background-color: var(--color-accent-hover);
-  box-shadow: 0 4px 12px rgba(118, 133, 114, 0.3);
+  box-shadow: 0 4px 12px rgba(89, 120, 91, 0.3);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #DDAE4F, #C4953A);
+  color: #FFFFFF;
+  border: none;
+  box-shadow: 0 2px 8px rgba(196, 149, 58, 0.2);
+}
+
+.btn-accent:hover {
+  background: linear-gradient(135deg, #C4953A, #A87925);
+  box-shadow: 0 4px 12px rgba(196, 149, 58, 0.3);
 }
 
 .btn-secondary {
   background-color: var(--color-gold-light);
   color: var(--color-gold);
-  border: 1px solid rgba(197, 160, 89, 0.2);
+  border: 1px solid rgba(196, 149, 58, 0.2);
 }
 
 .btn-secondary:hover {
   background-color: var(--color-gold);
   color: #FFFFFF;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1.5px solid var(--color-sage);
+  color: var(--color-sage);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-sage-light);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  border: none;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background-color: rgba(107, 142, 110, 0.08);
+  color: var(--color-sage);
 }
 
 .btn-whatsapp {
@@ -268,7 +369,7 @@ p, span, input, select, textarea, button {
   font-size: 12px;
   padding: 8px 12px;
   border-radius: var(--radius-button);
-  border: 1px solid rgba(138, 154, 134, 0.2);
+  border: 1px solid rgba(107, 142, 110, 0.2);
 }
 
 .btn-whatsapp:hover {
@@ -298,13 +399,29 @@ p, span, input, select, textarea, button {
 }
 
 .badge-anniversary {
-  background-color: var(--color-gold-light);
-  color: var(--color-gold);
+  background-color: var(--color-anniversary-light);
+  color: var(--color-anniversary);
 }
 
 .badge-death {
-  background-color: #ECEAE3;
+  background-color: var(--bg-badge-death);
   color: var(--text-secondary);
+}
+
+/* Avatar Gradient Styles */
+.avatar-gradient {
+  height: 36px;
+  width: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-sage) 0%, var(--color-blue) 50%, var(--color-gold) 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Modal Styling */
@@ -380,7 +497,9 @@ p, span, input, select, textarea, button {
     top: 0;
     z-index: 1000;
     border-bottom: var(--border-light);
-    background-color: var(--bg-primary);
+    background-color: var(--bg-header);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
   /* Main Scrollable Content Area */
@@ -405,7 +524,7 @@ p, span, input, select, textarea, button {
     align-items: flex-start;
     border-top: none;
     border-right: var(--border-light);
-    background-color: #FFFFFF;
+    background-color: var(--bg-sidebar);
     padding: 24px 0;
     box-shadow: none;
     z-index: 99;
@@ -446,7 +565,7 @@ p, span, input, select, textarea, button {
   .templates-grid {
     display: grid !important;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
+    gap: var(--section-gap, 20px);
     padding: 0 16px !important;
   }
 
@@ -474,4 +593,233 @@ p, span, input, select, textarea, button {
 @keyframes zoom-in {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+/* Mobile and Desktop responsive layout utilities */
+.mobile-only {
+  display: flex !important;
+}
+
+.desktop-only {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none !important;
+  }
+
+  .desktop-only {
+    display: flex !important;
+  }
+}
+
+/* Page Transitions */
+.page-transition {
+  animation: fadeInUp 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE/Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Horizontal Snap Scroll */
+.horizontal-snap-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.horizontal-snap-item {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Calendar month crossfade */
+.calendar-fade {
+  animation: calendarCrossfade 250ms ease-out forwards;
+}
+
+@keyframes calendarCrossfade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* WhatsApp Message Preview Bubble */
+.whatsapp-preview-container {
+  background-color: #E5DDD5;
+  background-image: radial-gradient(#dcd5cd 10%, transparent 10%), radial-gradient(#dcd5cd 10%, transparent 10%);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 10px;
+  border: 1px solid #d0c8c0;
+  display: flex;
+  flex-direction: column;
+}
+
+.whatsapp-bubble {
+  background-color: #DCF8C6;
+  color: #303030;
+  padding: 8px 12px 6px 12px;
+  border-radius: 8px 8px 0px 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 85%;
+  align-self: flex-end;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+  position: relative;
+  word-break: break-word;
+}
+
+.whatsapp-bubble::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #DCF8C6;
+  border-top: 8px solid transparent;
+}
+
+.whatsapp-time {
+  display: block;
+  font-size: 9px;
+  color: rgba(0, 0, 0, 0.45);
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Heart pulsation animation */
+.heart-pulse {
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+.heart-pulse:hover {
+  animation: pulse-faster 0.6s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulse-faster {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* Segmented Control Styling */
+.segmented-control {
+  display: flex;
+  background-color: var(--bg-primary);
+  padding: 4px;
+  border-radius: 12px;
+  border: var(--border-card);
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.segmented-control-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: var(--transition-smooth);
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+}
+
+.segmented-control-item.active {
+  background-color: var(--bg-card);
+  color: var(--color-gold);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+/* Toast popup styling */
+.toast-popup {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--text-primary);
+  color: #FFFFFF;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  z-index: 10000;
+  animation: slide-up-fade-out 2.5s ease-in-out forwards;
+}
+
+@keyframes slide-up-fade-out {
+  0% { transform: translate(-50%, 40px); opacity: 0; }
+  10% { transform: translate(-50%, 0); opacity: 1; }
+  90% { transform: translate(-50%, 0); opacity: 1; }
+  100% { transform: translate(-50%, -20px); opacity: 0; }
+}
+
+/* Micro-interaction: active click */
+.btn-press:active {
+  transform: scale(0.98);
+}
+
+/* Custom Switch Toggle */
+.switch-track {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: var(--bg-input);
+  position: relative;
+  transition: var(--transition-smooth);
+  display: inline-block;
+  cursor: pointer;
+}
+.switch-track.active {
+  background-color: var(--color-sage);
+}
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: var(--transition-smooth);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+.switch-track.active .switch-thumb {
+  left: 18px;
 }

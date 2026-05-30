@@ -142,7 +142,7 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }}>
+    <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Title Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -308,7 +308,7 @@ export default function ConnectionsPage() {
           padding: '20px'
         }}>
           <div style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             width: '100%',
             maxWidth: '440px',
             borderRadius: '24px',
@@ -377,8 +377,8 @@ export default function ConnectionsPage() {
                       alignItems: 'center',
                       gap: '12px',
                       padding: '10px 12px',
-                      backgroundColor: c.isShared ? 'rgba(197, 160, 89, 0.04)' : '#FAF9F6',
-                      border: c.isShared ? '1px solid rgba(197, 160, 89, 0.2)' : '1px solid rgba(0,0,0,0.03)',
+                      backgroundColor: c.isShared ? 'var(--color-gold-light)' : 'var(--bg-card-active)',
+                      border: c.isShared ? '1px solid rgba(197, 160, 89, 0.3)' : 'var(--border-light)',
                       borderRadius: '8px',
                       cursor: 'pointer',
                       fontSize: '14px',

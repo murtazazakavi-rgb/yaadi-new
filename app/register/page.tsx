@@ -39,7 +39,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{
+    <div className="page-transition" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
