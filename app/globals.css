@@ -1042,3 +1042,42 @@ p, span, input, select, textarea, button {
   flex-direction: column;
   gap: 12px;
 }
+
+/* Premium Admin Table styling */
+.table-wrapper {
+  overflow-x: auto;
+  background-color: var(--bg-card);
+  border: var(--border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  margin: 0 20px 30px 20px;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+.admin-table th {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  padding: 14px 16px;
+  border-bottom: var(--border-card);
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.5px;
+}
+.admin-table td {
+  padding: 14px 16px;
+  border-bottom: var(--border-light);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-table tr:hover td {
+  background-color: var(--bg-card-active);
+}
+

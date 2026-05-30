@@ -61,3 +61,65 @@ export async function decryptPassword(encryptedText: string) {
   await requireAdmin();
   return decrypt(encryptedText);
 }
+
+/**
+ * Fetches all contacts from all tenants, including events and tenant names.
+ */
+export async function getAllSystemContacts() {
+  await requireAdmin();
+  
+  const res = await query(`
+    SELECT 
+      c.id, 
+      c.first_name, 
+      c.middle_name, 
+      c.last_name, 
+      c.phone_number, 
+      c.email, 
+      c.notes,
+      c.tenant_id,
+      t.display_name as added_by,
+      e.id as event_id,
+      e.event_type,
+      e.g_day, e.g_month, e.g_year,
+      e.h_day, e.h_month, e.h_year
+    FROM contacts c
+    LEFT JOIN tenants t ON c.tenant_id = t.id
+    LEFT JOIN events e ON c.id = e.contact_id
+    ORDER BY t.display_name, c.last_name, c.first_name
+  `);
+
+  // Group events by contact id
+  const contactsMap: { [key: string]: any } = {};
+  
+  for (const row of res.rows) {
+    if (!contactsMap[row.id]) {
+      contactsMap[row.id] = {
+        id: row.id,
+        first_name: row.first_name,
+        middle_name: row.middle_name,
+        last_name: row.last_name,
+        phone_number: row.phone_number,
+        email: row.email,
+        notes: row.notes,
+        tenant_id: row.tenant_id,
+        added_by: row.added_by || 'Unknown Workspace',
+        events: []
+      };
+    }
+    if (row.event_id) {
+      contactsMap[row.id].events.push({
+        id: row.event_id,
+        event_type: row.event_type,
+        g_day: row.g_day,
+        g_month: row.g_month,
+        g_year: row.g_year,
+        h_day: row.h_day,
+        h_month: row.h_month,
+        h_year: row.h_year
+      });
+    }
+  }
+
+  return Object.values(contactsMap);
+}
