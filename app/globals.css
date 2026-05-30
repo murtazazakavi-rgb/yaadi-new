@@ -127,7 +127,7 @@ p, span, input, select, textarea, button {
   background-color: var(--bg-primary);
   position: relative;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.02);
-  padding-bottom: 80px; /* Space for bottom navigation */
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* Space for bottom navigation and notch safe-area */
 }
 
 /* Header & Brand styling */
@@ -172,7 +172,10 @@ p, span, input, select, textarea, button {
   transform: translateX(-50%);
   width: 100%;
   max-width: var(--max-width-mobile);
-  height: 64px;
+  height: auto;
+  min-height: 64px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  padding-top: 8px;
   background-color: var(--bg-bottom-nav);
   backdrop-filter: blur(10px);
   border-top: var(--border-light);
@@ -822,4 +825,26 @@ p, span, input, select, textarea, button {
 }
 .switch-track.active .switch-thumb {
   left: 18px;
+}
+
+/* PWA Install Banner styles */
+.pwa-banner-overlay {
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: calc(var(--max-width-mobile) - 32px);
+  z-index: 9999;
+}
+
+.pwa-banner-card {
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--color-gold);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(196, 149, 58, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }

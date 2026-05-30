@@ -8,6 +8,14 @@ export const metadata = {
   description: 'Track birthdays, waras, anniversaries, wafaat, and family connections in a classy British pastel dashboard.',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
+
 export default async function RootLayout({
   children,
 }: {

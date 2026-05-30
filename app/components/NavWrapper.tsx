@@ -19,6 +19,9 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   const router = useRouter();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
@@ -29,7 +32,47 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
         (err) => console.error('Service Worker registration failed:', err)
       );
     }
+
+    const ua = window.navigator.userAgent;
+    const ios = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    setIsIOS(ios);
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isDismissed = localStorage.getItem('pwa-prompt-dismissed') === 'true';
+
+    if (!isDismissed && !isStandalone) {
+      if (ios) {
+        setShowInstallPrompt(true);
+      }
+
+      const handleBeforeInstallPrompt = (e: Event) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+        setShowInstallPrompt(true);
+      };
+
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
+    }
   }, []);
+
+  const handleDismissPrompt = () => {
+    localStorage.setItem('pwa-prompt-dismissed', 'true');
+    setShowInstallPrompt(false);
+  };
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallPrompt(false);
+    }
+    setDeferredPrompt(null);
+  };
 
   const toggleTheme = () => {
     const isDark = document.documentElement.classList.contains('dark');
@@ -63,7 +106,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   const isMoreActive = ['/connections', '/templates', '/approvals', '/admin'].includes(pathname);
 
   return (
-    <div className="app-container page-transition">
+    <div className="app-container">
       {/* Top Header */}
       <header className="app-header" style={{ padding: '6px 20px', height: '60px' }}>
         <div className="brand-wrapper" style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
@@ -101,7 +144,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
       </header>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, paddingBottom: '16px' }}>
+      <main className="page-transition" style={{ flex: 1, paddingBottom: '16px' }}>
         {children}
       </main>
 
@@ -310,6 +353,73 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PWA Installer Banner */}
+      {showInstallPrompt && (
+        <div className="pwa-banner-overlay">
+          <div className="pwa-banner-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <img 
+                  src="/logo.png" 
+                  alt="Yaadi App Icon" 
+                  style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain', border: '1px solid var(--border-light)' }} 
+                />
+                <div>
+                  <h4 className="serif-font" style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>Install Yaadi</h4>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.3' }}>Add Yaadi to your home screen for quick, premium access.</p>
+                </div>
+              </div>
+              <button 
+                onClick={handleDismissPrompt} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px' }}
+                title="Dismiss"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {isIOS ? (
+              <div style={{ fontSize: '11px', color: 'var(--text-primary)', borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '9px' }}>1</span>
+                  <span>Tap the share button <Share2 size={12} style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> in Safari</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: 'var(--color-gold-light)', color: 'var(--color-gold)', fontWeight: 'bold', fontSize: '9px' }}>2</span>
+                  <span>Scroll down and select <strong>Add to Home Screen</strong></span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+                <button 
+                  onClick={handleDismissPrompt} 
+                  className="btn btn-ghost btn-press" 
+                  style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '8px', color: 'var(--text-muted)' }}
+                >
+                  Maybe Later
+                </button>
+                <button 
+                  onClick={handleInstallClick} 
+                  className="btn btn-press" 
+                  style={{ 
+                    backgroundColor: 'var(--color-gold)', 
+                    color: '#FFFFFF', 
+                    padding: '6px 14px', 
+                    fontSize: '11px', 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    fontWeight: '600',
+                    boxShadow: '0 2px 4px rgba(196, 149, 58, 0.2)' 
+                  }}
+                >
+                  Install Now
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
