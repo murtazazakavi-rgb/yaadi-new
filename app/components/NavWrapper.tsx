@@ -22,6 +22,13 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
 
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
+    
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw.js').then(
+        (reg) => console.log('Service Worker registered with scope:', reg.scope),
+        (err) => console.error('Service Worker registration failed:', err)
+      );
+    }
   }, []);
 
   const toggleTheme = () => {
