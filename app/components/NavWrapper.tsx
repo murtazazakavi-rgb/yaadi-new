@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon } from 'lucide-react';
+import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon, FileText } from 'lucide-react';
 
 interface NavWrapperProps {
   children: React.ReactNode;
@@ -103,7 +103,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
     return <>{children}</>;
   }
 
-  const isMoreActive = ['/connections', '/templates', '/approvals', '/admin'].includes(pathname);
+  const isMoreActive = ['/connections', '/templates', '/approvals', '/admin', '/documents'].includes(pathname);
 
   return (
     <div className="app-container">
@@ -168,6 +168,11 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
         <Link href="/tree" className={`nav-item ${pathname === '/tree' ? 'active' : ''}`}>
           <Network />
           <span>Family Tree</span>
+        </Link>
+
+        <Link href="/documents" className={`nav-item desktop-only ${pathname === '/documents' ? 'active' : ''}`}>
+          <FileText />
+          <span>Documents</span>
         </Link>
         
         <Link href="/connections" className={`nav-item desktop-only ${pathname === '/connections' ? 'active' : ''}`}>
@@ -240,6 +245,27 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Link 
+                href="/documents" 
+                onClick={() => setShowMoreMenu(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '14px 18px', 
+                  borderRadius: '12px', 
+                  backgroundColor: pathname === '/documents' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)',
+                  color: pathname === '/documents' ? 'var(--color-gold)' : 'var(--text-primary)',
+                  textDecoration: 'none',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'var(--transition-smooth)'
+                }}
+              >
+                <FileText size={18} style={{ color: pathname === '/documents' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
+                <span>Documents</span>
+              </Link>
+
               <Link 
                 href="/connections" 
                 onClick={() => setShowMoreMenu(false)}
