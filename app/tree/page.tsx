@@ -146,10 +146,10 @@ export default function FamilyTreePage() {
     <div style={{ padding: '20px 0', minHeight: '100vh' }} className="page-transition">
       {/* Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
-        <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 className="serif-font page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Network style={{ color: 'var(--color-gold)' }} /> Family Trees
         </h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+        <p className="page-subtitle">
           Visualize lineages, marriages, and generational lines.
         </p>
       </div>
@@ -233,10 +233,10 @@ export default function FamilyTreePage() {
                     }}>
                       {/* Partner A */}
                       <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                        <span style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                        <span className="tree-node-name" style={{ display: 'block' }}>
                           {partnerA.first_name}
                         </span>
-                        <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                        <span className="tree-node-sub">
                           {partnerA.last_name}
                         </span>
                       </div>
@@ -247,10 +247,10 @@ export default function FamilyTreePage() {
                           <Heart size={14} className="heart-pulse" style={{ color: 'var(--color-rose)', fill: 'var(--color-rose-light)', cursor: 'pointer' }} />
                           {/* Partner B */}
                           <div style={{ textAlign: 'center', minWidth: '80px' }}>
-                            <span style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                            <span className="tree-node-name" style={{ display: 'block' }}>
                               {partnerB.first_name}
                             </span>
-                            <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                            <span className="tree-node-sub">
                               {partnerB.last_name}
                             </span>
                           </div>

@@ -122,7 +122,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {user && (
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
               {user.display_name}
             </span>
           )}
@@ -244,7 +244,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                 <X size={20} />
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="mobile-drawer-links" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Link 
                 href="/documents" 
                 onClick={() => setShowMoreMenu(false)}

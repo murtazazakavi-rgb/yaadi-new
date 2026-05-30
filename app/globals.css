@@ -5,6 +5,16 @@
   --font-serif: 'Cormorant Garamond', Georgia, serif;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
+  /* Typography scales - mobile-first (comfortable distance reading) */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 16px;       /* 16px base for mobile readability and input fields */
+  --font-size-md: 18px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  --font-size-3xl: 38px;
+
   /* Modern Warm Cream Design Palette */
   --bg-primary: #FAF8F4;      /* warm cream background */
   --bg-card: #FFFFFF;         /* Pure white surface */
@@ -100,7 +110,7 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-secondary);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: var(--font-size-base);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -173,9 +183,9 @@ p, span, input, select, textarea, button {
   width: 100%;
   max-width: var(--max-width-mobile);
   height: auto;
-  min-height: 64px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-  padding-top: 8px;
+  min-height: 72px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-top: 10px;
   background-color: var(--bg-bottom-nav);
   backdrop-filter: blur(10px);
   border-top: var(--border-light);
@@ -193,7 +203,7 @@ p, span, input, select, textarea, button {
   justify-content: center;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   font-weight: 500;
   width: 25%;
   height: 100%;
@@ -226,8 +236,8 @@ p, span, input, select, textarea, button {
 }
 
 .nav-item svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   stroke-width: 1.8;
   transition: var(--transition-smooth);
 }
@@ -369,8 +379,8 @@ p, span, input, select, textarea, button {
 .btn-whatsapp {
   background-color: var(--color-sage-light);
   color: var(--color-sage);
-  font-size: 12px;
-  padding: 8px 12px;
+  font-size: var(--font-size-sm);
+  padding: 10px 14px;
   border-radius: var(--radius-button);
   border: 1px solid rgba(107, 142, 110, 0.2);
 }
@@ -383,8 +393,8 @@ p, span, input, select, textarea, button {
 /* Badge styles */
 .badge {
   display: inline-block;
-  padding: 3px 8px;
-  font-size: 10px;
+  padding: 4px 10px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -413,18 +423,175 @@ p, span, input, select, textarea, button {
 
 /* Avatar Gradient Styles */
 .avatar-gradient {
-  height: 36px;
-  width: 36px;
+  height: 44px;
+  width: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-sage) 0%, var(--color-blue) 50%, var(--color-gold) 100%);
   color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--font-size-base);
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: var(--transition-smooth);
+}
+
+/* Responsive typography & element overrides */
+.welcome-section {
+  padding: 16px 20px;
+  border-bottom: var(--border-light);
+  margin-bottom: 20px;
+}
+.welcome-title {
+  font-size: var(--font-size-2xl) !important;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.welcome-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+.welcome-hijri-date {
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+/* Stats components */
+.stats-board {
+  display: flex;
+  gap: 16px;
+  padding: 0 16px;
+  margin-bottom: 20px;
+}
+.stats-card {
+  flex: 1;
+  margin: 0 !important;
+  padding: 20px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.stats-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.stats-value {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  line-height: 1;
+}
+.stats-value.value-sage {
+  color: var(--color-sage);
+}
+.stats-value.value-gold {
+  color: var(--color-gold);
+}
+
+/* Search bar scaling */
+.search-bar-container {
+  padding: 0 16px 16px 16px;
+  position: relative;
+}
+.search-input-wrapper {
+  position: relative;
+}
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+.search-input {
+  padding-left: 44px !important;
+  height: 48px !important;
+  border-radius: 12px;
+  font-size: var(--font-size-base) !important;
+  background-color: var(--bg-card);
+  border: var(--border-thin);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Cards & items scale */
+.reminder-name {
+  font-size: var(--font-size-base) !important;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.reminder-subtext {
+  font-size: var(--font-size-sm) !important;
+  color: var(--text-muted);
+}
+
+/* Page headers */
+.page-title {
+  font-size: var(--font-size-2xl) !important;
+  color: var(--text-primary);
+}
+.page-subtitle {
+  font-size: var(--font-size-sm) !important;
+  color: var(--text-muted);
+}
+.contact-card-title {
+  font-size: var(--font-size-lg) !important;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Calendar month display */
+.calendar-month-title {
+  font-size: var(--font-size-lg) !important;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.calendar-week-header {
+  font-size: var(--font-size-xs) !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.selected-day-title {
+  font-size: var(--font-size-lg) !important;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.selected-day-hijri {
+  font-size: var(--font-size-sm) !important;
+  color: var(--color-gold);
+  font-weight: 600;
+}
+
+/* Family Tree styles */
+.tree-node-name {
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.tree-node-sub {
+  font-size: var(--font-size-xs) !important;
+  color: var(--text-muted);
+}
+
+/* Mobile Drawer menu list links scale */
+.mobile-drawer-links a,
+.mobile-drawer-links div {
+  font-size: var(--font-size-base) !important;
+}
+
+.modal-header h3 {
+  font-size: var(--font-size-xl) !important;
 }
 
 /* Modal Styling */
@@ -476,6 +643,33 @@ p, span, input, select, textarea, button {
 
 /* --- Desktop Responsive Layout Rules --- */
 @media (min-width: 768px) {
+  :root {
+    /* Reset typography variables to original compact sizes for desktop */
+    --font-size-xs: 10px;
+    --font-size-sm: 11px;
+    --font-size-base: 14px;
+    --font-size-md: 15px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 28px;
+    --font-size-3xl: 36px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    padding: 10px 12px;
+  }
+
+  .avatar-gradient {
+    height: 36px !important;
+    width: 36px !important;
+    font-size: 12px !important;
+  }
+
+  .bottom-nav .nav-item svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
   /* Layout Grid container */
   .app-container {
     max-width: 1200px;

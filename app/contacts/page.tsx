@@ -45,7 +45,7 @@ export default function ContactsPage() {
   const renderEventChips = (contactId: string) => {
     const cEvs = events.filter((e) => e.contact_id === contactId);
     if (cEvs.length === 0) {
-      return <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No events registered</span>;
+      return <span style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', fontStyle: 'italic' }}>No events registered</span>;
     }
     
     return (
@@ -79,7 +79,7 @@ export default function ContactsPage() {
               badgeClass = 'badge-death';
           }
           return (
-            <span key={e.id} className={`badge ${badgeClass}`} style={{ fontSize: '9px', padding: '2px 8px' }}>
+            <span key={e.id} className={`badge ${badgeClass}`}>
               {label}
             </span>
           );
@@ -646,10 +646,10 @@ export default function ContactsPage() {
       {/* Page Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)' }}>
+          <h2 className="serif-font page-title">
             Contacts Directory
           </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+          <p className="page-subtitle">
             Manage family directory, dates, and family connections.
           </p>
         </div>
@@ -672,18 +672,18 @@ export default function ContactsPage() {
       </div>
 
       {/* Directory Search */}
-      <div style={{ padding: '0 16px 16px 16px' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      <div className="search-bar-container">
+        <div className="search-input-wrapper">
+          <Search size={18} className="search-icon" />
           <input 
             type="text"
-            className="form-input"
-            style={{ paddingLeft: '36px', paddingRight: '36px', height: '42px', borderRadius: '12px', backgroundColor: 'var(--bg-card)', border: 'var(--border-thin)', boxShadow: 'var(--shadow-soft)' }}
+            className="form-input search-input"
+            style={{ paddingRight: '44px' }}
             placeholder="Search directory..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Mic size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={handleVoiceSearch} />
+          <Mic size={18} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={handleVoiceSearch} />
         </div>
       </div>
 
@@ -743,11 +743,11 @@ export default function ContactsPage() {
                     onClick={() => setActiveContactId(isActive ? null : c.id)} 
                     style={{ cursor: 'pointer', flex: 1 }}
                   >
-                    <h3 className="serif-font" style={{ fontSize: '18px', color: 'var(--text-primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h3 className="serif-font contact-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       {c.first_name}{c.middle_name ? ' ' + c.middle_name : ''} {c.last_name}
                       {!isOwn && (
                         <span style={{
-                          fontSize: '10px',
+                          fontSize: 'var(--font-size-xs)',
                           fontWeight: 'normal',
                           backgroundColor: 'rgba(197, 160, 89, 0.1)',
                           color: 'var(--color-gold)',
@@ -792,33 +792,33 @@ export default function ContactsPage() {
                   <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     
                     {/* Basic details */}
-                    <div style={{ display: 'flex', gap: '20px', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', gap: '20px', fontSize: 'var(--font-size-sm)' }}>
                       {c.phone_number && (
                         <div>
-                          <strong style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Phone</strong>
+                          <strong style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Phone</strong>
                           <span>{c.phone_number}</span>
                         </div>
                       )}
                       {c.email && (
                         <div>
-                          <strong style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Email</strong>
+                          <strong style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Email</strong>
                           <span>{c.email}</span>
                         </div>
                       )}
                     </div>
 
                     {c.notes && (
-                      <div style={{ fontSize: '13px' }}>
-                        <strong style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Notes</strong>
+                      <div style={{ fontSize: 'var(--font-size-sm)' }}>
+                        <strong style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Notes</strong>
                         <p style={{ color: 'var(--text-secondary)' }}>{c.notes}</p>
                       </div>
                     )}
 
                     {/* Relationships List */}
                     <div>
-                      <strong style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Relationships / Connections</strong>
+                      <strong style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>Relationships / Connections</strong>
                       {cRels.length === 0 ? (
-                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No relationships mapped yet.</p>
+                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-muted)', fontStyle: 'italic' }}>No relationships mapped yet.</p>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           {cRels.map((r) => {

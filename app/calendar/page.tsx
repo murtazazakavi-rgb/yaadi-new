@@ -177,10 +177,10 @@ export default function CalendarPage() {
     <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
-        <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <h2 className="serif-font page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Calendar style={{ color: 'var(--color-gold)' }} /> Family Calendar
         </h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+        <p className="page-subtitle">
           Browse birthdates, wafaat days, and wedding anniversaries by month.
         </p>
       </div>
@@ -197,7 +197,7 @@ export default function CalendarPage() {
             <ChevronLeft size={16} />
           </button>
           
-          <h3 className="serif-font" style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>
+          <h3 className="serif-font calendar-month-title">
             {monthsList[month]} {year}
           </h3>
 
@@ -211,14 +211,10 @@ export default function CalendarPage() {
         </div>
 
         {/* Days of week header */}
-        <div style={{ 
+        <div className="calendar-week-header" style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
           textAlign: 'center', 
-          fontSize: '11px', 
-          fontWeight: '600', 
-          textTransform: 'uppercase', 
-          color: 'var(--text-muted)', 
           marginBottom: '8px' 
         }}>
           <div>Su</div>
@@ -247,16 +243,16 @@ export default function CalendarPage() {
       {/* Selected Day Details Section */}
       {selectedDate && (
         <div style={{ padding: '0 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: 'var(--border-light)', paddingBottom: '8px', marginBottom: '12px' }}>
-            <h3 className="serif-font" style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>
-              {selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </h3>
-            {selectedHijriDate && (
-              <span style={{ fontSize: '11px', color: 'var(--color-gold)', fontWeight: '600' }}>
-                {selectedHijriDate.day} {HIJRI_MONTH_NAMES[selectedHijriDate.month]} {selectedHijriDate.year}
-              </span>
-            )}
-          </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: 'var(--border-light)', paddingBottom: '8px', marginBottom: '12px' }}>
+              <h3 className="serif-font selected-day-title">
+                {selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </h3>
+              {selectedHijriDate && (
+                <span className="selected-day-hijri">
+                  {selectedHijriDate.day} {HIJRI_MONTH_NAMES[selectedHijriDate.month]} {selectedHijriDate.year}
+                </span>
+              )}
+            </div>
           {selectedDateEvents.length === 0 ? (
             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: 'var(--border-card)' }}>
               No celebrations or wafaat events today.
@@ -284,10 +280,10 @@ export default function CalendarPage() {
                         {getInitials(e.contact)}
                       </div>
                       <div>
-                        <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                        <h4 className="reminder-name">
                           {e.contact.first_name} {e.contact.last_name}
                         </h4>
-                        <span className={`badge ${getEventBadgeClass(e.event_type)}`} style={{ fontSize: '9px', marginTop: '2px' }}>
+                        <span className={`badge ${getEventBadgeClass(e.event_type)}`} style={{ marginTop: '2px' }}>
                           {getEventLabel(e.event_type)}
                         </span>
                       </div>

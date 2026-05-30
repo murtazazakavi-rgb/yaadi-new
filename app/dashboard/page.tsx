@@ -187,27 +187,27 @@ export default function DashboardPage() {
   return (
     <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Welcome Greeting Section */}
-      <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
+      <div className="welcome-section">
         <div>
-          <h2 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+          <h2 className="welcome-title serif-font">
             Assalamu Alaikum!
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <div className="welcome-dates">
             <span>{gregorianTodayStr}</span>
-            <span style={{ color: 'var(--color-gold)', fontWeight: '500' }}>{hijriTodayStr}</span>
+            <span className="welcome-hijri-date">{hijriTodayStr}</span>
           </div>
         </div>
       </div>
 
       {/* Stats Board */}
-      <div style={{ display: 'flex', gap: '16px', padding: '0 16px', marginBottom: '20px' }}>
-        <div className="card" style={{ flex: 1, margin: 0, padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>Total Directory</span>
-          <span className="serif-font" style={{ fontSize: '36px', color: 'var(--color-sage)', fontWeight: '700', lineHeight: 1 }}>{data.contacts.length}</span>
+      <div className="stats-board">
+        <div className="card stats-card">
+          <span className="stats-label">Total Directory</span>
+          <span className="serif-font stats-value value-sage">{data.contacts.length}</span>
         </div>
-        <div className="card" style={{ flex: 1, margin: 0, padding: '20px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600' }}>Next 30 Days</span>
-          <span className="serif-font" style={{ fontSize: '36px', color: 'var(--color-gold)', fontWeight: '700', lineHeight: 1 }}>{next30DaysCount}</span>
+        <div className="card stats-card">
+          <span className="stats-label">Next 30 Days</span>
+          <span className="serif-font stats-value value-gold">{next30DaysCount}</span>
         </div>
       </div>
 
@@ -286,13 +286,12 @@ export default function DashboardPage() {
       )}
 
       {/* Elegant Search bar */}
-      <div style={{ padding: '0 16px 16px 16px', position: 'relative' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      <div className="search-bar-container">
+        <div className="search-input-wrapper">
+          <Search size={18} className="search-icon" />
           <input 
             type="text"
-            className="form-input"
-            style={{ paddingLeft: '36px', height: '42px', borderRadius: '12px', backgroundColor: 'var(--bg-card)', border: 'var(--border-thin)', boxShadow: 'var(--shadow-soft)' }}
+            className="form-input search-input"
             placeholder="Search friends & family..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -335,22 +334,22 @@ export default function DashboardPage() {
                           {getInitials(r.contact)}
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                          <h4 className="reminder-name">
                             {r.contact.first_name} {r.contact.last_name}
                           </h4>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <span className="reminder-subtext">
                             {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
                           </span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                        <span className={`badge ${getEventBadgeClass(r.eventType)}`} style={{ fontSize: '9px' }}>
+                        <span className={`badge ${getEventBadgeClass(r.eventType)}`}>
                           {getEventLabel(r)}
                         </span>
                         <button 
                           className="btn-whatsapp btn-press" 
                           onClick={() => handleOpenWhatsAppComposer(r)}
-                          style={{ width: 'auto', padding: '6px 12px', fontSize: '11px' }}
+                          style={{ width: 'auto' }}
                         >
                           <Send size={10} />
                           <span>Dua</span>
@@ -509,14 +508,14 @@ function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
 
         {/* Contact Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
+          <h4 className="reminder-name">
             {r.contact.first_name}{r.contact.middle_name ? ' ' + r.contact.middle_name : ''} {r.contact.last_name}
           </h4>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span className={`badge ${getEventBadgeClass(r.eventType)}`}>
               {getEventLabel(r)}
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            <span className="reminder-subtext">
               {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
             </span>
           </div>
