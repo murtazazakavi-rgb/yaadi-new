@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon, FileText } from 'lucide-react';
+import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon, FileText, Settings } from 'lucide-react';
 
 interface NavWrapperProps {
   children: React.ReactNode;
@@ -22,6 +22,8 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+  const [pendingConnections, setPendingConnections] = useState(0);
 
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
@@ -58,6 +60,24 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
       };
     }
   }, []);
+
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      if (!user) return;
+      try {
+        const res = await fetch('/api/alerts');
+        if (res.ok) {
+          const data = await res.json();
+          setPendingApprovals(data.pendingApprovalsCount || 0);
+          setPendingConnections(data.pendingConnectionsCount || 0);
+        }
+      } catch (err) {
+        console.error('Failed to fetch alerts:', err);
+      }
+    };
+    
+    fetchAlerts();
+  }, [pathname, user]);
 
   const handleDismissPrompt = () => {
     localStorage.setItem('pwa-prompt-dismissed', 'true');
@@ -103,7 +123,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
     return <>{children}</>;
   }
 
-  const isMoreActive = ['/connections', '/templates', '/approvals', '/admin', '/documents'].includes(pathname);
+  const isMoreActive = ['/connections', '/templates', '/approvals', '/admin', '/documents', '/settings'].includes(pathname);
 
   return (
     <div className="app-container">
@@ -175,9 +195,26 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
           <span>Documents</span>
         </Link>
         
-        <Link href="/connections" className={`nav-item desktop-only ${pathname === '/connections' ? 'active' : ''}`}>
-          <Share2 />
-          <span>Connections</span>
+        <Link href="/connections" className={`nav-item desktop-only ${pathname === '/connections' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Share2 />
+            <span>Connections</span>
+          </div>
+          {pendingConnections > 0 && (
+            <span style={{
+              backgroundColor: 'var(--color-rose)',
+              color: '#FFFFFF',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              borderRadius: '10px',
+              padding: '2px 6px',
+              minWidth: '18px',
+              textAlign: 'center',
+              lineHeight: '1.2'
+            }}>
+              {pendingConnections}
+            </span>
+          )}
         </Link>
         
         <Link href="/templates" className={`nav-item desktop-only ${pathname === '/templates' ? 'active' : ''}`}>
@@ -185,9 +222,31 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
           <span>Templates</span>
         </Link>
 
-        <Link href="/approvals" className={`nav-item desktop-only ${pathname === '/approvals' ? 'active' : ''}`}>
-          <CheckSquare />
-          <span>Approvals</span>
+        <Link href="/approvals" className={`nav-item desktop-only ${pathname === '/approvals' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <CheckSquare />
+            <span>Approvals</span>
+          </div>
+          {pendingApprovals > 0 && (
+            <span style={{
+              backgroundColor: 'var(--color-rose)',
+              color: '#FFFFFF',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              borderRadius: '10px',
+              padding: '2px 6px',
+              minWidth: '18px',
+              textAlign: 'center',
+              lineHeight: '1.2'
+            }}>
+              {pendingApprovals}
+            </span>
+          )}
+        </Link>
+
+        <Link href="/settings" className={`nav-item desktop-only ${pathname === '/settings' ? 'active' : ''}`}>
+          <Settings />
+          <span>Settings</span>
         </Link>
 
         {user?.isAdmin && (
@@ -200,10 +259,21 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
         <button 
           onClick={() => setShowMoreMenu(true)} 
           className={`nav-item mobile-only ${isMoreActive ? 'active' : ''}`}
-          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', position: 'relative' }}
         >
           <MoreHorizontal />
           <span>More</span>
+          {(pendingApprovals > 0 || pendingConnections > 0) && (
+            <span style={{
+              position: 'absolute',
+              top: '6px',
+              right: '24px',
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-rose)'
+            }} />
+          )}
         </button>
 
         {/* Theme Toggle for Desktop Sidebar */}
@@ -272,7 +342,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '12px', 
+                  justifyContent: 'space-between',
                   padding: '14px 18px', 
                   borderRadius: '12px', 
                   backgroundColor: pathname === '/connections' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)',
@@ -283,8 +353,25 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                   transition: 'var(--transition-smooth)'
                 }}
               >
-                <Share2 size={18} style={{ color: pathname === '/connections' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
-                <span>Connections</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Share2 size={18} style={{ color: pathname === '/connections' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
+                  <span>Connections</span>
+                </div>
+                {pendingConnections > 0 && (
+                  <span style={{
+                    backgroundColor: 'var(--color-rose)',
+                    color: '#FFFFFF',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    borderRadius: '10px',
+                    padding: '2px 6px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                    lineHeight: '1.2'
+                  }}>
+                    {pendingConnections}
+                  </span>
+                )}
               </Link>
               
               <Link 
@@ -314,7 +401,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '12px', 
+                  justifyContent: 'space-between',
                   padding: '14px 18px', 
                   borderRadius: '12px', 
                   backgroundColor: pathname === '/approvals' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)',
@@ -325,8 +412,46 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                   transition: 'var(--transition-smooth)'
                 }}
               >
-                <CheckSquare size={18} style={{ color: pathname === '/approvals' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
-                <span>Approvals</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <CheckSquare size={18} style={{ color: pathname === '/approvals' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
+                  <span>Approvals</span>
+                </div>
+                {pendingApprovals > 0 && (
+                  <span style={{
+                    backgroundColor: 'var(--color-rose)',
+                    color: '#FFFFFF',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    borderRadius: '10px',
+                    padding: '2px 6px',
+                    minWidth: '18px',
+                    textAlign: 'center',
+                    lineHeight: '1.2'
+                  }}>
+                    {pendingApprovals}
+                  </span>
+                )}
+              </Link>
+
+              <Link 
+                href="/settings" 
+                onClick={() => setShowMoreMenu(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '14px 18px', 
+                  borderRadius: '12px', 
+                  backgroundColor: pathname === '/settings' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)',
+                  color: pathname === '/settings' ? 'var(--color-gold)' : 'var(--text-primary)',
+                  textDecoration: 'none',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'var(--transition-smooth)'
+                }}
+              >
+                <Settings size={18} style={{ color: pathname === '/settings' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
+                <span>Settings</span>
               </Link>
 
               {user?.isAdmin && (

@@ -67,10 +67,26 @@ export async function getDashboardData() {
     [tenantId]
   );
 
+  // Query pending submissions count
+  const pendingSubmissionsRes = await query(
+    `SELECT COUNT(*)::integer as count FROM submissions WHERE tenant_id = $1 AND status = 'pending'`,
+    [tenantId]
+  );
+  const pendingApprovalsCount = pendingSubmissionsRes.rows[0]?.count || 0;
+
+  // Query pending received connections count
+  const pendingConnectionsRes = await query(
+    `SELECT COUNT(*)::integer as count FROM tenant_connections WHERE receiver_id = $1 AND status = 'pending'`,
+    [tenantId]
+  );
+  const pendingConnectionsCount = pendingConnectionsRes.rows[0]?.count || 0;
+
   return {
     contacts: contactsRes.rows,
     events: eventsRes.rows,
     templates: templatesRes.rows,
+    pendingApprovalsCount,
+    pendingConnectionsCount,
   };
 }
 

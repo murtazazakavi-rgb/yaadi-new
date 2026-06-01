@@ -187,7 +187,7 @@ export default function DashboardPage() {
   return (
     <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Welcome Greeting Section */}
-      <div className="welcome-section">
+      <div className="welcome-section" style={{ marginBottom: '16px' }}>
         <div>
           <h2 className="welcome-title serif-font">
             Assalamu Alaikum!
@@ -198,6 +198,75 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Pending Action Alerts */}
+      {data.pendingApprovalsCount > 0 && (
+        <div className="card page-transition" style={{
+          background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(197, 160, 89, 0.08) 100%)',
+          border: '1px solid rgba(197, 160, 89, 0.25)',
+          padding: '16px',
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          boxShadow: 'var(--shadow-soft)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '18px' }}>📝</span>
+            <div>
+              <span style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                Pending Contact Submissions
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                {data.pendingApprovalsCount} new {data.pendingApprovalsCount === 1 ? 'entry is' : 'entries are'} waiting for your approval.
+              </span>
+            </div>
+          </div>
+          <a 
+            href="/approvals" 
+            className="btn btn-secondary btn-press" 
+            style={{ width: 'auto', padding: '6px 14px', fontSize: '11px', height: '30px' }}
+          >
+            Review
+          </a>
+        </div>
+      )}
+
+      {data.pendingConnectionsCount > 0 && (
+        <div className="card page-transition" style={{
+          background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(107, 142, 110, 0.08) 100%)',
+          border: '1px solid rgba(107, 142, 110, 0.25)',
+          padding: '16px',
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          boxShadow: 'var(--shadow-soft)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '18px' }}>🤝</span>
+            <div>
+              <span style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                Directory Sharing Request
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                You have {data.pendingConnectionsCount} incoming connection {data.pendingConnectionsCount === 1 ? 'request' : 'requests'} pending response.
+              </span>
+            </div>
+          </div>
+          <a 
+            href="/connections" 
+            className="btn btn-secondary btn-press" 
+            style={{ width: 'auto', padding: '6px 14px', fontSize: '11px', height: '30px', backgroundColor: 'var(--color-sage-light)', color: 'var(--color-sage)', borderColor: 'rgba(107, 142, 110, 0.2)' }}
+          >
+            View
+          </a>
+        </div>
+      )}
 
       {/* Stats Board */}
       <div className="stats-board">

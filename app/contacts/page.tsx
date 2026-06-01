@@ -91,6 +91,7 @@ export default function ContactsPage() {
   // Form Drawer States
   const [showForm, setShowForm] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [formStep, setFormStep] = useState(1);
 
   // Form Fields
   const [firstName, setFirstName] = useState('');
@@ -431,6 +432,7 @@ export default function ContactsPage() {
     setHDMonth('');
     setHDYear('');
     setGAnniversary('');
+    setFormStep(1);
     setShowForm(true);
   };
 
@@ -480,6 +482,7 @@ export default function ContactsPage() {
       }
     });
 
+    setFormStep(1);
     setShowForm(true);
   };
 
@@ -909,236 +912,305 @@ export default function ContactsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveContact}>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
-                  <label className="form-label">First Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="form-input" 
-                    placeholder="e.g. Murtaza" 
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                  />
-                </div>
-                <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
-                  <label className="form-label">Middle Name (Opt)</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    placeholder="e.g. Juzer" 
-                    value={middleName}
-                    onChange={(e) => setMiddleName(e.target.value)}
-                  />
-                </div>
-                <div className="form-group" style={{ flex: 1, minWidth: '100px' }}>
-                  <label className="form-label">Last Name</label>
-                  <input 
-                    type="text" 
-                    required 
-                    className="form-input" 
-                    placeholder="e.g. Zakavi" 
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
-              </div>
+            {/* Steps Indicator Progress Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ flex: 1, height: '4px', borderRadius: '2px', backgroundColor: formStep >= 1 ? 'var(--color-gold)' : 'var(--bg-input)' }} />
+              <div style={{ flex: 1, height: '4px', borderRadius: '2px', backgroundColor: formStep >= 2 ? 'var(--color-gold)' : 'var(--bg-input)' }} />
+              <div style={{ flex: 1, height: '4px', borderRadius: '2px', backgroundColor: formStep >= 3 ? 'var(--color-gold)' : 'var(--bg-input)' }} />
+            </div>
 
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
-                  <label className="form-label">Phone Number</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <select 
-                      className="form-select" 
-                      style={{ width: '90px', flexShrink: 0, paddingRight: '4px' }}
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                    >
-                      {COUNTRY_CODES.map((item) => (
-                        <option key={item.code} value={item.code}>
-                          {item.flag} {item.code}
-                        </option>
-                      ))}
-                    </select>
-                    <input 
-                      type="tel" 
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (formStep < 3) {
+                setFormStep(formStep + 1);
+              } else {
+                handleSaveContact(e);
+              }
+            }}>
+              {/* STEP 1: Basic Details */}
+              {formStep === 1 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: 'var(--color-gold)' }}>Step 1: Contact Details</h4>
+                  
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                      <label className="form-label">First Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        className="form-input" 
+                        placeholder="e.g. Murtaza" 
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                      <label className="form-label">Middle Name (Opt)</label>
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        placeholder="e.g. Juzer" 
+                        value={middleName}
+                        onChange={(e) => setMiddleName(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1, minWidth: '120px' }}>
+                      <label className="form-label">Last Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        className="form-input" 
+                        placeholder="e.g. Zakavi" 
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ flex: 1, minWidth: '180px' }}>
+                      <label className="form-label">Phone Number</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <select 
+                          className="form-select" 
+                          style={{ width: '90px', flexShrink: 0, paddingRight: '4px' }}
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                        >
+                          {COUNTRY_CODES.map((item) => (
+                            <option key={item.code} value={item.code}>
+                              {item.flag} {item.code}
+                            </option>
+                          ))}
+                        </select>
+                        <input 
+                          type="tel" 
+                          className="form-input" 
+                          placeholder="e.g. 9825535907" 
+                          value={localNumber}
+                          onChange={(e) => setLocalNumber(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
+                      <label className="form-label">Email</label>
+                      <input 
+                        type="email" 
+                        required 
+                        className="form-input" 
+                        placeholder="murtaza@zakavi.com" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Birthday & Anniversary */}
+              {formStep === 2 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: 'var(--color-gold)' }}>Step 2: Birthday & Anniversary</h4>
+
+                  <div style={{ border: '1px solid var(--border-light)', padding: '16px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', marginBottom: '12px' }}>
+                    <h5 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Birthday & Waras</h5>
+                    
+                    <div className="form-group">
+                      <label className="form-label">Gregorian Birthday</label>
+                      <input 
+                        type="date" 
+                        className="form-input" 
+                        value={gBirthday}
+                        onChange={(e) => handleGBirthdayChange(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                      <div className="form-group" style={{ width: '70px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Day</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="30"
+                          className="form-input" 
+                          placeholder="Day"
+                          value={hBDate}
+                          onChange={(e) => {
+                            setHBDate(e.target.value);
+                            syncHBirthdayToGregorian(e.target.value, hBMonth, hBYear);
+                          }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label className="form-label">Hijri Month</label>
+                        <select 
+                          className="form-select"
+                          value={hBMonth}
+                          onChange={(e) => {
+                            setHBMonth(e.target.value);
+                            syncHBirthdayToGregorian(hBDate, e.target.value, hBYear);
+                          }}
+                        >
+                          <option value="">Select Month...</option>
+                          {HIJRI_MONTH_NAMES.map((name, idx) => (
+                            <option key={idx} value={idx}>{name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ width: '80px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Year</label>
+                        <input 
+                          type="number" 
+                          min="1000" 
+                          max="2000"
+                          className="form-input" 
+                          placeholder="Year"
+                          value={hBYear}
+                          onChange={(e) => {
+                            setHBYear(e.target.value);
+                            syncHBirthdayToGregorian(hBDate, hBMonth, e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ border: '1px solid var(--border-light)', padding: '16px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)' }}>
+                    <h5 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Wedding Anniversary</h5>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label">Anniversary Date</label>
+                      <input 
+                        type="date" 
+                        className="form-input" 
+                        value={gAnniversary}
+                        onChange={(e) => setGAnniversary(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Deceased & Notes */}
+              {formStep === 3 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: 'var(--color-gold)' }}>Step 3: Deceased Relative & Notes</h4>
+
+                  <div style={{ border: '1px solid var(--border-light)', padding: '16px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', marginBottom: '12px' }}>
+                    <h5 style={{ fontSize: '12px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Passing Away (Death Anniversary)</h5>
+                    
+                    <div className="form-group">
+                      <label className="form-label">Gregorian Death Date</label>
+                      <input 
+                        type="date" 
+                        className="form-input" 
+                        value={gDeath}
+                        onChange={(e) => handleGDeathChange(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                      <div className="form-group" style={{ width: '70px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Day</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="30"
+                          className="form-input" 
+                          placeholder="Day"
+                          value={hDDate}
+                          onChange={(e) => {
+                            setHDDate(e.target.value);
+                            syncHDeathToGregorian(e.target.value, hDMonth, hDYear);
+                          }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label className="form-label">Hijri Month</label>
+                        <select 
+                          className="form-select"
+                          value={hDMonth}
+                          onChange={(e) => {
+                            setHDMonth(e.target.value);
+                            syncHDeathToGregorian(hDDate, e.target.value, hDYear);
+                          }}
+                        >
+                          <option value="">Select Month...</option>
+                          {HIJRI_MONTH_NAMES.map((name, idx) => (
+                            <option key={idx} value={idx}>{name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ width: '80px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Year</label>
+                        <input 
+                          type="number" 
+                          min="1000" 
+                          max="2000"
+                          className="form-input" 
+                          placeholder="Year"
+                          value={hDYear}
+                          onChange={(e) => {
+                            setHDYear(e.target.value);
+                            syncHDeathToGregorian(hDDate, hDMonth, e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Notes</label>
+                    <textarea 
                       className="form-input" 
-                      placeholder="e.g. 9825535907" 
-                      value={localNumber}
-                      onChange={(e) => setLocalNumber(e.target.value)}
+                      style={{ height: '60px', resize: 'none' }}
+                      placeholder="Notes, address, secondary numbers..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
                     />
                   </div>
                 </div>
-                <div className="form-group" style={{ flex: 1, minWidth: '160px' }}>
-                  <label className="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    required 
-                    className="form-input" 
-                    placeholder="murtaza@zakavi.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
+              )}
+
+              {/* Action Buttons Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '24px', borderTop: 'var(--border-light)', paddingTop: '16px' }}>
+                {formStep > 1 ? (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    style={{ flex: 1, height: '40px' }} 
+                    onClick={() => setFormStep(formStep - 1)}
+                  >
+                    Back
+                  </button>
+                ) : (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    style={{ flex: 1, height: '40px' }} 
+                    onClick={() => setShowForm(false)}
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                {formStep < 3 ? (
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    style={{ flex: 1, height: '40px' }}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    style={{ flex: 1, height: '40px' }}
+                  >
+                    Save Contact
+                  </button>
+                )}
               </div>
-
-              {/* Gregorian / Hijri Birthday Dynamic Sync */}
-              <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', marginTop: '8px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Birthday & Waras</h4>
-                
-                <div className="form-group">
-                  <label className="form-label">Gregorian Birthday</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
-                    value={gBirthday}
-                    onChange={(e) => handleGBirthdayChange(e.target.value)}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                  <div className="form-group" style={{ width: '70px' }}>
-                    <label className="form-label">Hijri Day</label>
-                    <input 
-                      type="number" 
-                      min="1" 
-                      max="30"
-                      className="form-input" 
-                      placeholder="Day"
-                      value={hBDate}
-                      onChange={(e) => {
-                        setHBDate(e.target.value);
-                        syncHBirthdayToGregorian(e.target.value, hBMonth, hBYear);
-                      }}
-                    />
-                  </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Hijri Month</label>
-                    <select 
-                      className="form-select"
-                      value={hBMonth}
-                      onChange={(e) => {
-                        setHBMonth(e.target.value);
-                        syncHBirthdayToGregorian(hBDate, e.target.value, hBYear);
-                      }}
-                    >
-                      <option value="">Select Month...</option>
-                      {HIJRI_MONTH_NAMES.map((name, idx) => (
-                        <option key={idx} value={idx}>{name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ width: '80px' }}>
-                    <label className="form-label">Hijri Year</label>
-                    <input 
-                      type="number" 
-                      min="1000" 
-                      max="2000"
-                      className="form-input" 
-                      placeholder="Year"
-                      value={hBYear}
-                      onChange={(e) => {
-                        setHBYear(e.target.value);
-                        syncHBirthdayToGregorian(hBDate, hBMonth, e.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Gregorian / Hijri Death Dynamic Sync */}
-              <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', marginTop: '8px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Passing Away (Death Anniversary)</h4>
-                
-                <div className="form-group">
-                  <label className="form-label">Gregorian Death Date</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
-                    value={gDeath}
-                    onChange={(e) => handleGDeathChange(e.target.value)}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                  <div className="form-group" style={{ width: '70px' }}>
-                    <label className="form-label">Hijri Day</label>
-                    <input 
-                      type="number" 
-                      min="1" 
-                      max="30"
-                      className="form-input" 
-                      placeholder="Day"
-                      value={hDDate}
-                      onChange={(e) => {
-                        setHDDate(e.target.value);
-                        syncHDeathToGregorian(e.target.value, hDMonth, hDYear);
-                      }}
-                    />
-                  </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Hijri Month</label>
-                    <select 
-                      className="form-select"
-                      value={hDMonth}
-                      onChange={(e) => {
-                        setHDMonth(e.target.value);
-                        syncHDeathToGregorian(hDDate, e.target.value, hDYear);
-                      }}
-                    >
-                      <option value="">Select Month...</option>
-                      {HIJRI_MONTH_NAMES.map((name, idx) => (
-                        <option key={idx} value={idx}>{name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ width: '80px' }}>
-                    <label className="form-label">Hijri Year</label>
-                    <input 
-                      type="number" 
-                      min="1000" 
-                      max="2000"
-                      className="form-input" 
-                      placeholder="Year"
-                      value={hDYear}
-                      onChange={(e) => {
-                        setHDYear(e.target.value);
-                        syncHDeathToGregorian(hDDate, hDMonth, e.target.value);
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Wedding Anniversary */}
-              <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', marginTop: '8px', marginBottom: '16px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Wedding Anniversary</h4>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Anniversary Date</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
-                    value={gAnniversary}
-                    onChange={(e) => setGAnniversary(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Notes</label>
-                <textarea 
-                  className="form-input" 
-                  style={{ height: '60px', resize: 'none' }}
-                  placeholder="Notes, address, secondary numbers..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }}>
-                Save Contact
-              </button>
             </form>
           </div>
         </div>

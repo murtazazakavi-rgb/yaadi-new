@@ -77,6 +77,15 @@ async function ensureTables() {
     await sql.query(`
       CREATE INDEX IF NOT EXISTS idx_document_attachments_document ON document_attachments(document_id);
     `);
+    await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS email_reminders_enabled BOOLEAN DEFAULT true;
+    `);
+    await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS reminder_days_ahead INTEGER DEFAULT 7;
+    `);
+    await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS reminder_types VARCHAR(200) DEFAULT 'birthday_gregorian,birthday_hijri,anniversary,death_gregorian,death_hijri';
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

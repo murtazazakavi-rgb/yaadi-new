@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { getDashboardData } from '@/app/dashboard/actions';
 import { saveTemplates } from './actions';
-import { MessageSquare, Save, Link2, Copy, Check } from 'lucide-react';
+import { MessageSquare, Save, Link2, Copy, Check, QrCode, Share2 } from 'lucide-react';
 
 export default function TemplatesPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [showQr, setShowQr] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
   const triggerToast = (msg: string) => {
@@ -156,31 +157,105 @@ export default function TemplatesPage() {
           padding: '20px', 
           border: '1.5px solid var(--color-gold)', 
           background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--color-gold-light) 100%)',
-          boxShadow: '0 4px 12px rgba(196, 149, 58, 0.08)'
+          boxShadow: '0 4px 12px rgba(196, 149, 58, 0.08)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
         }}>
-          <h4 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-gold)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Link2 size={14} /> Directory Invitation Link
-          </h4>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-            Send this link to friends and family. Anyone visiting this link can submit their name, number, and dates to add them to your directory.
-          </p>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input 
-              type="text" 
-              readOnly 
-              className="form-input" 
-              style={{ flex: 1, backgroundColor: 'var(--bg-card)', fontSize: '12px', height: '36px' }}
-              value={shareUrl}
-            />
-            <button 
-              onClick={() => { handleCopyLink(); triggerToast("Invitation link copied!"); }} 
-              className="btn btn-secondary btn-press" 
-              style={{ width: 'auto', padding: '0 12px', height: '36px' }}
-            >
-              {copied ? <Check size={16} /> : <Copy size={16} />}
-            </button>
+          <div>
+            <h4 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-gold)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Link2 size={14} /> Directory Invitation Link
+            </h4>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+              Send this link to friends and family. Anyone visiting this link can submit their name, number, and dates to add them to your directory.
+            </p>
           </div>
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', flex: 1, minWidth: '240px', gap: '8px' }}>
+              <input 
+                type="text" 
+                readOnly 
+                className="form-input" 
+                style={{ flex: 1, backgroundColor: 'var(--bg-card)', fontSize: '12px', height: '38px', padding: '0 12px' }}
+                value={shareUrl}
+              />
+              <button 
+                onClick={() => { handleCopyLink(); triggerToast("Invitation link copied!"); }} 
+                className="btn btn-secondary btn-press" 
+                style={{ width: 'auto', padding: '0 14px', height: '38px' }}
+                title="Copy Link"
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent("Hi! Please add your details and family milestones (birthdays, waras, anniversaries) to our family directory on Yaadi using this link: " + shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-press"
+                style={{
+                  backgroundColor: '#25D366',
+                  color: '#FFFFFF',
+                  width: 'auto',
+                  padding: '0 14px',
+                  fontSize: '12px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 8px rgba(37, 211, 102, 0.15)',
+                  textDecoration: 'none'
+                }}
+              >
+                <Share2 size={14} /> Share
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowQr(!showQr)}
+                className="btn btn-secondary btn-press"
+                style={{
+                  width: 'auto',
+                  padding: '0 14px',
+                  height: '38px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <QrCode size={14} /> {showQr ? 'Hide QR' : 'QR Code'}
+              </button>
+            </div>
+          </div>
+
+          {showQr && (
+            <div 
+              className="page-transition"
+              style={{ 
+                marginTop: '8px', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '16px', 
+                backgroundColor: 'var(--bg-card)', 
+                borderRadius: '12px', 
+                border: '1px solid rgba(197, 160, 89, 0.2)',
+                alignSelf: 'center',
+                boxShadow: 'var(--shadow-soft)'
+              }}
+            >
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&color=c5a059&data=${encodeURIComponent(shareUrl)}`} 
+                alt="QR Code" 
+                style={{ width: '150px', height: '150px', borderRadius: '8px' }} 
+              />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>Scan to add details instantly</span>
+            </div>
+          )}
         </div>
       )}
 

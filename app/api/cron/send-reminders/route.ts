@@ -21,13 +21,23 @@ export async function GET(request: Request) {
       }
     }
 
-    // Fetch all tenants
-    const tenantsRes = await query('SELECT id, email, display_name FROM tenants');
+    // Fetch all tenants with email reminder preferences
+    const tenantsRes = await query('SELECT id, email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types FROM tenants');
     const tenants = tenantsRes.rows;
 
     const summaryResults: any[] = [];
 
     for (const tenant of tenants) {
+      // Skip if email reminders are disabled for this tenant
+      if (tenant.email_reminders_enabled === false) {
+        continue;
+      }
+
+      // Parse enabled event types
+      const enabledTypes = tenant.reminder_types 
+        ? tenant.reminder_types.split(',') 
+        : ['birthday_gregorian', 'birthday_hijri', 'anniversary', 'death_gregorian', 'death_hijri'];
+
       // 1. Fetch visible contacts
       const contactsRes = await query(
         `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id
@@ -70,6 +80,11 @@ export async function GET(request: Request) {
 
       // 3. Process events to reminders
       const reminders = events.map((event: any) => {
+        // Skip if event type is not enabled
+        if (!enabledTypes.includes(event.event_type)) {
+          return null;
+        }
+
         const contact = contacts.find((c: any) => c.id === event.contact_id);
         if (!contact) return null;
 
@@ -93,7 +108,10 @@ export async function GET(request: Request) {
       .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
 
       const todayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
-      const upcomingEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+      const daysAhead = tenant.reminder_days_ahead !== null && tenant.reminder_days_ahead !== undefined 
+        ? tenant.reminder_days_ahead 
+        : 7;
+      const upcomingEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= daysAhead);
 
       // Only send if there's at least one event today, or if forceSend override is active (e.g. testing)
       if (todayEvents.length > 0 || forceSend) {
