@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
       // 1. Fetch visible contacts
       const contactsRes = await query(
-        `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id
+        `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id, c.born_after_maghrib
          FROM contacts c
          WHERE c.tenant_id = $1
             OR c.id IN (

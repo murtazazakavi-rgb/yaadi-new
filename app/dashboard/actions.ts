@@ -22,7 +22,7 @@ export async function getDashboardData() {
 
   // Get contacts (owned + selectively shared)
   const contactsRes = await query(
-    `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id,
+    `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id, c.born_after_maghrib,
            t.display_name as owner_name,
            (c.tenant_id = $1) as is_owner
      FROM contacts c
@@ -106,7 +106,7 @@ export async function triggerManualEmailDigest() {
 
   // 2. Fetch visible contacts
   const contactsRes = await query(
-    `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id
+    `SELECT DISTINCT c.id, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.notes, c.tenant_id, c.born_after_maghrib
      FROM contacts c
      WHERE c.tenant_id = $1
         OR c.id IN (

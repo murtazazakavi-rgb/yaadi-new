@@ -36,6 +36,12 @@ async function ensureTables() {
       ALTER TABLE submissions ADD COLUMN IF NOT EXISTS middle_name VARCHAR(100);
     `);
     await sql.query(`
+      ALTER TABLE contacts ADD COLUMN IF NOT EXISTS born_after_maghrib BOOLEAN DEFAULT false;
+    `);
+    await sql.query(`
+      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS born_after_maghrib BOOLEAN DEFAULT false;
+    `);
+    await sql.query(`
       CREATE TABLE IF NOT EXISTS family_documents (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,

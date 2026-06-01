@@ -102,6 +102,7 @@ export default function ContactsPage() {
   const [localNumber, setLocalNumber] = useState('');
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
+  const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
 
   // Event Input States
   const [gBirthday, setGBirthday] = useState('');
@@ -352,24 +353,38 @@ export default function ContactsPage() {
   // --- Dynamic Bidirectional Conversions ---
 
   // Gregorian Birthday -> Hijri Birthday
-  const handleGBirthdayChange = (val: string) => {
+  const handleGBirthdayChange = (val: string, isAfterMaghrib = bornAfterMaghrib) => {
     setGBirthday(val);
     if (!val) return;
     const dateObj = new Date(val + 'T12:00:00');
     if (!isNaN(dateObj.getTime())) {
-      const h = HijriDate.fromGregorian(dateObj);
+      let calcDate = dateObj;
+      if (isAfterMaghrib) {
+        calcDate = new Date(dateObj.getTime() + 24 * 60 * 60 * 1000);
+      }
+      const h = HijriDate.fromGregorian(calcDate);
       setHBDate(h.day.toString());
       setHBMonth(h.month.toString());
       setHBYear(h.year.toString());
     }
   };
 
+  const handleBornAfterMaghribToggle = (checked: boolean) => {
+    setBornAfterMaghrib(checked);
+    if (gBirthday) {
+      handleGBirthdayChange(gBirthday, checked);
+    }
+  };
+
   // Hijri Birthday -> Gregorian Birthday
-  const syncHBirthdayToGregorian = (d: string, m: string, y: string) => {
+  const syncHBirthdayToGregorian = (d: string, m: string, y: string, isAfterMaghrib = bornAfterMaghrib) => {
     if (d && m && y) {
       try {
         const h = new HijriDate(parseInt(y), parseInt(m), parseInt(d));
-        const gDateObj = h.toGregorian();
+        let gDateObj = h.toGregorian();
+        if (isAfterMaghrib) {
+          gDateObj = new Date(gDateObj.getTime() - 24 * 60 * 60 * 1000);
+        }
         // format to yyyy-mm-dd (local time safe)
         const year = gDateObj.getFullYear();
         const month = String(gDateObj.getMonth() + 1).padStart(2, '0');
@@ -433,6 +448,7 @@ export default function ContactsPage() {
     setHDMonth('');
     setHDYear('');
     setGAnniversary('');
+    setBornAfterMaghrib(false);
     setFormStep(1);
     setShowForm(true);
   };
@@ -447,6 +463,7 @@ export default function ContactsPage() {
     setLocalNumber(local);
     setEmail(contact.email || '');
     setNotes(contact.notes || '');
+    setBornAfterMaghrib(contact.born_after_maghrib || false);
 
     // Reset event fields
     setGBirthday('');
@@ -554,6 +571,7 @@ export default function ContactsPage() {
       phoneNumber: combinedPhone,
       email,
       notes,
+      bornAfterMaghrib,
       events: finalEvents,
     };
 
@@ -749,6 +767,22 @@ export default function ContactsPage() {
                   >
                     <h3 className="serif-font contact-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       {c.first_name}{c.middle_name ? ' ' + c.middle_name : ''} {c.last_name}
+                      {c.born_after_maghrib && (
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 'normal',
+                          backgroundColor: 'var(--color-blue-light)',
+                          color: 'var(--color-blue)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(74, 107, 138, 0.2)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }} title="Born after sunset (Hijri date is next day)">
+                          🌙 Born after Maghrib
+                        </span>
+                      )}
                       {!isOwn && (
                         <span style={{
                           fontSize: 'var(--font-size-xs)',
@@ -1025,6 +1059,19 @@ export default function ContactsPage() {
                         value={gBirthday}
                         onChange={(e) => handleGBirthdayChange(e.target.value)}
                       />
+                    </div>
+
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="born-after-maghrib-check"
+                        checked={bornAfterMaghrib}
+                        onChange={(e) => handleBornAfterMaghribToggle(e.target.checked)}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      <label htmlFor="born-after-maghrib-check" style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none', margin: 0, textTransform: 'none', letterSpacing: 'normal' }}>
+                        Born after Maghrib (Sunset)
+                      </label>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>

@@ -78,6 +78,7 @@ export async function getAllSystemContacts() {
       c.email, 
       c.notes,
       c.tenant_id,
+      c.born_after_maghrib,
       t.display_name as added_by,
       e.id as event_id,
       e.event_type,
@@ -103,6 +104,7 @@ export async function getAllSystemContacts() {
         email: row.email,
         notes: row.notes,
         tenant_id: row.tenant_id,
+        born_after_maghrib: row.born_after_maghrib,
         added_by: row.added_by || 'Unknown Workspace',
         events: []
       };

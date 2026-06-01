@@ -31,6 +31,7 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
   const [hBDate, setHBDate] = useState('');
   const [hBMonth, setHBMonth] = useState('');
   const [hBYear, setHBYear] = useState('');
+  const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
 
   // Death Sync (Optional)
   const [hasDeceasedEvent, setHasDeceasedEvent] = useState(false);
@@ -45,23 +46,37 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
   const [gAnniversary, setGAnniversary] = useState('');
 
   // --- Dynamic conversions ---
-  const handleGBirthdayChange = (val: string) => {
+  const handleGBirthdayChange = (val: string, isAfterMaghrib = bornAfterMaghrib) => {
     setGBirthday(val);
     if (!val) return;
     const d = new Date(val + 'T12:00:00');
     if (!isNaN(d.getTime())) {
-      const h = HijriDate.fromGregorian(d);
+      let calcDate = d;
+      if (isAfterMaghrib) {
+        calcDate = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+      }
+      const h = HijriDate.fromGregorian(calcDate);
       setHBDate(h.day.toString());
       setHBMonth(h.month.toString());
       setHBYear(h.year.toString());
     }
   };
 
-  const syncHBirthdayToGregorian = (d: string, m: string, y: string) => {
+  const handleBornAfterMaghribToggle = (checked: boolean) => {
+    setBornAfterMaghrib(checked);
+    if (gBirthday) {
+      handleGBirthdayChange(gBirthday, checked);
+    }
+  };
+
+  const syncHBirthdayToGregorian = (d: string, m: string, y: string, isAfterMaghrib = bornAfterMaghrib) => {
     if (d && m && y) {
       try {
         const h = new HijriDate(parseInt(y), parseInt(m), parseInt(d));
-        const gDateObj = h.toGregorian();
+        let gDateObj = h.toGregorian();
+        if (isAfterMaghrib) {
+          gDateObj = new Date(gDateObj.getTime() - 24 * 60 * 60 * 1000);
+        }
         // format to yyyy-mm-dd (local time safe)
         const year = gDateObj.getFullYear();
         const month = String(gDateObj.getMonth() + 1).padStart(2, '0');
@@ -173,6 +188,7 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
         phoneNumber: combinedPhone,
         email,
         notes: finalNotes,
+        bornAfterMaghrib,
         events: finalEvents
       });
 
@@ -372,6 +388,20 @@ export default function ShareFormClient({ tenantId, tenantName }: ShareFormClien
                     onChange={(e) => handleGBirthdayChange(e.target.value)}
                     disabled={loading}
                   />
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <input 
+                    type="checkbox" 
+                    id="born-after-maghrib-check"
+                    checked={bornAfterMaghrib}
+                    onChange={(e) => handleBornAfterMaghribToggle(e.target.checked)}
+                    disabled={loading}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <label htmlFor="born-after-maghrib-check" style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none', margin: 0, textTransform: 'none', letterSpacing: 'normal' }}>
+                    Born after Maghrib (Sunset)
+                  </label>
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
