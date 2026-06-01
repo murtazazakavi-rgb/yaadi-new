@@ -81,12 +81,29 @@ export async function getDashboardData() {
   );
   const pendingConnectionsCount = pendingConnectionsRes.rows[0]?.count || 0;
 
+  // Get groups
+  const groupsRes = await query(
+    'SELECT id, name, color FROM groups WHERE tenant_id = $1 ORDER BY name ASC',
+    [tenantId]
+  );
+
+  // Get contact group mappings for this tenant's groups
+  const mappingsRes = await query(
+    `SELECT cgm.contact_id, cgm.group_id 
+     FROM contact_group_mappings cgm
+     JOIN groups g ON cgm.group_id = g.id
+     WHERE g.tenant_id = $1`,
+    [tenantId]
+  );
+
   return {
     contacts: contactsRes.rows,
     events: eventsRes.rows,
     templates: templatesRes.rows,
     pendingApprovalsCount,
     pendingConnectionsCount,
+    groups: groupsRes.rows,
+    groupMappings: mappingsRes.rows,
   };
 }
 

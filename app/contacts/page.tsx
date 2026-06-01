@@ -10,8 +10,9 @@ import {
   removeRelationship, 
   getRelationships 
 } from './actions';
+import { getGroups, createGroup, deleteGroup, getGroupShareLink, toggleGroupShareLink } from './groupActions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
 import Portal from '@/app/components/Portal';
@@ -103,6 +104,18 @@ export default function ContactsPage() {
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
+
+  // Grouping & Share Links States
+  const [groups, setGroups] = useState<any[]>([]);
+  const [groupMappings, setGroupMappings] = useState<any[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectedFilterGroupId, setSelectedFilterGroupId] = useState<string | null>(null);
+  const [shareLinkActive, setShareLinkActive] = useState(false);
+  const [shareLinkId, setShareLinkId] = useState<string | null>(null);
+  const [loadingShare, setLoadingShare] = useState(false);
+  const [showGroupManager, setShowGroupManager] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupColor, setNewGroupColor] = useState('#C4953A');
 
   // Event Input States
   const [gBirthday, setGBirthday] = useState('');
@@ -331,6 +344,73 @@ export default function ContactsPage() {
     setShowImportModal(true);
   };
 
+  const handleSelectFilterGroup = async (groupId: string | null) => {
+    setSelectedFilterGroupId(groupId);
+    if (groupId) {
+      setLoadingShare(true);
+      try {
+        const link = await getGroupShareLink(groupId);
+        if (link) {
+          setShareLinkActive(link.is_active);
+          setShareLinkId(link.id);
+        } else {
+          setShareLinkActive(false);
+          setShareLinkId(null);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingShare(false);
+      }
+    } else {
+      setShareLinkActive(false);
+      setShareLinkId(null);
+    }
+  };
+
+  const handleToggleShareLink = async (active: boolean) => {
+    if (!selectedFilterGroupId) return;
+    setLoadingShare(true);
+    try {
+      const res = await toggleGroupShareLink(selectedFilterGroupId, active);
+      setShareLinkActive(res.is_active);
+      setShareLinkId(res.id);
+    } catch (err) {
+      alert('Failed to update sharing link.');
+    } finally {
+      setLoadingShare(false);
+    }
+  };
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGroupName.trim()) return;
+    try {
+      await createGroup(newGroupName, newGroupColor);
+      setNewGroupName('');
+      setNewGroupColor('#C4953A');
+      const dbData = await getDashboardData();
+      setGroups(dbData.groups || []);
+    } catch (err: any) {
+      alert(err.message || 'Failed to create group');
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('Are you sure you want to delete this group? All contact tags and public sharing links will be removed.')) return;
+    try {
+      await deleteGroup(groupId);
+      if (selectedFilterGroupId === groupId) {
+        setSelectedFilterGroupId(null);
+      }
+      const dbData = await getDashboardData();
+      setGroups(dbData.groups || []);
+      setGroupMappings(dbData.groupMappings || []);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete group');
+    }
+  };
+
   useEffect(() => {
     loadAllData();
   }, []);
@@ -343,6 +423,8 @@ export default function ContactsPage() {
       setContacts(dbData.contacts);
       setEvents(dbData.events);
       setRelationships(rels);
+      setGroups(dbData.groups || []);
+      setGroupMappings(dbData.groupMappings || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -449,6 +531,7 @@ export default function ContactsPage() {
     setHDYear('');
     setGAnniversary('');
     setBornAfterMaghrib(false);
+    setSelectedGroupIds([]);
     setFormStep(1);
     setShowForm(true);
   };
@@ -464,6 +547,9 @@ export default function ContactsPage() {
     setEmail(contact.email || '');
     setNotes(contact.notes || '');
     setBornAfterMaghrib(contact.born_after_maghrib || false);
+
+    const mapped = groupMappings.filter(m => m.contact_id === contact.id).map(m => m.group_id);
+    setSelectedGroupIds(mapped);
 
     // Reset event fields
     setGBirthday('');
@@ -572,6 +658,7 @@ export default function ContactsPage() {
       email,
       notes,
       bornAfterMaghrib,
+      groupIds: selectedGroupIds,
       events: finalEvents,
     };
 
@@ -631,6 +718,13 @@ export default function ContactsPage() {
     const matchesSearch = fullName.includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
     
+    if (selectedFilterGroupId) {
+      const isTagged = groupMappings.some(
+        (m) => m.contact_id === c.id && m.group_id === selectedFilterGroupId
+      );
+      if (!isTagged) return false;
+    }
+
     if (filterTab === 'withEvents') {
       return events.some((e) => e.contact_id === c.id);
     }
@@ -708,6 +802,154 @@ export default function ContactsPage() {
           <Mic size={18} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', cursor: 'pointer' }} onClick={handleVoiceSearch} />
         </div>
       </div>
+
+      {/* Groups Filter Carousel */}
+      <div style={{ padding: '0 16px 12px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ flex: 1, overflowX: 'auto', display: 'flex', gap: '6px', paddingBottom: '4px' }} className="hide-scrollbar">
+          <button
+            type="button"
+            onClick={() => handleSelectFilterGroup(null)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '16px',
+              fontSize: '12px',
+              fontWeight: '500',
+              border: '1px solid',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s ease',
+              backgroundColor: selectedFilterGroupId === null ? 'var(--color-gold)' : 'transparent',
+              borderColor: selectedFilterGroupId === null ? 'var(--color-gold)' : 'var(--border-card)',
+              color: selectedFilterGroupId === null ? '#FFFFFF' : 'var(--text-secondary)'
+            }}
+          >
+            All Groups
+          </button>
+          {groups.map((g) => {
+            const isSelected = selectedFilterGroupId === g.id;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => handleSelectFilterGroup(isSelected ? null : g.id)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  border: '1px solid',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  backgroundColor: isSelected ? g.color : 'var(--bg-card)',
+                  borderColor: isSelected ? g.color : 'rgba(197, 160, 89, 0.15)',
+                  color: isSelected ? '#FFFFFF' : 'var(--text-primary)'
+                }}
+              >
+                {g.name}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowGroupManager(true)}
+          style={{
+            flexShrink: 0,
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            backgroundColor: 'var(--color-gold-light)',
+            border: '1px solid rgba(197, 160, 89, 0.2)',
+            color: 'var(--color-gold)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'var(--transition-smooth)'
+          }}
+          title="Manage Groups"
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+
+      {/* Group Share Link Settings Banner */}
+      {selectedFilterGroupId && (() => {
+        const activeGroup = groups.find((g) => g.id === selectedFilterGroupId);
+        if (!activeGroup) return null;
+        
+        const sharingUrl = shareLinkId ? `${window.location.origin}/shared-group/${shareLinkId}` : '';
+
+        return (
+          <div className="card page-transition" style={{
+            background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(197, 160, 89, 0.05) 100%)',
+            border: '1px solid rgba(197, 160, 89, 0.2)',
+            padding: '16px',
+            margin: '0 16px 16px 16px',
+            borderRadius: '12px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            boxShadow: 'var(--shadow-soft)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-gold)', display: 'block' }}>Sharing Settings</span>
+                <h4 className="serif-font" style={{ fontSize: '16px', color: 'var(--text-primary)', fontWeight: '600' }}>
+                  Share {activeGroup.name} Contacts
+                </h4>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {loadingShare ? 'Updating...' : shareLinkActive ? 'Sharing Active' : 'Sharing Inactive'}
+                </span>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={shareLinkActive}
+                    disabled={loadingShare}
+                    onChange={(e) => handleToggleShareLink(e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            {shareLinkActive && shareLinkId && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: 'var(--bg-primary)', padding: '10px', borderRadius: '8px', border: 'var(--border-light)' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', wordBreak: 'break-all' }}>
+                  Public Link: <a href={sharingUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--color-gold)', textDecoration: 'underline' }}>{sharingUrl}</a>
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 12px', height: '30px', width: 'auto', fontSize: '11px' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(sharingUrl);
+                      alert('Share link copied to clipboard!');
+                    }}
+                  >
+                    Copy Link
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ padding: '6px 12px', height: '30px', width: 'auto', fontSize: '11px', backgroundColor: '#25D366', color: '#FFFFFF', boxShadow: 'none' }}
+                    onClick={() => {
+                      const waUrl = `https://wa.me/?text=${encodeURIComponent(`Here is the shared event timeline calendar for the ${activeGroup.name} family group: ${sharingUrl}`)}`;
+                      window.open(waUrl, '_blank');
+                    }}
+                  >
+                    Share via WhatsApp
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Segmented Filter Control */}
       <div className="segmented-control" style={{ margin: '0 16px 16px 16px', width: 'calc(100% - 32px)' }}>
@@ -797,6 +1039,36 @@ export default function ContactsPage() {
                         </span>
                       )}
                     </h3>
+                    
+                    {/* Render Group Tags */}
+                    {(() => {
+                      const cGroups = groupMappings
+                        .filter((m) => m.contact_id === c.id)
+                        .map((m) => groups.find((g) => g.id === m.group_id))
+                        .filter(Boolean);
+                      if (cGroups.length === 0) return null;
+                      return (
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', margin: '4px 0' }}>
+                          {cGroups.map((g) => (
+                            <span
+                              key={g.id}
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: '600',
+                                backgroundColor: `${g.color}15`,
+                                color: g.color,
+                                padding: '1px 8px',
+                                borderRadius: '10px',
+                                border: `1px solid ${g.color}30`
+                              }}
+                            >
+                              {g.name}
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    })()}
+
                     {renderEventChips(c.id)}
                   </div>
                   
@@ -1039,6 +1311,52 @@ export default function ContactsPage() {
                         onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  {/* Groups Selection */}
+                  <div style={{ marginTop: '12px', borderTop: 'var(--border-light)', paddingTop: '12px' }}>
+                    <label className="form-label">Workspace Groups / Tags</label>
+                    {groups.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0' }}>
+                        No groups created yet. You can create groups in the setting button next to the filters.
+                      </p>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '8px 0' }}>
+                        {groups.map((g) => {
+                          const isSelected = selectedGroupIds.includes(g.id);
+                          return (
+                            <button
+                              key={g.id}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedGroupIds(selectedGroupIds.filter((id) => id !== g.id));
+                                } else {
+                                  setSelectedGroupIds([...selectedGroupIds, g.id]);
+                                }
+                              }}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 12px',
+                                borderRadius: '16px',
+                                fontSize: '12px',
+                                border: '1px solid',
+                                cursor: 'pointer',
+                                transition: 'var(--transition-smooth)',
+                                backgroundColor: isSelected ? g.color : 'transparent',
+                                borderColor: g.color,
+                                color: isSelected ? '#FFFFFF' : 'var(--text-primary)',
+                                opacity: isSelected ? 1 : 0.75
+                              }}
+                            >
+                              {g.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1381,6 +1699,100 @@ export default function ContactsPage() {
             </div>
           </div>
         </div>
+        </Portal>
+      )}
+
+      {/* Custom Group Manager Modal */}
+      {showGroupManager && (
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowGroupManager(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+              <div className="modal-header">
+                <h3 className="serif-font" style={{ fontSize: '20px' }}>Manage Custom Groups</h3>
+                <button className="modal-close" onClick={() => setShowGroupManager(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Create Group Inline Form */}
+              <form onSubmit={handleCreateGroup} style={{ borderBottom: 'var(--border-light)', paddingBottom: '16px', marginBottom: '16px' }}>
+                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '8px', fontWeight: '600' }}>Create New Group</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    placeholder="e.g. Qasre Juzer (QJ)"
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <label className="form-label" style={{ margin: 0, textTransform: 'none' }}>Tag Color:</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {['#C4953A', '#6B8E6E', '#4A6B8A', '#C45B7A', '#8A6BC4', '#E67E22', '#16A085'].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setNewGroupColor(color)}
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            backgroundColor: color,
+                            border: newGroupColor === color ? '2px solid var(--text-primary)' : 'none',
+                            cursor: 'pointer',
+                            transform: newGroupColor === color ? 'scale(1.1)' : 'none',
+                            transition: 'var(--transition-smooth)'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <button type="submit" className="btn btn-primary" style={{ height: '36px', marginTop: '4px' }}>
+                    Create Group
+                  </button>
+                </div>
+              </form>
+
+              {/* Existing Groups List */}
+              <div>
+                <h4 style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px', fontWeight: '600' }}>Existing Groups</h4>
+                {groups.length === 0 ? (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No groups created yet.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {groups.map((g) => (
+                      <div
+                        key={g.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '8px 12px',
+                          backgroundColor: 'var(--bg-primary)',
+                          borderRadius: '8px',
+                          border: 'var(--border-light)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: g.color }} />
+                          <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '500' }}>{g.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteGroup(g.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-rose)' }}
+                          title="Delete Group"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </Portal>
       )}
     </div>

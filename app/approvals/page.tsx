@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getPendingSubmissions, approveSubmission, rejectSubmission } from '@/app/share/actions';
+import { getGroups } from '@/app/contacts/groupActions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Check, X, ShieldAlert, Eye, User, Calendar, Save } from 'lucide-react';
 import Portal from '@/app/components/Portal';
@@ -25,6 +26,8 @@ export default function ApprovalsPage() {
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
   // Event Inputs
   const [gBirthday, setGBirthday] = useState('');
@@ -41,7 +44,15 @@ export default function ApprovalsPage() {
 
   useEffect(() => {
     fetchSubmissions();
+    loadGroups();
   }, []);
+
+  const loadGroups = async () => {
+    try {
+      const list = await getGroups();
+      setGroups(list);
+    } catch (err) {}
+  };
 
   const fetchSubmissions = async () => {
     try {
@@ -80,6 +91,7 @@ export default function ApprovalsPage() {
     setEmail(parsedEmail);
     setNotes(parsedNotes);
     setBornAfterMaghrib(sub.born_after_maghrib || false);
+    setSelectedGroupIds([]);
 
     // Reset event form fields
     setGBirthday('');
@@ -180,6 +192,7 @@ export default function ApprovalsPage() {
       email,
       notes,
       bornAfterMaghrib,
+      groupIds: selectedGroupIds,
       events: finalEvents
     };
 
@@ -432,6 +445,52 @@ export default function ApprovalsPage() {
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+              </div>
+
+              {/* Groups Selection */}
+              <div style={{ marginTop: '12px', borderTop: 'var(--border-light)', paddingTop: '12px' }}>
+                <label className="form-label">Assign to Groups</label>
+                {groups.length === 0 ? (
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0' }}>
+                    No groups created yet. Groups can be created in the Contacts page.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '8px 0' }}>
+                    {groups.map((g) => {
+                       const isSelected = selectedGroupIds.includes(g.id);
+                       return (
+                         <button
+                           key={g.id}
+                           type="button"
+                           onClick={() => {
+                             if (isSelected) {
+                               setSelectedGroupIds(selectedGroupIds.filter((id) => id !== g.id));
+                             } else {
+                               setSelectedGroupIds([...selectedGroupIds, g.id]);
+                             }
+                           }}
+                           style={{
+                             display: 'inline-flex',
+                             alignItems: 'center',
+                             gap: '4px',
+                             padding: '6px 12px',
+                             borderRadius: '16px',
+                             fontSize: '11px',
+                             border: '1px solid',
+                             cursor: 'pointer',
+                             transition: 'var(--transition-smooth)',
+                             backgroundColor: isSelected ? g.color : 'transparent',
+                             borderColor: g.color,
+                             color: isSelected ? '#FFFFFF' : 'var(--text-primary)',
+                             opacity: isSelected ? 1 : 0.75
+                           }}
+                         >
+                           {g.name}
+                         </button>
+                       );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Birthday Gregorian / Hijri Sync */}

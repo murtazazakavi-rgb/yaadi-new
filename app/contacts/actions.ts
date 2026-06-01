@@ -23,6 +23,7 @@ export async function createContact(formData: {
   email?: string;
   notes?: string;
   bornAfterMaghrib?: boolean;
+  groupIds?: string[];
   events: Array<{
     eventType: string;
     gDay?: number;
@@ -36,7 +37,7 @@ export async function createContact(formData: {
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, events } = formData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, groupIds, events } = formData;
 
   if (!firstName || !lastName) {
     throw new Error('First name and last name are required.');
@@ -69,6 +70,16 @@ export async function createContact(formData: {
     );
   }
 
+  // Insert group mappings
+  if (groupIds && groupIds.length > 0) {
+    for (const gId of groupIds) {
+      await query(
+        `INSERT INTO contact_group_mappings (contact_id, group_id) VALUES ($1, $2)`,
+        [contactId, gId]
+      );
+    }
+  }
+
   revalidatePath('/contacts');
   revalidatePath('/dashboard');
   revalidatePath('/tree');
@@ -88,6 +99,7 @@ export async function updateContact(
     email?: string;
     notes?: string;
     bornAfterMaghrib?: boolean;
+    groupIds?: string[];
     events: Array<{
       eventType: string;
       gDay?: number;
@@ -102,7 +114,7 @@ export async function updateContact(
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, events } = formData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, groupIds, events } = formData;
 
   // Verify ownership
   const check = await query('SELECT id FROM contacts WHERE id = $1 AND tenant_id = $2', [contactId, tenantId]);
@@ -137,6 +149,17 @@ export async function updateContact(
         ev.hYear !== undefined ? ev.hYear : null,
       ]
     );
+  }
+
+  // Synchronize group mappings
+  await query('DELETE FROM contact_group_mappings WHERE contact_id = $1', [contactId]);
+  if (groupIds && groupIds.length > 0) {
+    for (const gId of groupIds) {
+      await query(
+        `INSERT INTO contact_group_mappings (contact_id, group_id) VALUES ($1, $2)`,
+        [contactId, gId]
+      );
+    }
   }
 
   revalidatePath('/contacts');

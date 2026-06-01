@@ -42,6 +42,33 @@ async function ensureTables() {
       ALTER TABLE submissions ADD COLUMN IF NOT EXISTS born_after_maghrib BOOLEAN DEFAULT false;
     `);
     await sql.query(`
+      CREATE TABLE IF NOT EXISTS groups (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+          name VARCHAR(100) NOT NULL,
+          color VARCHAR(20) DEFAULT '#C4953A',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(tenant_id, name)
+      );
+    `);
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS contact_group_mappings (
+          contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE,
+          group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+          PRIMARY KEY (contact_id, group_id)
+      );
+    `);
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS group_share_links (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
+          tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(group_id)
+      );
+    `);
+    await sql.query(`
       CREATE TABLE IF NOT EXISTS family_documents (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
