@@ -41,6 +41,8 @@ export default async function RootLayout({
                 document.documentElement.classList.remove('dark');
                 document.documentElement.setAttribute('data-theme', 'light');
               }
+              var uiStyle = localStorage.getItem('yaadi-ui-style') || 'classic';
+              document.documentElement.setAttribute('data-ui-style', uiStyle);
             } catch (e) {}
           })();
         ` }} />

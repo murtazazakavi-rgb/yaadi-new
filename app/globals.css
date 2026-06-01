@@ -1,5 +1,5 @@
 /* --- globals.css --- */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   --font-serif: 'Cormorant Garamond', Georgia, serif;
@@ -101,6 +101,166 @@ html.dark, .dark {
   --bg-header: rgba(26, 26, 26, 0.8);
   --bg-modal: rgba(45, 45, 45, 0.85);
   --border-modal: 1px solid rgba(212, 168, 74, 0.22);
+}
+
+/* ⚡ UI STYLE 2: Neo-Pop Cyber Theme */
+:root[data-ui-style="cyber"] {
+  --font-serif: 'Outfit', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  
+  --bg-primary: #FAF9F6;
+  --bg-card: #FFFFFF;
+  --text-primary: #000000;
+  --text-secondary: #222222;
+  --text-muted: #555555;
+  
+  --color-gold: #4F46E5;       /* Electric Indigo */
+  --color-gold-light: rgba(79, 70, 229, 0.15);
+  --color-sage: #059669;       /* Emerald Cyber Mint */
+  --color-sage-light: rgba(5, 150, 105, 0.15);
+  --color-blue: #06B6D4;       /* Neon Cyan */
+  --color-blue-light: rgba(6, 182, 212, 0.15);
+  --color-rose: #EC4899;       /* Neon Pink */
+  --color-rose-light: rgba(236, 72, 153, 0.15);
+  --color-anniversary: #8B5CF6; /* Neon Purple */
+  --color-anniversary-light: rgba(139, 92, 246, 0.15);
+
+  --border-card: 2px solid #000000;
+  --border-thin: 2px solid #000000;
+  --border-light: 2px solid #000000;
+  
+  --shadow-soft: 4px 4px 0px #000000;
+  --shadow-hover: 6px 6px 0px #000000;
+  
+  --radius-card: 8px;
+  --radius-button: 8px;
+  --radius-pill: 6px;
+  
+  --bg-input: #FFFFFF;
+  --bg-input-focus: #FFFFFF;
+  --bg-card-active: #F3F4F6;
+  --bg-badge-death: #E5E7EB;
+  --bg-bottom-nav: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-header: rgba(255, 255, 255, 0.9);
+  --bg-modal: #FFFFFF;
+  --border-modal: 2px solid #000000;
+}
+
+html.dark[data-ui-style="cyber"], .dark[data-ui-style="cyber"] {
+  --bg-primary: #0F172A;       /* Slate 900 */
+  --bg-card: #1E293B;          /* Slate 800 */
+  --text-primary: #F8FAFC;
+  --text-secondary: #E2E8F0;
+  --text-muted: #94A3B8;
+
+  --color-gold: #818CF8;       /* Pastel Indigo */
+  --color-gold-light: rgba(129, 140, 248, 0.2);
+  --color-sage: #34D399;       /* Pastel Emerald */
+  --color-sage-light: rgba(52, 211, 153, 0.2);
+  --color-blue: #22D3EE;       /* Neon Cyan */
+  --color-blue-light: rgba(34, 211, 238, 0.2);
+  --color-rose: #F472B6;       /* Neon Pink */
+  --color-rose-light: rgba(244, 114, 182, 0.2);
+  --color-anniversary: #A78BFA;
+  --color-anniversary-light: rgba(167, 139, 250, 0.2);
+
+  --border-card: 2px solid #F8FAFC;
+  --border-thin: 2px solid #F8FAFC;
+  --border-light: 2px solid rgba(255, 255, 255, 0.2);
+  
+  --shadow-soft: 4px 4px 0px #000000;
+  --shadow-hover: 6px 6px 0px #000000;
+  
+  --bg-input: #1E293B;
+  --bg-input-focus: #0F172A;
+  --bg-card-active: #334155;
+  --bg-badge-death: #334155;
+  --bg-bottom-nav: #1E293B;
+  --bg-sidebar: #1E293B;
+  --bg-header: rgba(15, 23, 42, 0.9);
+  --bg-modal: #1E293B;
+  --border-modal: 2px solid #F8FAFC;
+}
+
+/* 🌸 UI STYLE 3: Pastel Minimalist Theme */
+:root[data-ui-style="pastel"] {
+  --font-serif: 'Outfit', sans-serif;
+  --font-sans: 'Outfit', sans-serif;
+  
+  --bg-primary: #FDFBF7;       /* Soft Buttercream */
+  --bg-card: #FFFFFF;
+  --text-primary: #2D264A;     /* Soft Dark Purple */
+  --text-secondary: #5E5280;
+  --text-muted: #8E82B0;
+  
+  --color-gold: #A78BFA;       /* Pastel Lavender */
+  --color-gold-light: rgba(167, 139, 250, 0.15);
+  --color-sage: #34D399;       /* Soft Mint */
+  --color-sage-light: rgba(52, 211, 153, 0.15);
+  --color-blue: #60A5FA;       /* Soft Sky Blue */
+  --color-blue-light: rgba(96, 165, 250, 0.15);
+  --color-rose: #F472B6;       /* Soft Blush Pink */
+  --color-rose-light: rgba(244, 114, 182, 0.15);
+  --color-anniversary: #FBBF24; /* Peach Butter */
+  --color-anniversary-light: rgba(251, 191, 36, 0.15);
+
+  --border-card: 1px solid rgba(167, 139, 250, 0.15);
+  --border-thin: 1px solid rgba(167, 139, 250, 0.12);
+  --border-light: 1px solid rgba(167, 139, 250, 0.08);
+  
+  --shadow-soft: 0 10px 25px -5px rgba(167, 139, 250, 0.08);
+  --shadow-hover: 0 16px 35px -5px rgba(167, 139, 250, 0.15);
+  
+  --radius-card: 24px;
+  --radius-button: 16px;
+  --radius-pill: 20px;
+  
+  --bg-input: #F5F3FF;         /* Soft lavender-tinted input */
+  --bg-input-focus: #FFFFFF;
+  --bg-card-active: #F9F8FF;
+  --bg-badge-death: #EEF2F6;
+  --bg-bottom-nav: rgba(255, 255, 255, 0.9);
+  --bg-sidebar: #FFFFFF;
+  --bg-header: rgba(253, 251, 247, 0.9);
+  --bg-modal: #FFFFFF;
+  --border-modal: 1px solid rgba(167, 139, 250, 0.2);
+}
+
+html.dark[data-ui-style="pastel"], .dark[data-ui-style="pastel"] {
+  --bg-primary: #120F1D;       /* Deep Cosmic Amethyst */
+  --bg-card: #1D192C;          /* Soft Amethyst Card */
+  --text-primary: #E9E3FF;
+  --text-secondary: #BDB4DF;
+  --text-muted: #8379A5;
+
+  --color-gold: #C084FC;       /* Light Purple */
+  --color-gold-light: rgba(192, 132, 252, 0.2);
+  --color-sage: #34D399;
+  --color-sage-light: rgba(52, 211, 153, 0.2);
+  --color-blue: #60A5FA;
+  --color-blue-light: rgba(96, 165, 250, 0.2);
+  --color-rose: #F472B6;
+  --color-rose-light: rgba(244, 114, 182, 0.2);
+  --color-anniversary: #FBBF24;
+  --color-anniversary-light: rgba(251, 191, 36, 0.2);
+  
+  --border-card: 1px solid rgba(192, 132, 252, 0.2);
+  --border-thin: 1px solid rgba(192, 132, 252, 0.15);
+  --border-light: 1px solid rgba(192, 132, 252, 0.1);
+  
+  --shadow-soft: 0 8px 30px rgba(0, 0, 0, 0.25);
+  --shadow-hover: 0 12px 35px rgba(0, 0, 0, 0.35);
+  
+  --bg-input: #26223B;
+  --bg-input-focus: #181524;
+  --bg-card-active: #2C2744;
+  --bg-badge-death: #2C2744;
+  --bg-bottom-nav: rgba(29, 25, 44, 0.95);
+  --bg-sidebar: #1D192C;
+  --bg-header: rgba(18, 15, 29, 0.9);
+  --bg-modal: #1D192C;
+  --border-modal: 1px solid rgba(192, 132, 252, 0.25);
 }
 
 * {
@@ -1149,5 +1309,66 @@ input:disabled + .toggle-slider {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Cyber Theme Custom Interactivity Overrides */
+[data-ui-style="cyber"] .card:hover {
+  transform: translate(-3px, -3px) !important;
+  box-shadow: 6px 6px 0px #000000 !important;
+}
+[data-ui-style="cyber"] .card:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 0px 0px 0px #000000 !important;
+}
+[data-ui-style="cyber"] .btn-press:hover {
+  transform: translate(-1px, -1px) !important;
+}
+[data-ui-style="cyber"] .btn-press:active {
+  transform: translate(1px, 1px) !important;
+}
+[data-ui-style="cyber"] .avatar-gradient {
+  border: 2px solid #000000 !important;
+  box-shadow: 2px 2px 0px #000000 !important;
+}
+[data-ui-style="cyber"] .badge {
+  border: 1px solid #000000 !important;
+  font-weight: 700 !important;
+}
+[data-ui-style="cyber"] .form-input, 
+[data-ui-style="cyber"] .form-select, 
+[data-ui-style="cyber"] .form-textarea {
+  border: 2px solid #000000 !important;
+}
+[data-ui-style="cyber"] .bottom-nav {
+  border-top: 2px solid #000000 !important;
+}
+[data-ui-style="cyber"] .app-header {
+  border-bottom: 2px solid #000000 !important;
+}
+[data-ui-style="cyber"] .search-input-wrapper input {
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+}
+[data-ui-style="cyber"] .search-input-wrapper input:focus {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+}
+
+/* Pastel Theme Custom Interactivity Overrides */
+[data-ui-style="pastel"] .card {
+  box-shadow: var(--shadow-soft) !important;
+  border: var(--border-card) !important;
+}
+[data-ui-style="pastel"] .card:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+  box-shadow: var(--shadow-hover) !important;
+}
+[data-ui-style="pastel"] .card:active {
+  transform: translateY(-1px) scale(0.99) !important;
+}
+[data-ui-style="pastel"] .avatar-gradient {
+  box-shadow: 0 4px 10px rgba(167, 139, 250, 0.2) !important;
+  border: none !important;
+}
+
 
 

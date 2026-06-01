@@ -19,6 +19,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   const router = useRouter();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [uiStyle, setUiStyle] = useState('classic');
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
@@ -27,6 +28,8 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
 
   useEffect(() => {
     setIsDarkMode(document.documentElement.classList.contains('dark'));
+    const savedStyle = localStorage.getItem('yaadi-ui-style') || 'classic';
+    setUiStyle(savedStyle);
     
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       navigator.serviceWorker.register('/sw.js').then(
@@ -107,6 +110,12 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
       localStorage.setItem('theme', 'dark');
       setIsDarkMode(true);
     }
+  };
+
+  const selectUIStyle = (styleName: string) => {
+    setUiStyle(styleName);
+    document.documentElement.setAttribute('data-ui-style', styleName);
+    localStorage.setItem('yaadi-ui-style', styleName);
   };
 
   // If path is root or register, don't wrap with navigation bars
@@ -275,6 +284,36 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
             }} />
           )}
         </button>
+
+        {/* UI Style Toggle for Desktop Sidebar */}
+        <div className="desktop-only" style={{ width: '100%', borderTop: 'var(--border-light)', padding: '12px 24px 0 24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: '600' }}>UI Style</span>
+            <div style={{ display: 'flex', backgroundColor: 'var(--bg-input)', padding: '3px', borderRadius: '10px', gap: '2px', width: '100%' }}>
+              <button 
+                type="button"
+                onClick={() => selectUIStyle('classic')} 
+                style={{ flex: 1, border: 'none', background: uiStyle === 'classic' ? 'var(--bg-card)' : 'none', color: uiStyle === 'classic' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '6px 4px', borderRadius: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+              >
+                Classic
+              </button>
+              <button 
+                type="button"
+                onClick={() => selectUIStyle('cyber')} 
+                style={{ flex: 1, border: 'none', background: uiStyle === 'cyber' ? 'var(--bg-card)' : 'none', color: uiStyle === 'cyber' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '6px 4px', borderRadius: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+              >
+                Cyber
+              </button>
+              <button 
+                type="button"
+                onClick={() => selectUIStyle('pastel')} 
+                style={{ flex: 1, border: 'none', background: uiStyle === 'pastel' ? 'var(--bg-card)' : 'none', color: uiStyle === 'pastel' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '6px 4px', borderRadius: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+              >
+                Pastel
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Theme Toggle for Desktop Sidebar */}
         <div className="desktop-only" style={{ marginTop: 'auto', width: '100%', borderTop: 'var(--border-light)', paddingTop: '12px' }}>
@@ -504,6 +543,31 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
                   style={{ width: '18px', height: '18px', borderRadius: '4px', objectFit: 'contain' }} 
                 />
                 <span>Install Yaadi App</span>
+              </div>
+
+              {/* UI Style Toggle for Mobile Drawer */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px', width: '100%' }}>
+                <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)', fontWeight: '600', paddingLeft: '4px' }}>UI Style</span>
+                <div style={{ display: 'flex', backgroundColor: 'var(--bg-input)', padding: '3px', borderRadius: '10px', gap: '2px' }}>
+                  <button 
+                    onClick={() => selectUIStyle('classic')} 
+                    style={{ flex: 1, border: 'none', background: uiStyle === 'classic' ? 'var(--bg-card)' : 'none', color: uiStyle === 'classic' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+                  >
+                    Classic
+                  </button>
+                  <button 
+                    onClick={() => selectUIStyle('cyber')} 
+                    style={{ flex: 1, border: 'none', background: uiStyle === 'cyber' ? 'var(--bg-card)' : 'none', color: uiStyle === 'cyber' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+                  >
+                    Cyber
+                  </button>
+                  <button 
+                    onClick={() => selectUIStyle('pastel')} 
+                    style={{ flex: 1, border: 'none', background: uiStyle === 'pastel' ? 'var(--bg-card)' : 'none', color: uiStyle === 'pastel' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-smooth)' }}
+                  >
+                    Pastel
+                  </button>
+                </div>
               </div>
 
               {/* Theme Toggle for Mobile Drawer */}
