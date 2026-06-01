@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getPendingSubmissions, approveSubmission, rejectSubmission } from '@/app/share/actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Check, X, ShieldAlert, Eye, User, Calendar, Save } from 'lucide-react';
+import Portal from '@/app/components/Portal';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 
 export default function ApprovalsPage() {
@@ -336,7 +337,8 @@ export default function ApprovalsPage() {
 
       {/* Review Modal Form */}
       {showReviewModal && selectedSub && (
-        <div className="modal-overlay" onClick={() => setShowReviewModal(false)}>
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowReviewModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="serif-font" style={{ fontSize: '22px' }}>Review Submission</h3>
@@ -585,6 +587,7 @@ export default function ApprovalsPage() {
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

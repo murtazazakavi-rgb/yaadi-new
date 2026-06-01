@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getDashboardData } from './actions';
 import { HijriDate, getNextGregorianEvent, getNextHijriEvent, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X } from 'lucide-react';
+import Portal from '@/app/components/Portal';
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>({ contacts: [], events: [], templates: [] });
@@ -455,7 +456,8 @@ export default function DashboardPage() {
 
       {/* WhatsApp Message Template Composer Drawer Modal */}
       {showModal && selectedReminder && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="serif-font" style={{ fontSize: '20px' }}>Send Blessings</h3>
@@ -498,6 +500,7 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

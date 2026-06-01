@@ -8,6 +8,7 @@ import {
   Search, Plus, Edit, Trash2, FolderOpen, FileText, Calendar, X, 
   Archive, User, AlertTriangle, CheckCircle, Eye, RefreshCw, Trash, Info
 } from 'lucide-react';
+import Portal from '@/app/components/Portal';
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -482,7 +483,8 @@ export default function DocumentsPage() {
 
       {/* Add / Edit Drawer Modal (Bottom Sheet on mobile, centered on desktop) */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div 
             className="modal-content" 
             onClick={(e) => e.stopPropagation()} 
@@ -621,6 +623,7 @@ export default function DocumentsPage() {
             </form>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );

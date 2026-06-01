@@ -606,7 +606,7 @@ p, span, input, select, textarea, button {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 2000;
+  z-index: 10000;
 }
 
 .modal-content {
@@ -615,7 +615,7 @@ p, span, input, select, textarea, button {
   max-width: var(--max-width-mobile);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
-  padding: 24px;
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom, 0px)) 24px;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
   animation: slide-up 0.3s ease-out;
   max-height: 90vh;

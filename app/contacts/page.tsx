@@ -14,6 +14,7 @@ import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
+import Portal from '@/app/components/Portal';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<any[]>([]);
@@ -901,7 +902,8 @@ export default function ContactsPage() {
 
       {/* Contact Form Modal Drawer */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="serif-font" style={{ fontSize: '22px' }}>
@@ -1214,11 +1216,13 @@ export default function ContactsPage() {
             </form>
           </div>
         </div>
+        </Portal>
       )}
 
       {/* CSV Import Modal */}
       {showImportModal && (
-        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
               <h3 className="serif-font" style={{ fontSize: '22px' }}>
@@ -1330,6 +1334,7 @@ export default function ContactsPage() {
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </div>
   );
