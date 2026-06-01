@@ -93,11 +93,44 @@ export default function DashboardPage() {
   // Sort chronologically by remaining days
   .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
 
-  // Group events
-  const todayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
-  const weekEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
-  const monthEvents = reminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
-  const laterEvents = reminders.filter((r: any) => r.daysRemaining > 30);
+  // Helper to group reminders by contact within each timeframe
+  const groupRemindersByContact = (remindersList: any[]) => {
+    const groupedMap: { [contactId: string]: any } = {};
+    remindersList.forEach((r: any) => {
+      const cId = r.contact.id;
+      if (!groupedMap[cId]) {
+        groupedMap[cId] = {
+          contact: r.contact,
+          events: [],
+          daysRemaining: r.daysRemaining,
+          id: `${cId}-${r.eventType}`
+        };
+      }
+      groupedMap[cId].events.push(r);
+      if (r.daysRemaining < groupedMap[cId].daysRemaining) {
+        groupedMap[cId].daysRemaining = r.daysRemaining;
+      }
+    });
+    
+    return Object.values(groupedMap).map((g: any) => {
+      g.events.sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+      g.id = `${g.contact.id}-${g.events.map((e: any) => e.id).join('-')}`;
+      return g;
+    }).sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+  };
+
+  // Group events and then combine duplicate contacts within each group
+  const rawTodayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
+  const rawWeekEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+  const rawMonthEvents = reminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
+  const rawLaterEvents = reminders.filter((r: any) => r.daysRemaining > 30);
+
+  const todayEvents = groupRemindersByContact(rawTodayEvents);
+  const weekEvents = groupRemindersByContact(rawWeekEvents);
+  const monthEvents = groupRemindersByContact(rawMonthEvents);
+  const laterEvents = groupRemindersByContact(rawLaterEvents);
+
+  const todayEventsCount = rawTodayEvents.length;
 
   // Open WhatsApp template composer
   const handleOpenWhatsAppComposer = (reminder: any) => {
@@ -302,53 +335,59 @@ export default function DashboardPage() {
             </h3>
           </div>
           <p style={{ fontSize: '13px', opacity: 0.9, lineHeight: '1.4' }}>
-            You have {todayEvents.length} special family event{todayEvents.length > 1 ? 's' : ''} today. Send them your prayers and blessings!
+            You have {todayEventsCount} special family event{todayEventsCount > 1 ? 's' : ''} today. Send them your prayers and blessings!
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-            {todayEvents.map((r: any) => (
+            {todayEvents.map((group: any) => (
               <div 
-                key={r.id} 
+                key={group.id} 
                 style={{ 
                   display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between', 
+                  flexDirection: 'column',
                   backgroundColor: 'rgba(255, 255, 255, 0.15)', 
-                  padding: '10px 14px', 
+                  padding: '12px 14px', 
                   borderRadius: '12px',
                   backdropFilter: 'blur(5px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  gap: '8px'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div className="avatar-gradient" style={{ height: '30px', width: '30px', fontSize: '10px', flexShrink: 0 }}>
-                    {getInitials(r.contact)}
+                    {getInitials(group.contact)}
                   </div>
-                  <div>
-                    <span style={{ display: 'block', fontSize: '13px', fontWeight: '600' }}>
-                      {r.contact.first_name} {r.contact.last_name}
-                    </span>
-                    <span style={{ fontSize: '11px', opacity: 0.85 }}>
-                      {getEventLabel(r)}
-                    </span>
-                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: '600' }}>
+                    {group.contact.first_name} {group.contact.last_name}
+                  </span>
                 </div>
-                <button 
-                  onClick={() => handleOpenWhatsAppComposer(r)}
-                  className="btn btn-press"
-                  style={{ 
-                    width: 'auto', 
-                    padding: '6px 12px', 
-                    fontSize: '11px', 
-                    backgroundColor: '#FFFFFF', 
-                    color: '#C4953A',
-                    fontWeight: '600',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Send Dua
-                </button>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '40px' }}>
+                  {group.events.map((r: any) => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', opacity: 0.85 }}>
+                        {getEventLabel(r)}
+                      </span>
+                      <button 
+                        onClick={() => handleOpenWhatsAppComposer(r)}
+                        className="btn btn-press"
+                        style={{ 
+                          width: 'auto', 
+                          padding: '4px 10px', 
+                          fontSize: '10px', 
+                          backgroundColor: '#FFFFFF', 
+                          color: '#C4953A',
+                          fontWeight: '600',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          height: '24px'
+                        }}
+                      >
+                        Send Dua
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -385,45 +424,59 @@ export default function DashboardPage() {
                   gap: '16px', 
                   padding: '4px 20px 16px 20px'
                 }}>
-                  {weekEvents.map((r: any) => (
+                  {weekEvents.map((group: any) => (
                     <div 
-                      key={r.id} 
+                      key={group.id} 
                       className="card reminder-card horizontal-snap-item"
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between',
                         padding: '16px',
                         margin: 0,
                         width: '260px',
-                        minWidth: '260px'
+                        minWidth: '260px',
+                        gap: '12px'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-                        <div className="avatar-gradient" style={{ flexShrink: 0 }}>
-                          {getInitials(r.contact)}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="avatar-gradient" style={{ flexShrink: 0, height: '36px', width: '36px', fontSize: '12px' }}>
+                          {getInitials(group.contact)}
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <h4 className="reminder-name">
-                            {r.contact.first_name} {r.contact.last_name}
-                          </h4>
-                          <span className="reminder-subtext">
-                            {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
-                          </span>
-                        </div>
+                        <h4 className="reminder-name" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {group.contact.first_name} {group.contact.last_name}
+                        </h4>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                        <span className={`badge ${getEventBadgeClass(r.eventType)}`}>
-                          {getEventLabel(r)}
-                        </span>
-                        <button 
-                          className="btn-whatsapp btn-press" 
-                          onClick={() => handleOpenWhatsAppComposer(r)}
-                          style={{ width: 'auto' }}
-                        >
-                          <Send size={10} />
-                          <span>Dua</span>
-                        </button>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
+                        {group.events.map((r: any) => (
+                          <div 
+                            key={r.id} 
+                            style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: '4px',
+                              borderTop: group.events.indexOf(r) > 0 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
+                              paddingTop: group.events.indexOf(r) > 0 ? '8px' : '0'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                              <span className={`badge ${getEventBadgeClass(r.eventType)}`} style={{ fontSize: '9px', padding: '2px 6px' }}>
+                                {getEventLabel(r)}
+                              </span>
+                              <button 
+                                className="btn-whatsapp btn-press" 
+                                onClick={() => handleOpenWhatsAppComposer(r)}
+                                style={{ width: 'auto', padding: '3px 8px', fontSize: '9px', height: '22px' }}
+                              >
+                                <Send size={8} />
+                                <span style={{ marginLeft: '4px' }}>Dua</span>
+                              </button>
+                            </div>
+                            <span className="reminder-subtext" style={{ fontSize: '10px' }}>
+                              {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
@@ -524,7 +577,7 @@ const getCountdownText = (days: number): string => {
 };
 
 // Sub-component card rendering helper
-function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
+function renderReminderCard(group: any, onWhatsAppOpen: (reminder: any) => void) {
   const getInitials = (c: any) => {
     return `${c.first_name[0] || ''}${c.last_name[0] || ''}`.toUpperCase();
   };
@@ -561,48 +614,61 @@ function renderReminderCard(r: any, onWhatsAppOpen: (reminder: any) => void) {
 
   return (
     <div 
-      key={r.id} 
+      key={group.id} 
       className="card reminder-card"
       style={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 16px',
+        flexDirection: 'column',
+        padding: '16px',
         margin: '8px 16px',
-        borderRadius: '12px'
+        borderRadius: '12px',
+        gap: '12px'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-        {/* Compact Avatar */}
-        <div className="avatar-gradient" style={{ flexShrink: 0 }}>
-          {getInitials(r.contact)}
+      {/* Contact Info Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="avatar-gradient" style={{ height: '36px', width: '36px', fontSize: '12px', flexShrink: 0 }}>
+          {getInitials(group.contact)}
         </div>
-
-        {/* Contact Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-          <h4 className="reminder-name">
-            {r.contact.first_name}{r.contact.middle_name ? ' ' + r.contact.middle_name : ''} {r.contact.last_name}
-          </h4>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-            <span className={`badge ${getEventBadgeClass(r.eventType)}`}>
-              {getEventLabel(r)}
-            </span>
-            <span className="reminder-subtext">
-              {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
-            </span>
-          </div>
-        </div>
+        <h4 className="reminder-name" style={{ margin: 0 }}>
+          {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+        </h4>
       </div>
 
-      {/* Action WhatsApp Button */}
-      <button 
-        className="btn-whatsapp btn-press" 
-        onClick={() => onWhatsAppOpen(r)}
-        style={{ width: 'auto', flexShrink: 0 }}
-      >
-        <Send size={12} />
-        <span>Dua</span>
-      </button>
+      {/* Events List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {group.events.map((r: any) => (
+          <div 
+            key={r.id} 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              gap: '12px',
+              borderTop: group.events.indexOf(r) > 0 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
+              paddingTop: group.events.indexOf(r) > 0 ? '8px' : '0'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span className={`badge ${getEventBadgeClass(r.eventType)}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                {getEventLabel(r)}
+              </span>
+              <span className="reminder-subtext" style={{ fontSize: '12px' }}>
+                {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
+              </span>
+            </div>
+            
+            <button 
+              className="btn-whatsapp btn-press" 
+              onClick={() => onWhatsAppOpen(r)}
+              style={{ width: 'auto', flexShrink: 0, padding: '4px 10px', fontSize: '11px', height: '26px' }}
+            >
+              <Send size={10} />
+              <span>Dua</span>
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
