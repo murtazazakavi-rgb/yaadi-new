@@ -104,6 +104,7 @@ export default function ContactsPage() {
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
+  const [isDeceased, setIsDeceased] = useState(false);
 
   // Grouping & Share Links States
   const [groups, setGroups] = useState<any[]>([]);
@@ -532,6 +533,7 @@ export default function ContactsPage() {
     setGAnniversary('');
     setBornAfterMaghrib(false);
     setSelectedGroupIds([]);
+    setIsDeceased(false);
     setFormStep(1);
     setShowForm(true);
   };
@@ -585,6 +587,9 @@ export default function ContactsPage() {
         setHDYear(ev.h_year.toString());
       }
     });
+ 
+    const hasDeathEvent = cEvents.some((ev: any) => ev.event_type === 'death_gregorian' || ev.event_type === 'death_hijri');
+    setIsDeceased(hasDeathEvent);
 
     setFormStep(1);
     setShowForm(true);
@@ -655,7 +660,7 @@ export default function ContactsPage() {
       middleName,
       lastName,
       phoneNumber: combinedPhone,
-      email,
+      email: (isDeceased && !email.trim()) ? undefined : email,
       notes,
       bornAfterMaghrib,
       groupIds: selectedGroupIds,
@@ -1304,13 +1309,34 @@ export default function ContactsPage() {
                       <label className="form-label">Email</label>
                       <input 
                         type="email" 
-                        required 
+                        required={!isDeceased} 
                         className="form-input" 
                         placeholder="murtaza@zakavi.com" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
                     </div>
+                  </div>
+
+                  {/* Deceased Switch */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px', borderTop: 'var(--border-light)', paddingTop: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="is-deceased-check"
+                        checked={isDeceased}
+                        onChange={(e) => setIsDeceased(e.target.checked)}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      <label htmlFor="is-deceased-check" style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none', margin: 0, textTransform: 'none', letterSpacing: 'normal' }}>
+                        Passed Away / Deceased Contact 🤍
+                      </label>
+                    </div>
+                    {isDeceased && (
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', paddingLeft: '24px' }}>
+                        * This contact will be marked as passed away. Email and phone number are optional.
+                      </span>
+                    )}
                   </div>
 
                   {/* Groups Selection */}

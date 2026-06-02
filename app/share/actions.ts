@@ -48,9 +48,24 @@ export async function submitGuestDetails(
       hMonth?: number;
       hYear?: number;
     }>;
+    deceased?: {
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      bornAfterMaghrib?: boolean;
+      events: Array<{
+        eventType: string;
+        gDay?: number;
+        gMonth?: number;
+        gYear?: number;
+        hDay?: number;
+        hMonth?: number;
+        hYear?: number;
+      }>;
+    } | null;
   }
 ) {
-  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, events } = guestData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, events, deceased } = guestData;
 
   if (!firstName || !lastName) {
     throw new Error('First name and last name are required.');
@@ -66,7 +81,8 @@ export async function submitGuestDetails(
   const eventData = JSON.stringify({
     email: email || null,
     notes: notes || null,
-    events: events || []
+    events: events || [],
+    deceased: deceased || null
   });
 
   await query(
@@ -178,6 +194,21 @@ export async function approveSubmission(
       hMonth?: number;
       hYear?: number;
     }>;
+    deceased?: {
+      firstName: string;
+      middleName?: string;
+      lastName: string;
+      bornAfterMaghrib?: boolean;
+      events: Array<{
+        eventType: string;
+        gDay?: number;
+        gMonth?: number;
+        gYear?: number;
+        hDay?: number;
+        hMonth?: number;
+        hYear?: number;
+      }>;
+    } | null;
   }
 ) {
   const session = await requireAuth();
@@ -192,7 +223,7 @@ export async function approveSubmission(
     throw new Error('Submission not found or already processed.');
   }
 
-  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, events } = approvedData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, events, deceased } = approvedData;
 
   // 1. Create Contact
   const contactRes = await query(
@@ -218,6 +249,42 @@ export async function approveSubmission(
         ev.hYear !== undefined ? ev.hYear : null,
       ]
     );
+  }
+
+  // 2b. If deceased relative info is present, create a separate contact and associated events!
+  if (deceased && deceased.firstName && deceased.lastName) {
+    const deceasedContactRes = await query(
+      `INSERT INTO contacts (tenant_id, first_name, middle_name, last_name, phone_number, email, notes, born_after_maghrib) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      [
+        tenantId,
+        deceased.firstName.trim(),
+        deceased.middleName?.trim() || null,
+        deceased.lastName.trim(),
+        null,
+        null,
+        `Deceased relative of ${firstName.trim()} ${lastName.trim()}`,
+        deceased.bornAfterMaghrib || false
+      ]
+    );
+    const deceasedContactId = deceasedContactRes.rows[0].id;
+
+    for (const ev of deceased.events) {
+      await query(
+        `INSERT INTO events (contact_id, event_type, g_day, g_month, g_year, h_day, h_month, h_year) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          deceasedContactId,
+          ev.eventType,
+          ev.gDay || null,
+          ev.gMonth || null,
+          ev.gYear || null,
+          ev.hDay !== undefined ? ev.hDay : null,
+          ev.hMonth !== undefined ? ev.hMonth : null,
+          ev.hYear !== undefined ? ev.hYear : null,
+        ]
+      );
+    }
   }
 
   // 3. Mark Submission Approved

@@ -42,6 +42,21 @@ export default function ApprovalsPage() {
   const [hDMonth, setHDMonth] = useState('');
   const [hDYear, setHDYear] = useState('');
 
+  // Deceased Relative States
+  const [hasDeceased, setHasDeceased] = useState(false);
+  const [decFirstName, setDecFirstName] = useState('');
+  const [decMiddleName, setDecMiddleName] = useState('');
+  const [decLastName, setDecLastName] = useState('');
+  const [decGBirthday, setDecGBirthday] = useState('');
+  const [decHBDate, setDecHBDate] = useState('');
+  const [decHBMonth, setDecHBMonth] = useState('');
+  const [decHBYear, setDecHBYear] = useState('');
+  const [decBornAfterMaghrib, setDecBornAfterMaghrib] = useState(false);
+  const [decGDeath, setDecGDeath] = useState('');
+  const [decHDDate, setDecHDDate] = useState('');
+  const [decHDMonth, setDecHDMonth] = useState('');
+  const [decHDYear, setDecHDYear] = useState('');
+
   useEffect(() => {
     fetchSubmissions();
     loadGroups();
@@ -104,6 +119,21 @@ export default function ApprovalsPage() {
     setHDMonth('');
     setHDYear('');
 
+    // Reset deceased state fields
+    setHasDeceased(false);
+    setDecFirstName('');
+    setDecMiddleName('');
+    setDecLastName('');
+    setDecGBirthday('');
+    setDecHBDate('');
+    setDecHBMonth('');
+    setDecHBYear('');
+    setDecBornAfterMaghrib(false);
+    setDecGDeath('');
+    setDecHDDate('');
+    setDecHDMonth('');
+    setDecHDYear('');
+
     // Pre-fill fields from events data
     parsedEvents.forEach((ev: any) => {
       if (ev.eventType === 'birthday_gregorian') {
@@ -125,6 +155,39 @@ export default function ApprovalsPage() {
         setHDYear(ev.hYear.toString());
       }
     });
+
+    // Check if there is separate deceased relative data
+    try {
+      const dataObj = typeof sub.event_data === 'string' ? JSON.parse(sub.event_data) : sub.event_data;
+      if (dataObj && dataObj.deceased) {
+        setHasDeceased(true);
+        setDecFirstName(dataObj.deceased.firstName || '');
+        setDecMiddleName(dataObj.deceased.middleName || '');
+        setDecLastName(dataObj.deceased.lastName || '');
+        setDecBornAfterMaghrib(dataObj.deceased.bornAfterMaghrib || false);
+
+        const decEvents = dataObj.deceased.events || [];
+        decEvents.forEach((ev: any) => {
+          if (ev.eventType === 'birthday_gregorian') {
+            const formatted = `${ev.gYear}-${String(ev.gMonth).padStart(2, '0')}-${String(ev.gDay).padStart(2, '0')}`;
+            setDecGBirthday(formatted);
+          } else if (ev.eventType === 'birthday_hijri') {
+            setDecHBDate(ev.hDay.toString());
+            setDecHBMonth(ev.hMonth.toString());
+            setDecHBYear(ev.hYear.toString());
+          } else if (ev.eventType === 'death_gregorian') {
+            const formatted = `${ev.gYear}-${String(ev.gMonth).padStart(2, '0')}-${String(ev.gDay).padStart(2, '0')}`;
+            setDecGDeath(formatted);
+          } else if (ev.eventType === 'death_hijri') {
+            setDecHDDate(ev.hDay.toString());
+            setDecHDMonth(ev.hMonth.toString());
+            setDecHDYear(ev.hYear.toString());
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Failed to parse deceased sub-object', e);
+    }
 
     setShowReviewModal(true);
   };
@@ -164,7 +227,7 @@ export default function ApprovalsPage() {
       });
     }
 
-    if (gDeath) {
+    if (gDeath && !hasDeceased) {
       const parts = gDeath.split('-');
       finalEvents.push({
         eventType: 'death_gregorian',
@@ -174,13 +237,61 @@ export default function ApprovalsPage() {
       });
     }
 
-    if (hDDate && hDMonth && hDYear) {
+    if (hDDate && hDMonth && hDYear && !hasDeceased) {
       finalEvents.push({
         eventType: 'death_hijri',
         hDay: parseInt(hDDate),
         hMonth: parseInt(hDMonth),
         hYear: parseInt(hDYear)
       });
+    }
+
+    // Construct deceased relative payload if applicable
+    let deceasedPayload: any = null;
+    if (hasDeceased && decFirstName && decLastName) {
+      const decEvents: any[] = [];
+      if (decGDeath) {
+        const parts = decGDeath.split('-');
+        decEvents.push({
+          eventType: 'death_gregorian',
+          gYear: parseInt(parts[0]),
+          gMonth: parseInt(parts[1]),
+          gDay: parseInt(parts[2])
+        });
+      }
+      if (decHDDate && decHDMonth && decHDYear) {
+        decEvents.push({
+          eventType: 'death_hijri',
+          hDay: parseInt(decHDDate),
+          hMonth: parseInt(decHDMonth),
+          hYear: parseInt(decHDYear)
+        });
+      }
+      if (decGBirthday) {
+        const parts = decGBirthday.split('-');
+        decEvents.push({
+          eventType: 'birthday_gregorian',
+          gYear: parseInt(parts[0]),
+          gMonth: parseInt(parts[1]),
+          gDay: parseInt(parts[2])
+        });
+      }
+      if (decHBDate && decHBMonth && decHBYear) {
+        decEvents.push({
+          eventType: 'birthday_hijri',
+          hDay: parseInt(decHBDate),
+          hMonth: parseInt(decHBMonth),
+          hYear: parseInt(decHBYear)
+        });
+      }
+
+      deceasedPayload = {
+        firstName: decFirstName.trim(),
+        middleName: decMiddleName?.trim() || null,
+        lastName: decLastName.trim(),
+        bornAfterMaghrib: decBornAfterMaghrib,
+        events: decEvents
+      };
     }
 
     const combinedPhone = localNumber.trim() ? `${countryCode}${localNumber.trim()}` : '';
@@ -193,11 +304,12 @@ export default function ApprovalsPage() {
       notes,
       bornAfterMaghrib,
       groupIds: selectedGroupIds,
-      events: finalEvents
+      events: finalEvents,
+      deceased: deceasedPayload
     };
 
     try {
-      await approveSubmission(selectedSub.id, payload);
+      await approveSubmission(selectedSub.id, payload as any);
       setShowReviewModal(false);
       fetchSubmissions();
     } catch (err: any) {
@@ -282,6 +394,72 @@ export default function ApprovalsPage() {
         const day = String(gDateObj.getDate()).padStart(2, '0');
         const formatted = `${year}-${month}-${day}`;
         setGDeath(formatted);
+      } catch (err) {}
+    }
+  };
+
+  const handleDecGBirthdayChange = (val: string, isAfterMaghrib = decBornAfterMaghrib) => {
+    setDecGBirthday(val);
+    if (!val) return;
+    const d = new Date(val + 'T12:00:00');
+    if (!isNaN(d.getTime())) {
+      let calcDate = d;
+      if (isAfterMaghrib) {
+        calcDate = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+      }
+      const h = HijriDate.fromGregorian(calcDate);
+      setDecHBDate(h.day.toString());
+      setDecHBMonth(h.month.toString());
+      setDecHBYear(h.year.toString());
+    }
+  };
+
+  const handleDecBornAfterMaghribToggle = (checked: boolean) => {
+    setDecBornAfterMaghrib(checked);
+    if (decGBirthday) {
+      handleDecGBirthdayChange(decGBirthday, checked);
+    }
+  };
+
+  const syncDecHBirthdayToGregorian = (d: string, m: string, y: string, isAfterMaghrib = decBornAfterMaghrib) => {
+    if (d && m && y) {
+      try {
+        const h = new HijriDate(parseInt(y), parseInt(m), parseInt(d));
+        let gDateObj = h.toGregorian();
+        if (isAfterMaghrib) {
+          gDateObj = new Date(gDateObj.getTime() - 24 * 60 * 60 * 1000);
+        }
+        const year = gDateObj.getFullYear();
+        const month = String(gDateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(gDateObj.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
+        setDecGBirthday(formatted);
+      } catch (err) {}
+    }
+  };
+
+  const handleDecGDeathChange = (val: string) => {
+    setDecGDeath(val);
+    if (!val) return;
+    const d = new Date(val + 'T12:00:00');
+    if (!isNaN(d.getTime())) {
+      const h = HijriDate.fromGregorian(d);
+      setDecHDDate(h.day.toString());
+      setDecHDMonth(h.month.toString());
+      setDecHDYear(h.year.toString());
+    }
+  };
+
+  const syncDecHDeathToGregorian = (d: string, m: string, y: string) => {
+    if (d && m && y) {
+      try {
+        const h = new HijriDate(parseInt(y), parseInt(m), parseInt(d));
+        const gDateObj = h.toGregorian();
+        const year = gDateObj.getFullYear();
+        const month = String(gDateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(gDateObj.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
+        setDecGDeath(formatted);
       } catch (err) {}
     }
   };
@@ -582,67 +760,252 @@ export default function ApprovalsPage() {
                 </div>
               </div>
 
-              {/* Deceased Relative (Wafaat) */}
-              <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', marginTop: '8px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Passing Away (Wafaat)</h4>
-                <div className="form-group">
-                  <label className="form-label">Gregorian Death Date</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
-                    value={gDeath}
-                    onChange={(e) => handleGDeathChange(e.target.value)}
-                  />
+              {/* Deceased Relative Details Card */}
+              {hasDeceased && (
+                <div style={{ border: '1px solid var(--border-light)', padding: '16px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'var(--border-light)', paddingBottom: '6px' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-gold)', margin: 0 }}>Deceased Relative Details</h4>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={hasDeceased} 
+                        onChange={(e) => setHasDeceased(e.target.checked)} 
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      Add Deceased Contact
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ flex: 1, minWidth: '90px', marginBottom: 0 }}>
+                      <label className="form-label">First Name</label>
+                      <input 
+                        type="text" 
+                        className="form-input"
+                        value={decFirstName}
+                        onChange={(e) => setDecFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1, minWidth: '90px', marginBottom: 0 }}>
+                      <label className="form-label">Middle Name (Opt)</label>
+                      <input 
+                        type="text" 
+                        className="form-input"
+                        value={decMiddleName}
+                        onChange={(e) => setDecMiddleName(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1, minWidth: '90px', marginBottom: 0 }}>
+                      <label className="form-label">Last Name</label>
+                      <input 
+                        type="text" 
+                        className="form-input"
+                        value={decLastName}
+                        onChange={(e) => setDecLastName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Deceased Relative Birthday */}
+                  <div style={{ border: '1px dashed rgba(197, 160, 89, 0.3)', padding: '10px', borderRadius: '8px', backgroundColor: 'var(--bg-primary)' }}>
+                    <label className="form-label" style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>Relative's Birthday & Waras</label>
+                    <div className="form-group" style={{ marginBottom: '8px' }}>
+                      <label className="form-label">Gregorian Birthday</label>
+                      <input 
+                        type="date" 
+                        className="form-input" 
+                        value={decGBirthday}
+                        onChange={(e) => handleDecGBirthdayChange(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="dec-modal-maghrib-check"
+                        checked={decBornAfterMaghrib}
+                        onChange={(e) => handleDecBornAfterMaghribToggle(e.target.checked)}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      <label htmlFor="dec-modal-maghrib-check" style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-primary)', cursor: 'pointer', userSelect: 'none', margin: 0, textTransform: 'none', letterSpacing: 'normal' }}>
+                        Born after Maghrib (Sunset)
+                      </label>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                      <div className="form-group" style={{ width: '70px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Day</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="30"
+                          className="form-input" 
+                          placeholder="Day"
+                          value={decHBDate}
+                          onChange={(e) => {
+                            setDecHBDate(e.target.value);
+                            syncDecHBirthdayToGregorian(e.target.value, decHBMonth, decHBYear);
+                          }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label className="form-label">Hijri Month</label>
+                        <select 
+                          className="form-select"
+                          value={decHBMonth}
+                          onChange={(e) => {
+                            setDecHBMonth(e.target.value);
+                            syncDecHBirthdayToGregorian(decHBDate, e.target.value, decHBYear);
+                          }}
+                        >
+                          <option value="">Select Month...</option>
+                          {HIJRI_MONTH_NAMES.map((name, idx) => (
+                            <option key={idx} value={idx}>{name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ width: '80px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Year</label>
+                        <input 
+                          type="number" 
+                          min="1000" 
+                          max="2000"
+                          className="form-input" 
+                          placeholder="Year"
+                          value={decHBYear}
+                          onChange={(e) => {
+                            setDecHBYear(e.target.value);
+                            syncDecHBirthdayToGregorian(decHBDate, decHBMonth, e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Deceased Relative Death Section */}
+                  <div style={{ border: '1px dashed rgba(197, 160, 89, 0.3)', padding: '10px', borderRadius: '8px', backgroundColor: 'var(--bg-primary)' }}>
+                    <label className="form-label" style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>Relative's Wafaat (Passing Away)</label>
+                    <div className="form-group" style={{ marginBottom: '8px' }}>
+                      <label className="form-label">Gregorian Death Date</label>
+                      <input 
+                        type="date" 
+                        className="form-input" 
+                        value={decGDeath}
+                        onChange={(e) => handleDecGDeathChange(e.target.value)}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                      <div className="form-group" style={{ width: '70px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Day</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="30"
+                          className="form-input" 
+                          placeholder="Day"
+                          value={decHDDate}
+                          onChange={(e) => {
+                            setDecHDDate(e.target.value);
+                            syncDecHDeathToGregorian(e.target.value, decHDMonth, decHDYear);
+                          }}
+                        />
+                      </div>
+                      <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label className="form-label">Hijri Month</label>
+                        <select 
+                          className="form-select"
+                          value={decHDMonth}
+                          onChange={(e) => {
+                            setDecHDMonth(e.target.value);
+                            syncDecHDeathToGregorian(decHDDate, e.target.value, decHDYear);
+                          }}
+                        >
+                          <option value="">Select Month...</option>
+                          {HIJRI_MONTH_NAMES.map((name, idx) => (
+                            <option key={idx} value={idx}>{name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ width: '80px', marginBottom: 0 }}>
+                        <label className="form-label">Hijri Year</label>
+                        <input 
+                          type="number" 
+                          min="1000" 
+                          max="2000"
+                          className="form-input" 
+                          placeholder="Year"
+                          value={decHDYear}
+                          onChange={(e) => {
+                            setDecHDYear(e.target.value);
+                            syncDecHDeathToGregorian(decHDDate, decHDMonth, e.target.value);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                  <div className="form-group" style={{ width: '70px' }}>
-                    <label className="form-label">Hijri Day</label>
+              )}
+
+              {!hasDeceased && (
+                <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', marginTop: '8px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)' }}>Passing Away (Wafaat)</h4>
+                  <div className="form-group">
+                    <label className="form-label">Gregorian Death Date</label>
                     <input 
-                      type="number" 
-                      min="1" 
-                      max="30"
+                      type="date" 
                       className="form-input" 
-                      placeholder="Day"
-                      value={hDDate}
-                      onChange={(e) => {
-                        setHDDate(e.target.value);
-                        syncHDeathToGregorian(e.target.value, hDMonth, hDYear);
-                      }}
+                      value={gDeath}
+                      onChange={(e) => handleGDeathChange(e.target.value)}
                     />
                   </div>
-                  <div className="form-group" style={{ flex: 1 }}>
-                    <label className="form-label">Hijri Month</label>
-                    <select 
-                      className="form-select"
-                      value={hDMonth}
-                      onChange={(e) => {
-                        setHDMonth(e.target.value);
-                        syncHDeathToGregorian(hDDate, e.target.value, hDYear);
-                      }}
-                    >
-                      <option value="">Select Month...</option>
-                      {HIJRI_MONTH_NAMES.map((name, idx) => (
-                        <option key={idx} value={idx}>{name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ width: '80px' }}>
-                    <label className="form-label">Hijri Year</label>
-                    <input 
-                      type="number" 
-                      min="1000" 
-                      max="2000"
-                      className="form-input" 
-                      placeholder="Year"
-                      value={hDYear}
-                      onChange={(e) => {
-                        setHDYear(e.target.value);
-                        syncHDeathToGregorian(hDDate, hDMonth, e.target.value);
-                      }}
-                    />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                    <div className="form-group" style={{ width: '70px' }}>
+                      <label className="form-label">Hijri Day</label>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="30"
+                        className="form-input" 
+                        placeholder="Day"
+                        value={hDDate}
+                        onChange={(e) => {
+                          setHDDate(e.target.value);
+                          syncHDeathToGregorian(e.target.value, hDMonth, hDYear);
+                        }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label className="form-label">Hijri Month</label>
+                      <select 
+                        className="form-select"
+                        value={hDMonth}
+                        onChange={(e) => {
+                          setHDMonth(e.target.value);
+                          syncHDeathToGregorian(hDDate, e.target.value, hDYear);
+                        }}
+                      >
+                        <option value="">Select Month...</option>
+                        {HIJRI_MONTH_NAMES.map((name, idx) => (
+                          <option key={idx} value={idx}>{name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ width: '80px' }}>
+                      <label className="form-label">Hijri Year</label>
+                      <input 
+                        type="number" 
+                        min="1000" 
+                        max="2000"
+                        className="form-input" 
+                        placeholder="Year"
+                        value={hDYear}
+                        onChange={(e) => {
+                          setHDYear(e.target.value);
+                          syncHDeathToGregorian(hDDate, hDMonth, e.target.value);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="form-group" style={{ marginTop: '12px' }}>
                 <label className="form-label">Admin Notes</label>
