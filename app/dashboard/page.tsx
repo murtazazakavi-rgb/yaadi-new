@@ -430,7 +430,7 @@ export default function DashboardPage() {
             {weekEvents.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--color-sage)', fontWeight: '600' }}>Upcoming This Week</h3>
-                <div className="horizontal-snap-scroll hide-scrollbar" style={{ 
+                <div className="horizontal-snap-scroll hide-scrollbar reminders-grid-desktop" style={{ 
                   gap: '16px', 
                   padding: '4px 20px 16px 20px'
                 }}>

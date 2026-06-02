@@ -985,6 +985,23 @@ p, span, input, select, textarea, button {
   }
 }
 
+/* Transform horizontal snap scroll to grid on desktop view */
+@media (min-width: 768px) {
+  .reminders-grid-desktop {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--section-gap, 20px);
+    padding: 0 16px !important;
+    overflow-x: visible !important;
+    scroll-snap-type: none !important;
+  }
+  .reminders-grid-desktop .reminder-card {
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+}
+
 /* Page Transitions */
 .page-transition {
   animation: fadeIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
