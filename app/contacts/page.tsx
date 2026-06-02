@@ -23,7 +23,7 @@ export default function ContactsPage() {
   const [relationships, setRelationships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterTab, setFilterTab] = useState<'all' | 'withEvents' | 'familyTree'>('all');
+  const [filterTab, setFilterTab] = useState<'all' | 'withEvents' | 'familyTree' | 'passedAway'>('all');
 
   const handleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -736,6 +736,9 @@ export default function ContactsPage() {
     if (filterTab === 'familyTree') {
       return relationships.some((r) => r.contact_a_id === c.id || r.contact_b_id === c.id);
     }
+    if (filterTab === 'passedAway') {
+      return events.some((e) => e.contact_id === c.id && (e.event_type === 'death_gregorian' || e.event_type === 'death_hijri'));
+    }
     return true;
   });
 
@@ -979,6 +982,13 @@ export default function ContactsPage() {
         >
           Family Connections
         </button>
+        <button 
+          type="button"
+          onClick={() => setFilterTab('passedAway')} 
+          className={`segmented-control-item ${filterTab === 'passedAway' ? 'active' : ''}`}
+        >
+          Passed Away
+        </button>
       </div>
 
       {/* Contacts List */}
@@ -992,6 +1002,7 @@ export default function ContactsPage() {
             const isActive = activeContactId === c.id;
             const cRels = getContactRelationships(c.id);
             const isOwn = c.is_owner !== false;
+            const isContactDeceased = events.some((e) => e.contact_id === c.id && (e.event_type === 'death_gregorian' || e.event_type === 'death_hijri'));
 
             return (
               <div 
@@ -1014,6 +1025,22 @@ export default function ContactsPage() {
                   >
                     <h3 className="serif-font contact-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       {c.first_name}{c.middle_name ? ' ' + c.middle_name : ''} {c.last_name}
+                      {isContactDeceased && (
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 'normal',
+                          backgroundColor: 'rgba(140, 137, 132, 0.1)',
+                          color: 'var(--text-muted)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(140, 137, 132, 0.2)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          🤍 Passed Away
+                        </span>
+                      )}
                       {c.born_after_maghrib && (
                         <span style={{
                           fontSize: 'var(--font-size-xs)',
