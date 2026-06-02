@@ -162,7 +162,13 @@ export async function triggerManualEmailDigest() {
   const events = eventsRes.rows;
 
   // 4. Process event countdowns
-  const reminders = events.map((event: any) => {
+  const deceasedContactIds = new Set(
+    events
+      .filter((e: any) => e.event_type === 'death_gregorian' || e.event_type === 'death_hijri')
+      .map((e: any) => e.contact_id)
+  );
+
+  const rawReminders = events.map((event: any) => {
     const contact = contacts.find((c: any) => c.id === event.contact_id);
     if (!contact) return null;
 
@@ -185,11 +191,17 @@ export async function triggerManualEmailDigest() {
   .filter(Boolean)
   .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
 
-  const todayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
-  const upcomingEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+  const livingReminders = rawReminders.filter((r: any) => !deceasedContactIds.has(r.contact.id));
+  const deceasedReminders = rawReminders.filter((r: any) => deceasedContactIds.has(r.contact.id));
+
+  const todayEvents = livingReminders.filter((r: any) => r.daysRemaining === 0);
+  const upcomingEvents = livingReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+
+  const todayDeceasedEvents = deceasedReminders.filter((r: any) => r.daysRemaining === 0);
+  const upcomingDeceasedEvents = deceasedReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
 
   // Send the email (always send for manual tests)
-  const html = generateHtmlDigest(tenant.display_name, todayEvents, upcomingEvents);
+  const html = generateHtmlDigest(tenant.display_name, todayEvents, upcomingEvents, todayDeceasedEvents, upcomingDeceasedEvents);
   const subject = todayEvents.length > 0 
     ? `Yaadi Reminders: Family Events Today! (${todayEvents.length})`
     : `Yaadi Reminders: Weekly Digest Preview`;

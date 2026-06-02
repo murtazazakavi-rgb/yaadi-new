@@ -241,10 +241,19 @@ export default function CalendarPage() {
       </div>
 
       {/* Selected Day Details Section */}
-      {selectedDate && (
-        <div style={{ padding: '0 20px' }}>
+      {selectedDate && (() => {
+        const deceasedContactIds = new Set(
+          data.events
+            ? data.events
+                .filter((ev: any) => ev.event_type === 'death_gregorian' || ev.event_type === 'death_hijri')
+                .map((ev: any) => ev.contact_id)
+            : []
+        );
+
+        return (
+          <div style={{ padding: '0 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: 'var(--border-light)', paddingBottom: '8px', marginBottom: '12px' }}>
-              <h3 className="serif-font selected-day-title">
+              <h3 className="serif-font" style={{ fontSize: '18px', fontWeight: '600' }}>
                 {selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </h3>
               {selectedHijriDate && (
@@ -253,48 +262,52 @@ export default function CalendarPage() {
                 </span>
               )}
             </div>
-          {selectedDateEvents.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: 'var(--border-card)' }}>
-              No celebrations or wafaat events today.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {selectedDateEvents.map((e: any) => {
-                const getInitials = (c: any) => `${c.first_name[0] || ''}${c.last_name[0] || ''}`.toUpperCase();
-                
-                return (
-                  <div 
-                    key={e.id}
-                    className="card"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 16px',
-                      margin: 0,
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div className="avatar-gradient" style={{ flexShrink: 0 }}>
-                        {getInitials(e.contact)}
-                      </div>
-                      <div>
-                        <h4 className="reminder-name">
-                          {e.contact.first_name} {e.contact.last_name}
-                        </h4>
-                        <span className={`badge ${getEventBadgeClass(e.event_type)}`} style={{ marginTop: '2px' }}>
-                          {getEventLabel(e.event_type)}
-                        </span>
+            {selectedDateEvents.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: 'var(--border-card)' }}>
+                No celebrations or wafaat events today.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {selectedDateEvents.map((e: any) => {
+                  const getInitials = (c: any) => `${c.first_name[0] || ''}${c.last_name[0] || ''}`.toUpperCase();
+                  
+                  return (
+                    <div 
+                      key={e.id}
+                      className="card"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        margin: 0,
+                        borderRadius: '12px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="avatar-gradient" style={{ flexShrink: 0 }}>
+                          {getInitials(e.contact)}
+                        </div>
+                        <div>
+                          <h4 className="reminder-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {e.contact.first_name} {e.contact.last_name}
+                            {deceasedContactIds.has(e.contact.id) && (
+                              <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+                            )}
+                          </h4>
+                          <span className={`badge ${getEventBadgeClass(e.event_type)}`} style={{ marginTop: '2px' }}>
+                            {getEventLabel(e.event_type)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

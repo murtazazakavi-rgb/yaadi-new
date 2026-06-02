@@ -79,7 +79,13 @@ export async function GET(request: Request) {
       const events = eventsRes.rows;
 
       // 3. Process events to reminders
-      const reminders = events.map((event: any) => {
+      const deceasedContactIds = new Set(
+        events
+          .filter((e: any) => e.event_type === 'death_gregorian' || e.event_type === 'death_hijri')
+          .map((e: any) => e.contact_id)
+      );
+
+      const rawReminders = events.map((event: any) => {
         // Skip if event type is not enabled
         if (!enabledTypes.includes(event.event_type)) {
           return null;
@@ -107,15 +113,21 @@ export async function GET(request: Request) {
       .filter(Boolean)
       .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
 
-      const todayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
+      const livingReminders = rawReminders.filter((r: any) => !deceasedContactIds.has(r.contact.id));
+      const deceasedReminders = rawReminders.filter((r: any) => deceasedContactIds.has(r.contact.id));
+
+      const todayEvents = livingReminders.filter((r: any) => r.daysRemaining === 0);
       const daysAhead = tenant.reminder_days_ahead !== null && tenant.reminder_days_ahead !== undefined 
         ? tenant.reminder_days_ahead 
         : 7;
-      const upcomingEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= daysAhead);
+      const upcomingEvents = livingReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= daysAhead);
+
+      const todayDeceasedEvents = deceasedReminders.filter((r: any) => r.daysRemaining === 0);
+      const upcomingDeceasedEvents = deceasedReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= daysAhead);
 
       // Only send if there's at least one event today, or if forceSend override is active (e.g. testing)
-      if (todayEvents.length > 0 || forceSend) {
-        const html = generateHtmlDigest(tenant.display_name, todayEvents, upcomingEvents);
+      if (todayEvents.length > 0 || todayDeceasedEvents.length > 0 || forceSend) {
+        const html = generateHtmlDigest(tenant.display_name, todayEvents, upcomingEvents, todayDeceasedEvents, upcomingDeceasedEvents);
         const subject = todayEvents.length > 0 
           ? `Yaadi Reminders: Family Events Today! (${todayEvents.length})`
           : `Yaadi Reminders: Weekly Digest Preview`;

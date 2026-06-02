@@ -54,8 +54,15 @@ export default function DashboardPage() {
     return num + 'th';
   };
 
+  // Identify passed away contacts (any contact with a death event)
+  const deceasedContactIds = new Set(
+    data.events
+      .filter((e: any) => e.event_type === 'death_gregorian' || e.event_type === 'death_hijri')
+      .map((e: any) => e.contact_id)
+  );
+
   // Process all events and calculate countdowns
-  const reminders = data.events.map((event: any) => {
+  const rawReminders = data.events.map((event: any) => {
     const contact = data.contacts.find((c: any) => c.id === event.contact_id);
     if (!contact) return null;
 
@@ -89,9 +96,10 @@ export default function DashboardPage() {
   .filter((r: any) => {
     const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`.toLowerCase();
     return name.includes(searchQuery.toLowerCase());
-  })
-  // Sort chronologically by remaining days
-  .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+  });
+
+  const livingReminders = rawReminders.filter((r: any) => !deceasedContactIds.has(r.contact.id));
+  const deceasedReminders = rawReminders.filter((r: any) => deceasedContactIds.has(r.contact.id));
 
   // Helper to group reminders by contact within each timeframe
   const groupRemindersByContact = (remindersList: any[]) => {
@@ -120,15 +128,17 @@ export default function DashboardPage() {
   };
 
   // Group events and then combine duplicate contacts within each group
-  const rawTodayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
-  const rawWeekEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
-  const rawMonthEvents = reminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
-  const rawLaterEvents = reminders.filter((r: any) => r.daysRemaining > 30);
+  const rawTodayEvents = livingReminders.filter((r: any) => r.daysRemaining === 0);
+  const rawWeekEvents = livingReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+  const rawMonthEvents = livingReminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
+  const rawLaterEvents = livingReminders.filter((r: any) => r.daysRemaining > 30);
 
   const todayEvents = groupRemindersByContact(rawTodayEvents);
   const weekEvents = groupRemindersByContact(rawWeekEvents);
   const monthEvents = groupRemindersByContact(rawMonthEvents);
   const laterEvents = groupRemindersByContact(rawLaterEvents);
+
+  const deceasedEvents = groupRemindersByContact(deceasedReminders);
 
   const todayEventsCount = rawTodayEvents.length;
 
@@ -216,7 +226,7 @@ export default function DashboardPage() {
   }
 
   // Stats Counters
-  const next30DaysCount = reminders.filter((r: any) => r.daysRemaining <= 30).length;
+  const next30DaysCount = livingReminders.filter((r: any) => r.daysRemaining <= 30).length;
 
   return (
     <div style={{ padding: '20px 0' }} className="page-transition">
@@ -410,7 +420,7 @@ export default function DashboardPage() {
 
       {/* Event Lists */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {reminders.length === 0 ? (
+        {livingReminders.length === 0 && deceasedReminders.length === 0 ? (
           <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
             No celebrations found in your directory.
           </div>
@@ -500,6 +510,18 @@ export default function DashboardPage() {
                 <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--text-secondary)' }}>Later Events</h3>
                 <div className="reminders-grid">
                   {laterEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
+                </div>
+              </div>
+            )}
+
+            {/* Passed Away Family & Friends */}
+            {deceasedEvents.length > 0 && (
+              <div>
+                <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--text-secondary)', borderTop: 'var(--border-light)', paddingTop: '16px', marginTop: '16px' }}>
+                  Passed Away Family & Friends
+                </h3>
+                <div className="reminders-grid">
+                  {deceasedEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
                 </div>
               </div>
             )}

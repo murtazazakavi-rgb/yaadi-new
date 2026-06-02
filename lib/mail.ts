@@ -87,11 +87,13 @@ export function getBadgeColors(type: string) {
 export function generateHtmlDigest(
   displayName: string,
   todayReminders: any[],
-  upcomingReminders: any[]
+  upcomingReminders: any[],
+  todayDeceasedReminders: any[] = [],
+  upcomingDeceasedReminders: any[] = []
 ): string {
   const todaySection = todayReminders.length === 0
     ? `<div style="padding: 16px; text-align: center; color: #8C8984; font-size: 14px; border: 1px dashed #ECEBE6; border-radius: 8px;">
-         No family events scheduled for today.
+         No family celebrations scheduled for today.
        </div>`
     : todayReminders.map(r => {
         const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`;
@@ -118,9 +120,36 @@ export function generateHtmlDigest(
         `;
       }).join('');
 
+  const todayDeceasedSection = todayDeceasedReminders.length === 0
+    ? ''
+    : `
+      <div style="margin-top: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: #7F8C8D; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+          Remembrance Today (Passed Away)
+        </div>
+        ${todayDeceasedReminders.map(r => {
+          const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`;
+          const colors = getBadgeColors(r.eventType);
+          return `
+            <div style="background-color: #FAF9F6; border-left: 4px solid #7F8C8D; border-radius: 6px; padding: 12px 16px; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <span style="font-weight: 600; color: #55514C; font-size: 15px; font-family: 'Playfair Display', Georgia, serif;">${name}</span>
+                <span style="background-color: #ECEAE3; color: #4B5563; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; font-family: sans-serif; text-transform: uppercase;">
+                  ${colors.label}
+                </span>
+              </div>
+              <div style="font-size: 12px; color: #7F8C8D; margin-top: 4px;">
+                Remembering them today on their <strong>${getOrdinalSuffix(r.ordinal)}</strong> ${colors.label.toLowerCase()}.
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
   const upcomingSection = upcomingReminders.length === 0
     ? `<div style="padding: 12px; text-align: center; color: #8C8984; font-size: 13px;">
-         No upcoming events in the next 7 days.
+         No upcoming celebrations in the next 7 days.
        </div>`
     : upcomingReminders.map(r => {
         const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`;
@@ -141,6 +170,36 @@ export function generateHtmlDigest(
           </div>
         `;
       }).join('');
+
+  const upcomingDeceasedSection = upcomingDeceasedReminders.length === 0
+    ? ''
+    : `
+      <div style="margin-top: 16px;">
+        <div style="font-size: 12px; font-weight: 700; color: #7F8C8D; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+          Passed Away Family & Friends (Upcoming)
+        </div>
+        <div style="background-color: #FCFCFB; border: 1px solid #ECEBE6; border-radius: 8px; padding: 4px 16px;">
+          ${upcomingDeceasedReminders.map(r => {
+            const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`;
+            return `
+              <div style="padding: 10px 0; border-bottom: 1px solid #F4F3EF; display: flex; justify-content: space-between; align-items: center; font-family: sans-serif;">
+                <div>
+                  <div style="font-weight: 600; color: #55514C; font-size: 13px;">${name}</div>
+                  <div style="font-size: 11px; color: #8C8984; margin-top: 2px;">
+                    ${getEventLabel(r.eventType, r.ordinal)}
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 11px; font-weight: 700; color: #4B5563; background-color: #ECEAE3; padding: 2px 6px; border-radius: 4px;">
+                    In ${r.daysRemaining} days
+                  </span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
 
   return `
     <!DOCTYPE html>
@@ -173,6 +232,7 @@ export function generateHtmlDigest(
               Today's Events
             </h3>
             ${todaySection}
+            ${todayDeceasedSection}
           </div>
 
           <!-- Upcoming Section -->
@@ -183,6 +243,7 @@ export function generateHtmlDigest(
             <div style="background-color: #FCFCFB; border: 1px solid #ECEBE6; border-radius: 8px; padding: 4px 16px;">
               ${upcomingSection}
             </div>
+            ${upcomingDeceasedSection}
           </div>
 
           <!-- Footer -->

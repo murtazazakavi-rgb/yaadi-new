@@ -92,8 +92,41 @@ export default function SharedGroupPage({ params }: PageProps) {
 
   const { groupName, contacts, events } = data;
 
+  // Helper to group reminders by contact within each timeframe
+  const groupRemindersByContact = (remindersList: any[]) => {
+    const groupedMap: { [contactId: string]: any } = {};
+    remindersList.forEach((r: any) => {
+      const cId = r.contact.id;
+      if (!groupedMap[cId]) {
+        groupedMap[cId] = {
+          contact: r.contact,
+          events: [],
+          daysRemaining: r.daysRemaining,
+          id: `${cId}-${r.eventType}`
+        };
+      }
+      groupedMap[cId].events.push(r);
+      if (r.daysRemaining < groupedMap[cId].daysRemaining) {
+        groupedMap[cId].daysRemaining = r.daysRemaining;
+      }
+    });
+    
+    return Object.values(groupedMap).map((g: any) => {
+      g.events.sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+      g.id = `${g.contact.id}-${g.events.map((e: any) => e.id).join('-')}`;
+      return g;
+    }).sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+  };
+
+  // Identify passed away contacts (any contact with a death event)
+  const deceasedContactIds = new Set(
+    events
+      .filter((e: any) => e.event_type === 'death_gregorian' || e.event_type === 'death_hijri')
+      .map((e: any) => e.contact_id)
+  );
+
   // Process all group events to reminders
-  const reminders = events.map((event: any) => {
+  const rawReminders = events.map((event: any) => {
     const contact = contacts.find((c: any) => c.id === event.contact_id);
     if (!contact) return null;
 
@@ -126,13 +159,22 @@ export default function SharedGroupPage({ params }: PageProps) {
   .filter((r: any) => {
     const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`.toLowerCase();
     return name.includes(searchQuery.toLowerCase());
-  })
-  .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+  });
 
-  const todayEvents = reminders.filter((r: any) => r.daysRemaining === 0);
-  const weekEvents = reminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
-  const monthEvents = reminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
-  const laterEvents = reminders.filter((r: any) => r.daysRemaining > 30);
+  const livingReminders = rawReminders.filter((r: any) => !deceasedContactIds.has(r.contact.id));
+  const deceasedReminders = rawReminders.filter((r: any) => deceasedContactIds.has(r.contact.id));
+
+  const rawTodayEvents = livingReminders.filter((r: any) => r.daysRemaining === 0);
+  const rawWeekEvents = livingReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+  const rawMonthEvents = livingReminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
+  const rawLaterEvents = livingReminders.filter((r: any) => r.daysRemaining > 30);
+
+  const todayEvents = groupRemindersByContact(rawTodayEvents);
+  const weekEvents = groupRemindersByContact(rawWeekEvents);
+  const monthEvents = groupRemindersByContact(rawMonthEvents);
+  const laterEvents = groupRemindersByContact(rawLaterEvents);
+
+  const deceasedEvents = groupRemindersByContact(deceasedReminders);
 
   const handleOpenWhatsApp = (reminder: any) => {
     setSelectedReminder(reminder);
@@ -213,49 +255,66 @@ export default function SharedGroupPage({ params }: PageProps) {
     return `in ${days} days`;
   };
 
-  function renderSharedCard(r: any) {
+  function renderSharedCard(group: any) {
     return (
       <div 
-        key={r.id} 
+        key={group.id} 
         className="card"
         style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
           padding: '12px 16px',
           margin: '8px 16px',
-          borderRadius: '12px'
+          borderRadius: '12px',
+          gap: '10px'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-          <div className="avatar-gradient" style={{ flexShrink: 0 }}>
-            {getInitials(r.contact)}
+        {/* Contact Info Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="avatar-gradient" style={{ flexShrink: 0, height: '36px', width: '36px', fontSize: '12px' }}>
+            {getInitials(group.contact)}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-            <h4 className="reminder-name" style={{ fontSize: '14px', fontWeight: '600' }}>
-              {r.contact.first_name}{r.contact.middle_name ? ' ' + r.contact.middle_name : ''} {r.contact.last_name}
-            </h4>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span className={`badge ${getEventBadgeClass(r.eventType)}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                {getEventLabel(r)}
-              </span>
-              <span className="reminder-subtext" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
-              </span>
-            </div>
-          </div>
+          <h4 className="reminder-name" style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
+            {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+          </h4>
         </div>
 
-        {r.contact.phone_number && (
-          <button 
-            className="btn-whatsapp btn-press" 
-            onClick={() => handleOpenWhatsApp(r)}
-            style={{ width: 'auto', padding: '6px 10px', fontSize: '11px', flexShrink: 0 }}
-          >
-            <Send size={10} />
-            <span>Dua</span>
-          </button>
-        )}
+        {/* Events List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {group.events.map((r: any) => (
+            <div 
+              key={r.id} 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                gap: '12px',
+                borderTop: group.events.indexOf(r) > 0 ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
+                paddingTop: group.events.indexOf(r) > 0 ? '8px' : '0'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span className={`badge ${getEventBadgeClass(r.eventType)}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                  {getEventLabel(r)}
+                </span>
+                <span className="reminder-subtext" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {formatDateDisplay(r)} • {getCountdownText(r.daysRemaining)}
+                </span>
+              </div>
+
+              {r.contact.phone_number && (
+                <button 
+                  className="btn-whatsapp btn-press" 
+                  onClick={() => handleOpenWhatsApp(r)}
+                  style={{ width: 'auto', padding: '4px 8px', fontSize: '10px', flexShrink: 0, height: '24px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Send size={10} />
+                  <span>Dua</span>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -318,51 +377,57 @@ export default function SharedGroupPage({ params }: PageProps) {
               </h3>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {todayEvents.map((r: any) => (
+              {todayEvents.map((group: any) => (
                 <div 
-                  key={r.id} 
+                  key={group.id} 
                   style={{ 
                     display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
+                    flexDirection: 'column',
                     backgroundColor: 'rgba(255, 255, 255, 0.15)', 
                     padding: '8px 12px', 
                     borderRadius: '10px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    gap: '6px'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div className="avatar-gradient" style={{ height: '28px', width: '28px', fontSize: '10px', flexShrink: 0 }}>
-                      {getInitials(r.contact)}
+                      {getInitials(group.contact)}
                     </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '12px', fontWeight: '600' }}>
-                        {r.contact.first_name} {r.contact.last_name}
-                      </span>
-                      <span style={{ fontSize: '10px', opacity: 0.85 }}>
-                        {getEventLabel(r)}
-                      </span>
-                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '600' }}>
+                      {group.contact.first_name} {group.contact.last_name}
+                    </span>
                   </div>
-                  {r.contact.phone_number && (
-                    <button 
-                      onClick={() => handleOpenWhatsApp(r)}
-                      className="btn btn-press"
-                      style={{ 
-                        width: 'auto', 
-                        padding: '4px 10px', 
-                        fontSize: '10px', 
-                        backgroundColor: '#FFFFFF', 
-                        color: '#C4953A',
-                        fontWeight: '600',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Send Dua
-                    </button>
-                  )}
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '36px' }}>
+                    {group.events.map((r: any) => (
+                      <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                        <span style={{ fontSize: '10px', opacity: 0.85 }}>
+                          {getEventLabel(r)}
+                        </span>
+                        {r.contact.phone_number && (
+                          <button 
+                            onClick={() => handleOpenWhatsApp(r)}
+                            className="btn btn-press"
+                            style={{ 
+                              width: 'auto', 
+                              padding: '2px 8px', 
+                              fontSize: '9px', 
+                              backgroundColor: '#FFFFFF', 
+                              color: '#C4953A',
+                              fontWeight: '600',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              height: '20px'
+                            }}
+                          >
+                            Send Dua
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
@@ -371,7 +436,7 @@ export default function SharedGroupPage({ params }: PageProps) {
 
         {/* Timelines Lists */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {reminders.length === 0 ? (
+          {livingReminders.length === 0 && deceasedReminders.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
               No upcoming events found in this group.
             </div>
@@ -403,6 +468,18 @@ export default function SharedGroupPage({ params }: PageProps) {
                   <h3 className="serif-font" style={{ padding: '0 20px 4px 20px', fontSize: '16px', color: 'var(--text-secondary)' }}>Later Celebrations</h3>
                   <div>
                     {laterEvents.map(renderSharedCard)}
+                  </div>
+                </div>
+              )}
+
+              {/* Passed Away Family & Friends */}
+              {deceasedEvents.length > 0 && (
+                <div>
+                  <h3 className="serif-font" style={{ padding: '0 20px 4px 20px', fontSize: '16px', color: 'var(--text-secondary)', borderTop: 'var(--border-light)', paddingTop: '16px', marginTop: '8px' }}>
+                    Passed Away Family & Friends
+                  </h3>
+                  <div>
+                    {deceasedEvents.map(renderSharedCard)}
                   </div>
                 </div>
               )}
