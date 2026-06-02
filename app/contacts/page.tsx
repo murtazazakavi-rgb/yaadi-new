@@ -10,9 +10,10 @@ import {
   removeRelationship, 
   getRelationships 
 } from './actions';
+import { parseVoiceContact } from './voiceActions';
 import { getGroups, createGroup, deleteGroup, getGroupShareLink, toggleGroupShareLink } from './groupActions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy, Sparkles } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
 import Portal from '@/app/components/Portal';
@@ -24,6 +25,14 @@ export default function ContactsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'withEvents' | 'familyTree' | 'passedAway'>('all');
+
+  // Voice Speech-to-Text States
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessingSpeech, setIsProcessingSpeech] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [recognitionObj, setRecognitionObj] = useState<any>(null);
+  const [voiceError, setVoiceError] = useState('');
 
   const handleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -42,6 +51,159 @@ export default function ContactsPage() {
       alert("Voice search encountered an error.");
     };
     recognition.start();
+  };
+
+  // Initialize SpeechRecognition for Speak to Me
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        if (currentTranscript.trim()) {
+          setVoiceTranscript(currentTranscript);
+        }
+      };
+
+      rec.onerror = (event: any) => {
+        console.error('Speech recognition error:', event);
+        if (event.error !== 'no-speech') {
+          setVoiceError(`Error: ${event.error}. Please try again.`);
+          setIsListening(false);
+        }
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      setRecognitionObj(rec);
+    }
+  }, []);
+
+  const handleOpenSpeakToMe = () => {
+    setVoiceTranscript('');
+    setVoiceError('');
+    setIsListening(false);
+    setShowVoiceModal(true);
+  };
+
+  const handleStartListening = () => {
+    if (!recognitionObj) {
+      alert("Speech recognition is not supported or not initialized in this browser.");
+      return;
+    }
+    setVoiceError('');
+    setIsListening(true);
+    try {
+      recognitionObj.start();
+    } catch (err) {
+      console.error('Failed to start recognition:', err);
+    }
+  };
+
+  const handleStopListening = () => {
+    if (recognitionObj) {
+      try {
+        recognitionObj.stop();
+      } catch (err) {
+        console.error('Failed to stop recognition:', err);
+      }
+      setIsListening(false);
+    }
+  };
+
+  const handleProcessSpeech = async () => {
+    if (!voiceTranscript.trim()) {
+      setVoiceError("Please say something first.");
+      return;
+    }
+
+    if (isListening) {
+      handleStopListening();
+    }
+
+    setIsProcessingSpeech(true);
+    setVoiceError('');
+
+    try {
+      const res = await parseVoiceContact(voiceTranscript);
+      if (res.success && res.data) {
+        // Reset and pre-fill form fields
+        setEditingContactId(null);
+        setFirstName(res.data.firstName || '');
+        setMiddleName(res.data.middleName || '');
+        setLastName(res.data.lastName || '');
+
+        if (res.data.phoneNumber) {
+          const { code, local } = parsePhoneNumber(res.data.phoneNumber);
+          setCountryCode(code);
+          setLocalNumber(local);
+        } else {
+          setCountryCode('+91');
+          setLocalNumber('');
+        }
+
+        setEmail(res.data.email || '');
+        setNotes(res.data.notes || '');
+        setBornAfterMaghrib(res.data.bornAfterMaghrib || false);
+
+        // Reset all dates
+        setGBirthday('');
+        setHBDate('');
+        setHBMonth('');
+        setHBYear('');
+        setGDeath('');
+        setHDDate('');
+        setHDMonth('');
+        setHDYear('');
+        setGAnniversary('');
+        setIsDeceased(false);
+
+        // Process events parsed by LLM
+        res.data.events.forEach((ev) => {
+          if (ev.eventType === 'birthday_gregorian' && ev.gDay && ev.gMonth && ev.gYear) {
+            const formatted = `${ev.gYear}-${String(ev.gMonth).padStart(2, '0')}-${String(ev.gDay).padStart(2, '0')}`;
+            setGBirthday(formatted);
+          } else if (ev.eventType === 'birthday_hijri' && ev.hDay && ev.hMonth && ev.hYear) {
+            setHBDate(ev.hDay.toString());
+            setHBMonth(ev.hMonth.toString());
+            setHBYear(ev.hYear.toString());
+          } else if (ev.eventType === 'anniversary' && ev.gDay && ev.gMonth && ev.gYear) {
+            const formatted = `${ev.gYear}-${String(ev.gMonth).padStart(2, '0')}-${String(ev.gDay).padStart(2, '0')}`;
+            setGAnniversary(formatted);
+          } else if (ev.eventType === 'death_gregorian' && ev.gDay && ev.gMonth && ev.gYear) {
+            const formatted = `${ev.gYear}-${String(ev.gMonth).padStart(2, '0')}-${String(ev.gDay).padStart(2, '0')}`;
+            setGDeath(formatted);
+            setIsDeceased(true);
+          } else if (ev.eventType === 'death_hijri' && ev.hDay && ev.hMonth && ev.hYear) {
+            setHDDate(ev.hDay.toString());
+            setHDMonth(ev.hMonth.toString());
+            setHDYear(ev.hYear.toString());
+            setIsDeceased(true);
+          }
+        });
+
+        // Hide voice modal and open standard form
+        setShowVoiceModal(false);
+        setFormStep(1);
+        setShowForm(true);
+      } else {
+        setVoiceError(res.error || 'Failed to parse speech details.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setVoiceError(err.message || 'An error occurred during processing.');
+    } finally {
+      setIsProcessingSpeech(false);
+    }
   };
 
   const renderEventChips = (contactId: string) => {
@@ -778,6 +940,23 @@ export default function ContactsPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="btn btn-secondary" 
+            style={{ 
+              width: 'auto', 
+              padding: '8px 12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              fontSize: '13px',
+              border: '1px solid rgba(196, 149, 58, 0.4)',
+              background: 'linear-gradient(135deg, var(--bg-card) 0%, var(--color-gold-light) 100%)',
+              color: 'var(--color-gold)'
+            }} 
+            onClick={handleOpenSpeakToMe}
+          >
+            <Sparkles size={14} style={{ color: 'var(--color-gold)' }} /> Speak to Me
+          </button>
           <button 
             className="btn btn-secondary" 
             style={{ width: 'auto', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }} 
@@ -1844,6 +2023,105 @@ export default function ContactsPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Speak to Me Voice Modal */}
+      {showVoiceModal && (
+        <Portal>
+          <div className="modal-overlay" onClick={handleStopListening}>
+            <div className="modal-content glassmorphic-voice-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+              <div className="modal-header" style={{ marginBottom: '12px' }}>
+                <h3 className="serif-font" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '22px' }}>
+                  <Sparkles size={20} style={{ color: 'var(--color-gold)' }} />
+                  Speak to Me
+                </h3>
+                <button className="modal-close" onClick={() => { handleStopListening(); setShowVoiceModal(false); }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {isProcessingSpeech ? (
+                <div className="voice-processing-loader">
+                  <div className="voice-spinner"></div>
+                  <p style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)' }}>Parsing speech with AI...</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Converting your dates and details into a contact record.</p>
+                </div>
+              ) : (
+                <div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '15px', lineHeight: '1.5' }}>
+                    Speak naturally to add a contact. For example:<br />
+                    <span style={{ fontStyle: 'italic', color: 'var(--color-gold)', fontWeight: '500' }}>
+                      "Add Ali Raza, phone 9876543210, birthdate 15th Ramadan 1410"
+                    </span>
+                  </p>
+
+                  <div className="voice-mic-container">
+                    <button
+                      type="button"
+                      className={`voice-mic-button ${isListening ? 'listening' : ''}`}
+                      onClick={isListening ? handleStopListening : handleStartListening}
+                    >
+                      <Mic size={36} />
+                    </button>
+                    {isListening && (
+                      <>
+                        <div className="voice-ripple voice-ripple-1"></div>
+                        <div className="voice-ripple voice-ripple-2"></div>
+                        <div className="voice-ripple voice-ripple-3"></div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="voice-wave-container">
+                    <div className="voice-wave-bar"></div>
+                    <div className="voice-wave-bar"></div>
+                    <div className="voice-wave-bar"></div>
+                    <div className="voice-wave-bar"></div>
+                    <div className="voice-wave-bar"></div>
+                    <div className="voice-wave-bar"></div>
+                  </div>
+
+                  <p className="voice-hint-text">
+                    {isListening ? 'Listening... click microphone to pause.' : 'Click the microphone to start speaking.'}
+                  </p>
+
+                  <div style={{ marginTop: '20px' }}>
+                    <label className="form-label">Real-time Transcript</label>
+                    <div className="voice-transcript-card">
+                      {voiceTranscript || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Your spoken words will appear here...</span>}
+                    </div>
+                  </div>
+
+                  {voiceError && (
+                    <div style={{ color: 'var(--color-rose)', fontSize: '12px', marginBottom: '15px', fontWeight: '500' }}>
+                      {voiceError}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ flex: 1 }}
+                      onClick={() => { handleStopListening(); setShowVoiceModal(false); }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ flex: 2, background: 'linear-gradient(135deg, var(--color-sage) 0%, var(--color-accent-hover) 100%)' }}
+                      disabled={!voiceTranscript.trim()}
+                      onClick={handleProcessSpeech}
+                    >
+                      Process Speech
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </Portal>
