@@ -7,7 +7,8 @@ import {
   respondToConnectionRequest, 
   removeConnection,
   getSharingStatus,
-  updateSharedContacts
+  updateSharedContacts,
+  cancelConnectionRequest
 } from './actions';
 import { Share2, UserPlus, Check, X, ShieldAlert, Link2, Trash2, Search } from 'lucide-react';
 
@@ -73,6 +74,15 @@ export default function ConnectionsPage() {
       loadData();
     } catch (err: any) {
       alert(err.message || 'Failed to respond to request.');
+    }
+  };
+
+  const handleCancel = async (requestId: string) => {
+    try {
+      await cancelConnectionRequest(requestId);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to cancel request.');
     }
   };
 
@@ -243,7 +253,7 @@ export default function ConnectionsPage() {
                   <strong style={{ display: 'block', fontSize: '14px' }}>{req.display_name}</strong>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{req.email}</span>
                 </div>
-                <button onClick={() => handleRespond(req.id, false)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button onClick={() => handleCancel(req.id)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <X size={14} /> Cancel
                 </button>
               </div>

@@ -227,3 +227,26 @@ export async function updateSharedContacts(connectionId: string, contactIds: str
   revalidatePath('/tree');
   return { success: true };
 }
+
+export async function cancelConnectionRequest(requestId: string) {
+  const session = await requireAuth();
+  const userId = session.userId;
+
+  // Verify the request was sent by the logged-in user and is still pending
+  const checkRes = await query(
+    `SELECT id FROM tenant_connections 
+     WHERE id = $1 AND requester_id = $2 AND status = 'pending'`,
+    [requestId, userId]
+  );
+
+  if (checkRes.rows.length === 0) {
+    throw new Error('Request not found or access denied.');
+  }
+
+  // Delete the connection request
+  await query('DELETE FROM tenant_connections WHERE id = $1', [requestId]);
+
+  revalidatePath('/connections');
+  return { success: true };
+}
+
