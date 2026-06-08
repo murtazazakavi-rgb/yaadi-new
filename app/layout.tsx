@@ -22,6 +22,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await getSession();
+  const initialTheme = session?.theme || null;
+  const initialUiStyle = session?.uiStyle || null;
 
   return (
     <html lang="en">
@@ -33,7 +35,10 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
-              var theme = localStorage.getItem('theme');
+              var sessionTheme = ${initialTheme ? JSON.stringify(initialTheme) : 'null'};
+              var sessionUiStyle = ${initialUiStyle ? JSON.stringify(initialUiStyle) : 'null'};
+              
+              var theme = localStorage.getItem('theme') || sessionTheme;
               if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
                 document.documentElement.setAttribute('data-theme', 'dark');
@@ -41,8 +46,16 @@ export default async function RootLayout({
                 document.documentElement.classList.remove('dark');
                 document.documentElement.setAttribute('data-theme', 'light');
               }
-              var uiStyle = localStorage.getItem('yaadi-ui-style') || 'classic';
+              
+              var uiStyle = localStorage.getItem('yaadi-ui-style') || sessionUiStyle || 'classic';
               document.documentElement.setAttribute('data-ui-style', uiStyle);
+
+              if (sessionTheme && !localStorage.getItem('theme')) {
+                localStorage.setItem('theme', sessionTheme);
+              }
+              if (sessionUiStyle && !localStorage.getItem('yaadi-ui-style')) {
+                localStorage.setItem('yaadi-ui-style', sessionUiStyle);
+              }
             } catch (e) {}
           })();
         ` }} />

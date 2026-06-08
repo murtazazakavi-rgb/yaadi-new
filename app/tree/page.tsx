@@ -234,7 +234,7 @@ export default function FamilyTreePage() {
                       {/* Partner A */}
                       <div style={{ textAlign: 'center', minWidth: '80px' }}>
                         <span className="tree-node-name" style={{ display: 'block' }}>
-                          {partnerA.first_name}
+                          {partnerA.first_name}{partnerA.middle_name ? ' ' + partnerA.middle_name : ''}
                         </span>
                         <span className="tree-node-sub">
                           {partnerA.last_name}
@@ -248,7 +248,7 @@ export default function FamilyTreePage() {
                           {/* Partner B */}
                           <div style={{ textAlign: 'center', minWidth: '80px' }}>
                             <span className="tree-node-name" style={{ display: 'block' }}>
-                              {partnerB.first_name}
+                              {partnerB.first_name}{partnerB.middle_name ? ' ' + partnerB.middle_name : ''}
                             </span>
                             <span className="tree-node-sub">
                               {partnerB.last_name}

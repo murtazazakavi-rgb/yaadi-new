@@ -11,6 +11,8 @@ export interface UserSession {
   email: string;
   display_name: string;
   isAdmin: boolean;
+  theme?: string;
+  uiStyle?: string;
 }
 
 export async function encrypt(payload: UserSession) {

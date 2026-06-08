@@ -36,9 +36,20 @@ export async function POST(request: Request) {
       email: newTenant.email,
       display_name: newTenant.display_name,
       isAdmin: newTenant.is_admin,
+      theme: newTenant.theme || 'light',
+      uiStyle: newTenant.ui_style || 'classic',
     });
 
-    return NextResponse.json({ success: true, user: { email: newTenant.email, display_name: newTenant.display_name, isAdmin: newTenant.is_admin } }, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      user: {
+        email: newTenant.email,
+        display_name: newTenant.display_name,
+        isAdmin: newTenant.is_admin,
+        theme: newTenant.theme || 'light',
+        uiStyle: newTenant.ui_style || 'classic'
+      }
+    }, { status: 201 });
   } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

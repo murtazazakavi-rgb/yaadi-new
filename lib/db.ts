@@ -119,6 +119,12 @@ async function ensureTables() {
     await sql.query(`
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS reminder_types VARCHAR(200) DEFAULT 'birthday_gregorian,birthday_hijri,anniversary,death_gregorian,death_hijri';
     `);
+    await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS theme VARCHAR(20) DEFAULT 'light';
+    `);
+    await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ui_style VARCHAR(30) DEFAULT 'classic';
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

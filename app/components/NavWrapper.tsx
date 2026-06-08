@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon, FileText, Settings } from 'lucide-react';
+import { saveUIPreferences } from '@/app/settings/actions';
 
 interface NavWrapperProps {
   children: React.ReactNode;
@@ -11,6 +12,8 @@ interface NavWrapperProps {
     email: string;
     display_name: string;
     isAdmin: boolean;
+    theme?: string;
+    uiStyle?: string;
   } | null;
 }
 
@@ -99,6 +102,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
 
   const toggleTheme = () => {
     const isDark = document.documentElement.classList.contains('dark');
+    const newTheme = isDark ? 'light' : 'dark';
     if (isDark) {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
@@ -110,12 +114,23 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
       localStorage.setItem('theme', 'dark');
       setIsDarkMode(true);
     }
+    if (user) {
+      saveUIPreferences(newTheme, uiStyle).catch(err => {
+        console.error('Failed to sync theme to DB:', err);
+      });
+    }
   };
 
   const selectUIStyle = (styleName: string) => {
     setUiStyle(styleName);
     document.documentElement.setAttribute('data-ui-style', styleName);
     localStorage.setItem('yaadi-ui-style', styleName);
+    if (user) {
+      const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+      saveUIPreferences(currentTheme, styleName).catch(err => {
+        console.error('Failed to sync UI style to DB:', err);
+      });
+    }
   };
 
   // If path is root or register, don't wrap with navigation bars

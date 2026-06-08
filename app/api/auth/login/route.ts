@@ -33,9 +33,20 @@ export async function POST(request: Request) {
       email: tenant.email,
       display_name: tenant.display_name,
       isAdmin: tenant.is_admin,
+      theme: tenant.theme,
+      uiStyle: tenant.ui_style,
     });
 
-    return NextResponse.json({ success: true, user: { email: tenant.email, display_name: tenant.display_name, isAdmin: tenant.is_admin } });
+    return NextResponse.json({
+      success: true,
+      user: {
+        email: tenant.email,
+        display_name: tenant.display_name,
+        isAdmin: tenant.is_admin,
+        theme: tenant.theme,
+        uiStyle: tenant.ui_style,
+      }
+    });
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

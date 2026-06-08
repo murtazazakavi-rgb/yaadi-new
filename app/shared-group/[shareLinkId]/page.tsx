@@ -164,8 +164,8 @@ export default function SharedGroupPage({ params }: PageProps) {
   const livingReminders = rawReminders.filter((r: any) => !deceasedContactIds.has(r.contact.id));
   const deceasedReminders = rawReminders.filter((r: any) => deceasedContactIds.has(r.contact.id));
 
-  const rawTodayEvents = livingReminders.filter((r: any) => r.daysRemaining === 0);
-  const rawWeekEvents = livingReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+  const rawTodayEvents = rawReminders.filter((r: any) => r.daysRemaining === 0);
+  const rawWeekEvents = rawReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
   const rawMonthEvents = livingReminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
   const rawLaterEvents = livingReminders.filter((r: any) => r.daysRemaining > 30);
 
@@ -274,8 +274,11 @@ export default function SharedGroupPage({ params }: PageProps) {
           <div className="avatar-gradient" style={{ flexShrink: 0, height: '36px', width: '36px', fontSize: '12px' }}>
             {getInitials(group.contact)}
           </div>
-          <h4 className="reminder-name" style={{ fontSize: '14px', fontWeight: '600', margin: 0 }}>
+          <h4 className="reminder-name" style={{ fontSize: '14px', fontWeight: '600', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
             {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+            {deceasedContactIds.has(group.contact.id) && (
+              <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+            )}
           </h4>
         </div>
 
@@ -394,8 +397,11 @@ export default function SharedGroupPage({ params }: PageProps) {
                     <div className="avatar-gradient" style={{ height: '28px', width: '28px', fontSize: '10px', flexShrink: 0 }}>
                       {getInitials(group.contact)}
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: '600' }}>
-                      {group.contact.first_name} {group.contact.last_name}
+                    <span style={{ fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+                      {deceasedContactIds.has(group.contact.id) && (
+                        <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+                      )}
                     </span>
                   </div>
                   
@@ -503,8 +509,11 @@ export default function SharedGroupPage({ params }: PageProps) {
 
               <div style={{ marginBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span className="serif-font" style={{ fontSize: '15px', fontWeight: '600' }}>
-                    {selectedReminder.contact.first_name} {selectedReminder.contact.last_name}
+                  <span className="serif-font" style={{ fontSize: '15px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    {selectedReminder.contact.first_name}{selectedReminder.contact.middle_name ? ' ' + selectedReminder.contact.middle_name : ''} {selectedReminder.contact.last_name}
+                    {deceasedContactIds.has(selectedReminder.contact.id) && (
+                      <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+                    )}
                   </span>
                   <span className={`badge ${getEventBadgeClass(selectedReminder.eventType)}`} style={{ fontSize: '10px' }}>
                     {getEventLabel(selectedReminder)}

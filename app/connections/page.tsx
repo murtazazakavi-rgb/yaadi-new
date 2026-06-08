@@ -130,7 +130,7 @@ export default function ConnectionsPage() {
   };
 
   const filteredSharingContacts = sharingContacts.filter(c => 
-    `${c.firstName} ${c.lastName}`.toLowerCase().includes(sharingSearchQuery.toLowerCase())
+    `${c.firstName}${c.middleName ? ' ' + c.middleName : ''} ${c.lastName}`.toLowerCase().includes(sharingSearchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -396,7 +396,7 @@ export default function ConnectionsPage() {
                       checked={c.isShared}
                       onChange={() => handleToggleContactShare(c.id)}
                     />
-                    <span>{c.firstName} {c.lastName}</span>
+                    <span>{c.firstName}{c.middleName ? ' ' + c.middleName : ''} {c.lastName}</span>
                   </label>
                 ))
               )}

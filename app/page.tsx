@@ -28,6 +28,21 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
+      // Sync theme and style from user login preferences
+      if (data.user?.theme) {
+        localStorage.setItem('theme', data.user.theme);
+        document.documentElement.setAttribute('data-theme', data.user.theme);
+        if (data.user.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+      if (data.user?.uiStyle) {
+        localStorage.setItem('yaadi-ui-style', data.user.uiStyle);
+        document.documentElement.setAttribute('data-ui-style', data.user.uiStyle);
+      }
+
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {

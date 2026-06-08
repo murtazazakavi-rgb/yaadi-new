@@ -314,7 +314,7 @@ export default function DocumentsPage() {
             <option value="">All Family Members</option>
             {contacts.map(c => (
               <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name}
+                {c.first_name}{c.middle_name ? ' ' + c.middle_name : ''} {c.last_name}
               </option>
             ))}
           </select>

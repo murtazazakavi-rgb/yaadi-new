@@ -128,8 +128,8 @@ export default function DashboardPage() {
   };
 
   // Group events and then combine duplicate contacts within each group
-  const rawTodayEvents = livingReminders.filter((r: any) => r.daysRemaining === 0);
-  const rawWeekEvents = livingReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
+  const rawTodayEvents = rawReminders.filter((r: any) => r.daysRemaining === 0);
+  const rawWeekEvents = rawReminders.filter((r: any) => r.daysRemaining > 0 && r.daysRemaining <= 7);
   const rawMonthEvents = livingReminders.filter((r: any) => r.daysRemaining > 7 && r.daysRemaining <= 30);
   const rawLaterEvents = livingReminders.filter((r: any) => r.daysRemaining > 30);
 
@@ -366,8 +366,11 @@ export default function DashboardPage() {
                   <div className="avatar-gradient" style={{ height: '30px', width: '30px', fontSize: '10px', flexShrink: 0 }}>
                     {getInitials(group.contact)}
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: '600' }}>
-                    {group.contact.first_name} {group.contact.last_name}
+                  <span style={{ fontSize: '13px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+                    {deceasedContactIds.has(group.contact.id) && (
+                      <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+                    )}
                   </span>
                 </div>
                 
@@ -452,8 +455,11 @@ export default function DashboardPage() {
                         <div className="avatar-gradient" style={{ flexShrink: 0, height: '36px', width: '36px', fontSize: '12px' }}>
                           {getInitials(group.contact)}
                         </div>
-                        <h4 className="reminder-name" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {group.contact.first_name} {group.contact.last_name}
+                        <h4 className="reminder-name" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+                          {deceasedContactIds.has(group.contact.id) && (
+                            <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+                          )}
                         </h4>
                       </div>
                       
@@ -499,7 +505,7 @@ export default function DashboardPage() {
               <div>
                 <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--color-gold)', fontWeight: '600' }}>Coming Up This Month</h3>
                 <div className="reminders-grid">
-                  {monthEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
+                  {monthEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer, deceasedContactIds))}
                 </div>
               </div>
             )}
@@ -509,7 +515,7 @@ export default function DashboardPage() {
               <div>
                 <h3 className="serif-font" style={{ padding: '0 20px 8px 20px', fontSize: '18px', color: 'var(--text-secondary)' }}>Later Events</h3>
                 <div className="reminders-grid">
-                  {laterEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
+                  {laterEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer, deceasedContactIds))}
                 </div>
               </div>
             )}
@@ -521,7 +527,7 @@ export default function DashboardPage() {
                   Passed Away Family & Friends
                 </h3>
                 <div className="reminders-grid">
-                  {deceasedEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer))}
+                  {deceasedEvents.map((r: any) => renderReminderCard(r, handleOpenWhatsAppComposer, deceasedContactIds))}
                 </div>
               </div>
             )}
@@ -599,7 +605,7 @@ const getCountdownText = (days: number): string => {
 };
 
 // Sub-component card rendering helper
-function renderReminderCard(group: any, onWhatsAppOpen: (reminder: any) => void) {
+function renderReminderCard(group: any, onWhatsAppOpen: (reminder: any) => void, deceasedContactIds: Set<any>) {
   const getInitials = (c: any) => {
     return `${c.first_name[0] || ''}${c.last_name[0] || ''}`.toUpperCase();
   };
@@ -652,8 +658,11 @@ function renderReminderCard(group: any, onWhatsAppOpen: (reminder: any) => void)
         <div className="avatar-gradient" style={{ height: '36px', width: '36px', fontSize: '12px', flexShrink: 0 }}>
           {getInitials(group.contact)}
         </div>
-        <h4 className="reminder-name" style={{ margin: 0 }}>
+        <h4 className="reminder-name" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
           {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+          {deceasedContactIds.has(group.contact.id) && (
+            <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+          )}
         </h4>
       </div>
 

@@ -172,3 +172,29 @@ export async function sendTestEmail() {
 
   return { success: true };
 }
+
+/**
+ * Saves the UI theme and layout style preferences to the database and session.
+ */
+export async function saveUIPreferences(theme: string, uiStyle: string) {
+  const session = await requireAuth();
+  const tenantId = session.userId;
+
+  if (!theme || !uiStyle) {
+    throw new Error('Theme and UI Style are required.');
+  }
+
+  await query(
+    'UPDATE tenants SET theme = $1, ui_style = $2 WHERE id = $3',
+    [theme, uiStyle, tenantId]
+  );
+
+  // Update server session cookie
+  await setSession({
+    ...session,
+    theme,
+    uiStyle
+  });
+
+  return { success: true };
+}

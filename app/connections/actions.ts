@@ -169,7 +169,7 @@ export async function getSharingStatus(connectionId: string) {
 
   // Fetch current user's contacts
   const contactsRes = await query(
-    'SELECT id, first_name, last_name FROM contacts WHERE tenant_id = $1 ORDER BY first_name ASC',
+    'SELECT id, first_name, middle_name, last_name FROM contacts WHERE tenant_id = $1 ORDER BY first_name ASC',
     [userId]
   );
 
@@ -184,6 +184,7 @@ export async function getSharingStatus(connectionId: string) {
   const contactsList = contactsRes.rows.map(c => ({
     id: c.id,
     firstName: c.first_name,
+    middleName: c.middle_name,
     lastName: c.last_name,
     isShared: sharedIds.has(c.id)
   }));

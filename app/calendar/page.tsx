@@ -290,7 +290,7 @@ export default function CalendarPage() {
                         </div>
                         <div>
                           <h4 className="reminder-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {e.contact.first_name} {e.contact.last_name}
+                            {e.contact.first_name}{e.contact.middle_name ? ' ' + e.contact.middle_name : ''} {e.contact.last_name}
                             {deceasedContactIds.has(e.contact.id) && (
                               <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
                             )}
