@@ -1,14 +1,90 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getDocuments, createDocument, updateDocument, deleteDocument, toggleArchiveDocument } from './actions';
+import { 
+  getDocuments, createDocument, updateDocument, deleteDocument, 
+  toggleArchiveDocument, deleteAttachment, getAttachmentContent, parseDocumentFile 
+} from './actions';
 import { getDashboardData } from '@/app/dashboard/actions';
 import { DOCUMENT_TYPES, getDocumentTypeLabel } from '@/lib/documentTypes';
 import { 
   Search, Plus, Edit, Trash2, FolderOpen, FileText, Calendar, X, 
-  Archive, User, AlertTriangle, CheckCircle, Eye, RefreshCw, Trash, Info
+  Archive, User, AlertTriangle, CheckCircle, Eye, RefreshCw, Trash, Info,
+  Paperclip, Download, Loader2
 } from 'lucide-react';
 import Portal from '@/app/components/Portal';
+
+// Helper for client-side image compression
+function compressImage(file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.7): Promise<{ base64: string; compressedSize: number }> {
+  return new Promise((resolve, reject) => {
+    if (file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve({
+          base64: e.target?.result as string,
+          compressedSize: file.size
+        });
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        const stringLength = compressedBase64.length - 'data:image/jpeg;base64,'.length;
+        const sizeInBytes = Math.round(stringLength * 0.75);
+
+        resolve({
+          base64: compressedBase64,
+          compressedSize: sizeInBytes
+        });
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+}
+
+// Format file size utility
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -31,6 +107,12 @@ export default function DocumentsPage() {
   const [expiryDate, setExpiryDate] = useState('');
   const [reviewDate, setReviewDate] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Attachment & Scan States
+  const [isScanning, setIsScanning] = useState(false);
+  const [attachmentFile, setAttachmentFile] = useState<any | null>(null);
+  const [attachmentMetadata, setAttachmentMetadata] = useState<any | null>(null);
+  const [isDownloadingId, setIsDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAllData();
@@ -62,6 +144,8 @@ export default function DocumentsPage() {
     setExpiryDate('');
     setReviewDate('');
     setNotes('');
+    setAttachmentFile(null);
+    setAttachmentMetadata(null);
     setShowForm(true);
   };
 
@@ -76,6 +160,17 @@ export default function DocumentsPage() {
     setExpiryDate(doc.expiry_date ? new Date(doc.expiry_date).toISOString().split('T')[0] : '');
     setReviewDate(doc.review_date ? new Date(doc.review_date).toISOString().split('T')[0] : '');
     setNotes(doc.notes || '');
+    setAttachmentFile(null);
+    if (doc.attachment_id) {
+      setAttachmentMetadata({
+        id: doc.attachment_id,
+        name: doc.attachment_name,
+        type: doc.attachment_type,
+        size: doc.attachment_size
+      });
+    } else {
+      setAttachmentMetadata(null);
+    }
     setShowForm(true);
   };
 
@@ -95,6 +190,7 @@ export default function DocumentsPage() {
       expiryDate: expiryDate || null,
       reviewDate: reviewDate || null,
       notes: notes.trim(),
+      attachment: attachmentFile
     };
 
     try {
@@ -104,10 +200,123 @@ export default function DocumentsPage() {
         await createDocument(payload);
       }
       setShowForm(false);
+      setAttachmentFile(null);
+      setAttachmentMetadata(null);
       loadAllData();
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Error saving document reminder.');
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large. Please select a file under 5MB.');
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      // 1. Compress image in browser (or read base64 directly if PDF)
+      const { base64, compressedSize } = await compressImage(file);
+
+      setAttachmentFile({
+        fileName: file.name,
+        fileType: file.type === 'application/pdf' ? 'application/pdf' : 'image/jpeg',
+        fileSize: compressedSize,
+        fileContent: base64
+      });
+
+      // 2. Scan with Gemini OCR
+      const res = await parseDocumentFile(base64);
+
+      if (res.success && res.data) {
+        const info = res.data;
+
+        if (info.documentType) {
+          setDocumentType(info.documentType);
+        }
+        if (info.documentNumber) {
+          setDocumentNumber(info.documentNumber);
+        }
+        if (info.issueDate) {
+          setIssueDate(info.issueDate);
+        }
+        if (info.expiryDate) {
+          setExpiryDate(info.expiryDate);
+        }
+
+        let autoNotes = '';
+        if (info.holderName) {
+          autoNotes += `Holder: ${info.holderName}\n`;
+          
+          // Suggest linking to family contact if names match
+          const matchedContact = contacts.find((c: any) => {
+            const fullName = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().trim();
+            return fullName.includes(info.holderName.toLowerCase().trim()) || 
+                   info.holderName.toLowerCase().trim().includes(fullName);
+          });
+          if (matchedContact) {
+            setContactId(matchedContact.id);
+            autoNotes += `Linked Contact: ${matchedContact.first_name} ${matchedContact.last_name} (Auto-matched)\n`;
+          }
+        }
+        if (info.notes) {
+          autoNotes += info.notes;
+        }
+
+        if (autoNotes) {
+          setNotes((prev) => prev ? `${prev}\n\n[Extracted Info]\n${autoNotes}` : autoNotes);
+        }
+
+        alert('Document scanned and fields auto-filled successfully! Please review.');
+      } else {
+        alert(res.error || 'Failed to scan document content. You can still fill it manually.');
+      }
+    } catch (err: any) {
+      console.error('OCR scanning error:', err);
+      alert(err.message || 'An error occurred while uploading/scanning.');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (attachmentId: string, name: string, type: string) => {
+    setIsDownloadingId(attachmentId);
+    try {
+      const res = await getAttachmentContent(attachmentId);
+      if (!res || !res.file_content) {
+        alert('Could not download file content.');
+        return;
+      }
+
+      const link = document.createElement('a');
+      link.href = res.file_content;
+      link.download = res.file_name || name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      console.error('Download error:', err);
+      alert(err.message || 'Error downloading file.');
+    } finally {
+      setIsDownloadingId(null);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (confirm('Are you sure you want to permanently delete this attachment? The document reminder will remain.')) {
+      try {
+        await deleteAttachment(attachmentId);
+        setAttachmentMetadata(null);
+        loadAllData();
+      } catch (err: any) {
+        console.error('Delete attachment error:', err);
+        alert(err.message || 'Error deleting attachment.');
+      }
     }
   };
 
@@ -468,6 +677,34 @@ export default function DocumentsPage() {
                   )}
                 </div>
 
+                {/* File Attachment */}
+                {doc.attachment_id && (
+                  <div style={{ fontSize: '12.5px', borderTop: '1px dashed rgba(0,0,0,0.06)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', overflow: 'hidden', marginRight: '8px' }}>
+                      <Paperclip size={13} style={{ color: 'var(--color-gold)', flexShrink: 0 }} />
+                      <span style={{ fontWeight: '500', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={doc.attachment_name}>
+                        {doc.attachment_name}
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', flexShrink: 0 }}>
+                        ({formatFileSize(doc.attachment_size)})
+                      </span>
+                    </div>
+                    <button 
+                      className="btn btn-ghost"
+                      style={{ height: '24px', padding: '0 8px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', width: 'auto', color: 'var(--color-gold)', flexShrink: 0 }}
+                      onClick={() => handleDownloadAttachment(doc.attachment_id, doc.attachment_name, doc.attachment_type)}
+                      disabled={isDownloadingId === doc.attachment_id}
+                    >
+                      {isDownloadingId === doc.attachment_id ? (
+                        <Loader2 size={11} className="spin" />
+                      ) : (
+                        <Download size={11} />
+                      )}
+                      Download
+                    </button>
+                  </div>
+                )}
+
                 {/* Notes */}
                 {doc.notes && (
                   <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', borderTop: '1px dashed rgba(0,0,0,0.06)', paddingTop: '8px' }}>
@@ -588,6 +825,142 @@ export default function DocumentsPage() {
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
                   Choose a date to receive an early notification before the actual expiry.
                 </span>
+              </div>
+
+              {/* File Upload Dropzone / Attachment Status */}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Document Attachment</label>
+                
+                {isScanning ? (
+                  <div 
+                    style={{ 
+                      border: '2px dashed rgba(197, 160, 89, 0.4)', 
+                      borderRadius: '12px', 
+                      padding: '24px 20px', 
+                      textAlign: 'center', 
+                      backgroundColor: 'rgba(197, 160, 89, 0.05)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Loader2 size={24} className="spin" style={{ color: 'var(--color-gold)' }} />
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                      Scanning document using Gemini AI OCR...
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      Please wait, extracting details to auto-fill the form
+                    </span>
+                  </div>
+                ) : attachmentMetadata ? (
+                  <div 
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '10px 12px', 
+                      backgroundColor: 'rgba(197, 160, 89, 0.06)', 
+                      borderRadius: '10px',
+                      border: '1px solid rgba(197, 160, 89, 0.2)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <Paperclip size={14} style={{ color: 'var(--color-gold)', flexShrink: 0 }} />
+                      <span style={{ fontSize: '12.5px', color: 'var(--text-primary)', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={attachmentMetadata.name}>
+                        {attachmentMetadata.name}
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        ({formatFileSize(attachmentMetadata.size)})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ height: '28px', padding: '0 8px', width: 'auto', display: 'flex', alignItems: 'center', fontSize: '11px', gap: '4px', color: 'var(--color-gold)' }}
+                        onClick={() => handleDownloadAttachment(attachmentMetadata.id, attachmentMetadata.name, attachmentMetadata.type)}
+                      >
+                        <Download size={12} /> View
+                      </button>
+                      <button 
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ height: '28px', padding: '0 8px', width: 'auto', display: 'flex', alignItems: 'center', fontSize: '11px', gap: '4px', color: 'var(--color-rose)' }}
+                        onClick={() => handleDeleteAttachment(attachmentMetadata.id)}
+                      >
+                        <Trash size={12} /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : attachmentFile ? (
+                  <div 
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '10px 12px', 
+                      backgroundColor: 'rgba(74, 117, 89, 0.06)', 
+                      borderRadius: '10px',
+                      border: '1px solid rgba(74, 117, 89, 0.2)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                      <Paperclip size={14} style={{ color: 'var(--color-sage)', flexShrink: 0 }} />
+                      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <span style={{ fontSize: '12.5px', color: 'var(--text-primary)', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={attachmentFile.fileName}>
+                          {attachmentFile.fileName}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--color-sage)' }}>
+                          Pending save ({formatFileSize(attachmentFile.fileSize)})
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{ height: '28px', padding: '0 8px', width: 'auto', display: 'flex', alignItems: 'center', fontSize: '11px', gap: '4px', color: 'var(--color-rose)' }}
+                      onClick={() => setAttachmentFile(null)}
+                    >
+                      <Trash size={12} /> Clear
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    style={{ 
+                      border: '2px dashed rgba(197, 160, 89, 0.3)', 
+                      borderRadius: '12px', 
+                      padding: '16px', 
+                      textAlign: 'center', 
+                      backgroundColor: 'var(--bg-primary)', 
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf" 
+                      onChange={handleFileChange}
+                      style={{ 
+                        position: 'absolute', 
+                        top: 0, 
+                        left: 0, 
+                        width: '100%', 
+                        height: '100%', 
+                        opacity: 0, 
+                        cursor: 'pointer' 
+                      }} 
+                    />
+                    <FolderOpen size={20} style={{ color: 'var(--color-gold)', marginBottom: '6px', opacity: 0.8 }} />
+                    <p style={{ fontSize: '12.5px', fontWeight: '500', color: 'var(--text-primary)', margin: 0 }}>
+                      Upload Photo or PDF scan to auto-fill
+                    </p>
+                    <p style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px', margin: 0 }}>
+                      Supports all document types up to 5MB
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Form Notes */}

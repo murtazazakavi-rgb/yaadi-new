@@ -111,6 +111,9 @@ async function ensureTables() {
       CREATE INDEX IF NOT EXISTS idx_document_attachments_document ON document_attachments(document_id);
     `);
     await sql.query(`
+      ALTER TABLE document_attachments ADD COLUMN IF NOT EXISTS file_content TEXT;
+    `);
+    await sql.query(`
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS email_reminders_enabled BOOLEAN DEFAULT true;
     `);
     await sql.query(`
