@@ -37,3 +37,6 @@ test-*.js
 /scratch
 
 .env*
+
+# local node environment
+.node/
