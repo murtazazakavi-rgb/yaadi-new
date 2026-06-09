@@ -143,7 +143,7 @@ export default function DashboardPage() {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [nextEvent?.id, nextEvent?.eventDate]);
+  }, [nextEvent?.id, nextEvent?.eventDate instanceof Date ? nextEvent.eventDate.getTime() : nextEvent?.eventDate]);
 
   // Insights Stats
   const insights = React.useMemo(() => {
