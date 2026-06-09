@@ -467,24 +467,44 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            {/* Countdown Clock */}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              {[
-                { value: timeLeft.days, label: 'Days' },
-                { value: timeLeft.hours, label: 'Hrs' },
-                { value: timeLeft.minutes, label: 'Mins' },
-                { value: timeLeft.seconds, label: 'Secs' }
-              ].map((item, idx) => (
-                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '44px', padding: '6px 2px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: 'var(--border-light)' }}>
-                  <span className="serif-font" style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>
-                    {String(item.value).padStart(2, '0')}
-                  </span>
-                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>
-                    {item.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {/* Countdown Clock or Today Badge */}
+            {nextEvent.daysRemaining === 0 ? (
+              <div 
+                className="page-pulse"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  fontSize: '12px', 
+                  fontWeight: '700', 
+                  color: nextEvent.eventType.includes('death') ? 'var(--text-muted)' : 'var(--color-gold)', 
+                  backgroundColor: 'var(--bg-primary)', 
+                  padding: '8px 14px', 
+                  borderRadius: '12px', 
+                  border: `1px solid ${nextEvent.eventType.includes('death') ? 'rgba(140, 137, 132, 0.2)' : 'rgba(197, 160, 89, 0.25)'}`
+                }}
+              >
+                {nextEvent.eventType.includes('death') ? '🤍 Remembering Today' : '🎉 Celebrating Today!'}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                {[
+                  { value: timeLeft.days, label: 'Days' },
+                  { value: timeLeft.hours, label: 'Hrs' },
+                  { value: timeLeft.minutes, label: 'Mins' },
+                  { value: timeLeft.seconds, label: 'Secs' }
+                ].map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '44px', padding: '6px 2px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: 'var(--border-light)' }}>
+                    <span className="serif-font" style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>
+                      {String(item.value).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
