@@ -894,7 +894,7 @@ p, span, input, select, textarea, button {
     background-color: var(--bg-sidebar);
     padding: 24px 0;
     box-shadow: none;
-    z-index: 99;
+    z-index: 999;
   }
 
   /* Style sidebar nav items */
@@ -1219,6 +1219,7 @@ p, span, input, select, textarea, button {
   width: calc(100% - 32px);
   max-width: calc(var(--max-width-mobile) - 32px);
   z-index: 9999;
+  pointer-events: none;
 }
 
 .pwa-banner-card {
@@ -1230,6 +1231,7 @@ p, span, input, select, textarea, button {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  pointer-events: auto;
 }
 
 /* Premium Admin Table styling */
