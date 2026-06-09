@@ -14,7 +14,7 @@ import {
 import { parseVoiceContact } from './voiceActions';
 import { getGroups, createGroup, deleteGroup, getGroupShareLink, toggleGroupShareLink } from './groupActions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy, Sparkles, Send } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy, Sparkles, Send, Settings } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
 import Portal from '@/app/components/Portal';
@@ -1065,9 +1065,9 @@ export default function ContactsPage() {
             cursor: 'pointer',
             transition: 'var(--transition-smooth)'
           }}
-          title="Manage Groups"
+          title="Manage Tags / Groups"
         >
-          <Plus size={16} />
+          <Settings size={16} />
         </button>
       </div>
 
@@ -1597,10 +1597,32 @@ export default function ContactsPage() {
 
                   {/* Groups Selection */}
                   <div style={{ marginTop: '12px', borderTop: 'var(--border-light)', paddingTop: '12px' }}>
-                    <label className="form-label">Workspace Groups / Tags</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label className="form-label" style={{ margin: 0 }}>Workspace Groups / Tags</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowGroupManager(true)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--color-gold)',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          padding: 0,
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Settings size={12} /> Manage Tags
+                      </button>
+                    </div>
                     {groups.length === 0 ? (
                       <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0' }}>
-                        No groups created yet. You can create groups in the setting button next to the filters.
+                        No groups created yet. Click "Manage Tags" above to create some.
                       </p>
                     ) : (
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '8px 0' }}>
