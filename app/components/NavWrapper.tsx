@@ -30,9 +30,14 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   const [pendingConnections, setPendingConnections] = useState(0);
 
   useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-    const savedStyle = localStorage.getItem('yaadi-ui-style') || 'classic';
-    setUiStyle(savedStyle);
+    try {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+      let savedStyle = 'classic';
+      try {
+        savedStyle = localStorage.getItem('yaadi-ui-style') || 'classic';
+      } catch (e) {}
+      setUiStyle(savedStyle);
+    } catch (e) {}
     
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       navigator.serviceWorker.register('/sw.js').then(
@@ -46,7 +51,10 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
     setIsIOS(ios);
 
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isDismissed = localStorage.getItem('pwa-prompt-dismissed') === 'true';
+    let isDismissed = false;
+    try {
+      isDismissed = localStorage.getItem('pwa-prompt-dismissed') === 'true';
+    } catch (e) {}
 
     if (!isDismissed && !isStandalone) {
       if (ios) {
@@ -86,7 +94,9 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   }, [pathname, user]);
 
   const handleDismissPrompt = () => {
-    localStorage.setItem('pwa-prompt-dismissed', 'true');
+    try {
+      localStorage.setItem('pwa-prompt-dismissed', 'true');
+    } catch (e) {}
     setShowInstallPrompt(false);
   };
 
@@ -106,12 +116,16 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
     if (isDark) {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('theme', 'light');
+      try {
+        localStorage.setItem('theme', 'light');
+      } catch (e) {}
       setIsDarkMode(false);
     } else {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
+      try {
+        localStorage.setItem('theme', 'dark');
+      } catch (e) {}
       setIsDarkMode(true);
     }
     if (user) {
@@ -124,7 +138,9 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
   const selectUIStyle = (styleName: string) => {
     setUiStyle(styleName);
     document.documentElement.setAttribute('data-ui-style', styleName);
-    localStorage.setItem('yaadi-ui-style', styleName);
+    try {
+      localStorage.setItem('yaadi-ui-style', styleName);
+    } catch (e) {}
     if (user) {
       const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
       saveUIPreferences(currentTheme, styleName).catch(err => {
@@ -194,32 +210,32 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
 
       {/* Bottom Navigation */}
       <nav className="bottom-nav">
-        <Link href="/dashboard" className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}>
+        <Link href="/dashboard" prefetch={false} className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}>
           <Home />
           <span>Dashboard</span>
         </Link>
 
-        <Link href="/calendar" className={`nav-item ${pathname === '/calendar' ? 'active' : ''}`}>
+        <Link href="/calendar" prefetch={false} className={`nav-item ${pathname === '/calendar' ? 'active' : ''}`}>
           <Calendar />
           <span>Calendar</span>
         </Link>
         
-        <Link href="/contacts" className={`nav-item ${pathname === '/contacts' ? 'active' : ''}`}>
+        <Link href="/contacts" prefetch={false} className={`nav-item ${pathname === '/contacts' ? 'active' : ''}`}>
           <Users />
           <span>Contacts</span>
         </Link>
         
-        <Link href="/tree" className={`nav-item ${pathname === '/tree' ? 'active' : ''}`}>
+        <Link href="/tree" prefetch={false} className={`nav-item ${pathname === '/tree' ? 'active' : ''}`}>
           <Network />
           <span>Family Tree</span>
         </Link>
 
-        <Link href="/documents" className={`nav-item desktop-only ${pathname === '/documents' ? 'active' : ''}`}>
+        <Link href="/documents" prefetch={false} className={`nav-item desktop-only ${pathname === '/documents' ? 'active' : ''}`}>
           <FileText />
           <span>Documents</span>
         </Link>
         
-        <Link href="/connections" className={`nav-item desktop-only ${pathname === '/connections' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Link href="/connections" prefetch={false} className={`nav-item desktop-only ${pathname === '/connections' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Share2 />
             <span>Connections</span>
@@ -241,12 +257,12 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
           )}
         </Link>
         
-        <Link href="/templates" className={`nav-item desktop-only ${pathname === '/templates' ? 'active' : ''}`}>
+        <Link href="/templates" prefetch={false} className={`nav-item desktop-only ${pathname === '/templates' ? 'active' : ''}`}>
           <MessageSquare />
           <span>Templates</span>
         </Link>
 
-        <Link href="/approvals" className={`nav-item desktop-only ${pathname === '/approvals' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Link href="/approvals" prefetch={false} className={`nav-item desktop-only ${pathname === '/approvals' ? 'active' : ''}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <CheckSquare />
             <span>Approvals</span>
@@ -268,13 +284,13 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
           )}
         </Link>
 
-        <Link href="/settings" className={`nav-item desktop-only ${pathname === '/settings' ? 'active' : ''}`}>
+        <Link href="/settings" prefetch={false} className={`nav-item desktop-only ${pathname === '/settings' ? 'active' : ''}`}>
           <Settings />
           <span>Settings</span>
         </Link>
 
         {user?.isAdmin && (
-          <Link href="/admin" className={`nav-item desktop-only ${pathname === '/admin' ? 'active' : ''}`}>
+          <Link href="/admin" prefetch={false} className={`nav-item desktop-only ${pathname === '/admin' ? 'active' : ''}`}>
             <ShieldAlert />
             <span>Admin</span>
           </Link>
@@ -371,6 +387,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
             <div className="mobile-drawer-links" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <Link 
                 href="/documents" 
+                prefetch={false}
                 onClick={() => setShowMoreMenu(false)}
                 style={{ 
                   display: 'flex', 
@@ -392,6 +409,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
 
               <Link 
                 href="/connections" 
+                prefetch={false}
                 onClick={() => setShowMoreMenu(false)}
                 style={{ 
                   display: 'flex', 
@@ -430,6 +448,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
               
               <Link 
                 href="/templates" 
+                prefetch={false}
                 onClick={() => setShowMoreMenu(false)}
                 style={{ 
                   display: 'flex', 
@@ -451,6 +470,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
               
               <Link 
                 href="/approvals" 
+                prefetch={false}
                 onClick={() => setShowMoreMenu(false)}
                 style={{ 
                   display: 'flex', 
@@ -489,6 +509,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
 
               <Link 
                 href="/settings" 
+                prefetch={false}
                 onClick={() => setShowMoreMenu(false)}
                 style={{ 
                   display: 'flex', 
@@ -511,6 +532,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
               {user?.isAdmin && (
                 <Link 
                   href="/admin" 
+                  prefetch={false}
                   onClick={() => setShowMoreMenu(false)}
                   style={{ 
                     display: 'flex', 

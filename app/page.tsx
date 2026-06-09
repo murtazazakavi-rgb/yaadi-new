@@ -30,7 +30,9 @@ export default function LoginPage() {
 
       // Sync theme and style from user login preferences
       if (data.user?.theme) {
-        localStorage.setItem('theme', data.user.theme);
+        try {
+          localStorage.setItem('theme', data.user.theme);
+        } catch (e) {}
         document.documentElement.setAttribute('data-theme', data.user.theme);
         if (data.user.theme === 'dark') {
           document.documentElement.classList.add('dark');
@@ -39,7 +41,9 @@ export default function LoginPage() {
         }
       }
       if (data.user?.uiStyle) {
-        localStorage.setItem('yaadi-ui-style', data.user.uiStyle);
+        try {
+          localStorage.setItem('yaadi-ui-style', data.user.uiStyle);
+        } catch (e) {}
         document.documentElement.setAttribute('data-ui-style', data.user.uiStyle);
       }
 
