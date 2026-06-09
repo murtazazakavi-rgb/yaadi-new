@@ -324,7 +324,7 @@ Strictly return a JSON object with the following fields:
 Do not output any markdown code blocks or text outside of the JSON. Output only the raw JSON.
 `;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
     const requestBody = {
       contents: [
