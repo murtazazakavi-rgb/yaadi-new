@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Shield, Bell, Check, AlertTriangle, KeyRound, User, Mail, Send } from 'lucide-react';
-import { getSettingsData, updateProfile, changePassword, updateReminderSettings, sendTestEmail } from './actions';
+import { Settings, Shield, Bell, Check, AlertTriangle, KeyRound, User, Mail, Send, Share2 } from 'lucide-react';
+import { getSettingsData, updateProfile, changePassword, updateReminderSettings, sendTestEmail, updateShareAnnouncements } from './actions';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -27,6 +27,11 @@ export default function SettingsPage() {
   const [updatingReminders, setUpdatingReminders] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
 
+  // Section 4: Public Share Announcements
+  const [shareAnnouncementsEnabled, setShareAnnouncementsEnabled] = useState(false);
+  const [tenantId, setTenantId] = useState('');
+  const [shareUrl, setShareUrl] = useState('');
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -40,6 +45,10 @@ export default function SettingsPage() {
       setEmailRemindersEnabled(data.emailRemindersEnabled);
       setReminderDaysAhead(data.reminderDaysAhead);
       setReminderTypes(data.reminderTypes);
+      setShareAnnouncementsEnabled(data.shareAnnouncementsEnabled);
+      setTenantId(data.tenantId);
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      setShareUrl(`${origin}/share/announcements/${data.tenantId}`);
     } catch (err) {
       console.error(err);
       triggerToast('Failed to load settings.');
@@ -305,6 +314,74 @@ export default function SettingsPage() {
             </button>
           </form>
         </div>
+
+        {/* SHARED ANNOUNCEMENT LINK SECTION */}
+        <div className="card" style={{ margin: 0, padding: '20px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-gold)', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Share2 size={16} /> Shared Announcement Link
+          </h4>
+          
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: 'var(--border-light)' }}>
+            <div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', display: 'block' }}>Public Announcement Page</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Generate a public, read-only list of today's and this week's celebrations</span>
+            </div>
+            <div 
+              className={`switch-track ${shareAnnouncementsEnabled ? 'active' : ''}`}
+              onClick={async () => {
+                const newValue = !shareAnnouncementsEnabled;
+                setShareAnnouncementsEnabled(newValue);
+                try {
+                  await updateShareAnnouncements(newValue);
+                  triggerToast(newValue ? 'Shared announcement link enabled!' : 'Shared announcement link disabled.');
+                } catch (err: any) {
+                  setShareAnnouncementsEnabled(!newValue); // rollback
+                  triggerToast(err.message || 'Failed to update sharing preference.');
+                }
+              }}
+              style={{ flexShrink: 0, cursor: 'pointer' }}
+            >
+              <div className="switch-thumb" />
+            </div>
+          </div>
+
+          {shareAnnouncementsEnabled && (
+            <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">Your Shareable Link</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input 
+                    type="text" 
+                    readOnly 
+                    className="form-input" 
+                    value={shareUrl}
+                    style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '12px', flex: 1 }}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary btn-press" 
+                    style={{ width: 'auto', padding: '0 16px', height: '38px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}
+                    onClick={() => {
+                      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                        navigator.clipboard.writeText(shareUrl);
+                        triggerToast('Link copied to clipboard!');
+                      } else {
+                        triggerToast('Clipboard not supported, please copy manually.');
+                      }
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '6px', lineHeight: '1.4' }}>
+                  Anyone with this link can view the current week's celebrations. Perfect to pin in family group descriptions or email footers!
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
 
         {/* SECURITY / PASSWORD CHANGING */}
         <div className="card" style={{ margin: 0, padding: '20px' }}>

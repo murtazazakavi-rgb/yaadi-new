@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getDashboardData } from './actions';
 import { HijriDate, getNextGregorianEvent, getNextHijriEvent, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X } from 'lucide-react';
+import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X, Clock, BarChart3, Award } from 'lucide-react';
 import Portal from '@/app/components/Portal';
 
 export default function DashboardPage() {
@@ -19,6 +19,11 @@ export default function DashboardPage() {
   // Current Date Strings
   const [gregorianTodayStr, setGregorianTodayStr] = useState('');
   const [hijriTodayStr, setHijriTodayStr] = useState('');
+
+  // Added States for Countdown and Analytics Tab
+  const [activeTab, setActiveTab] = useState<'events' | 'insights'>('events');
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+  const [insightCalendarType, setInsightCalendarType] = useState<'gregorian' | 'hijri'>('gregorian');
 
   useEffect(() => {
     const today = new Date();
@@ -62,7 +67,7 @@ export default function DashboardPage() {
   );
 
   // Process all events and calculate countdowns
-  const rawReminders = data.events.map((event: any) => {
+  const allCalculatedReminders = data.events.map((event: any) => {
     const contact = data.contacts.find((c: any) => c.id === event.contact_id);
     if (!contact) return null;
 
@@ -91,15 +96,119 @@ export default function DashboardPage() {
       eventData: event
     };
   })
-  .filter(Boolean)
-  // Filter by search query
-  .filter((r: any) => {
-    const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`.toLowerCase();
-    return name.includes(searchQuery.toLowerCase());
-  });
+  .filter(Boolean);
+
+  // Find next closest upcoming event
+  const absoluteUpcoming = allCalculatedReminders
+    .filter((r: any) => r && r.daysRemaining >= 0)
+    .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+  const nextEvent = absoluteUpcoming[0];
+
+  // Filter raw reminders by search query for UI lists
+  const rawReminders = allCalculatedReminders
+    .filter((r: any) => {
+      const name = `${r.contact.first_name}${r.contact.middle_name ? ' ' + r.contact.middle_name : ''} ${r.contact.last_name}`.toLowerCase();
+      return name.includes(searchQuery.toLowerCase());
+    });
 
   const livingReminders = rawReminders.filter((r: any) => !deceasedContactIds.has(r.contact.id));
   const deceasedReminders = rawReminders.filter((r: any) => deceasedContactIds.has(r.contact.id));
+
+  // Real-time Countdown Timer Effect
+  useEffect(() => {
+    if (!nextEvent) {
+      setTimeLeft(null);
+      return;
+    }
+
+    const updateTimer = () => {
+      const now = new Date();
+      const eventDate = new Date(nextEvent.eventDate);
+      eventDate.setHours(0, 0, 0, 0); // start of day
+
+      const diffMs = eventDate.getTime() - now.getTime();
+      if (diffMs <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [nextEvent?.id, nextEvent?.eventDate]);
+
+  // Insights Stats
+  const insights = React.useMemo(() => {
+    if (!data.contacts || data.contacts.length === 0) {
+      return { totalContacts: 0, avgAge: 0, gMonthCounts: Array(12).fill(0), hMonthCounts: Array(12).fill(0), mostCommonGMonth: 'N/A', landmarks: [] };
+    }
+
+    const totalContacts = data.contacts.length;
+    
+    // Average Age
+    let totalAge = 0;
+    let ageCount = 0;
+    const currentYear = new Date().getFullYear();
+    const currentHYear = HijriDate.fromGregorian(new Date()).year;
+
+    data.events.forEach((e: any) => {
+      if (e.event_type === 'birthday_gregorian' && e.g_year) {
+        totalAge += (currentYear - e.g_year);
+        ageCount++;
+      } else if (e.event_type === 'birthday_hijri' && e.h_year) {
+        totalAge += (currentHYear - e.h_year);
+        ageCount++;
+      }
+    });
+    const avgAge = ageCount > 0 ? Math.round(totalAge / ageCount) : 0;
+
+    // Month distribution
+    const gMonthCounts = Array(12).fill(0);
+    const hMonthCounts = Array(12).fill(0);
+
+    data.events.forEach((e: any) => {
+      if (e.event_type === 'birthday_gregorian' && e.g_month) {
+        gMonthCounts[e.g_month - 1]++;
+      } else if (e.event_type === 'birthday_hijri' && e.h_month !== undefined && e.h_month !== null) {
+        hMonthCounts[e.h_month]++;
+      }
+    });
+
+    // Most common birth month
+    let maxGMonth = 0;
+    let maxGCount = 0;
+    gMonthCounts.forEach((count, idx) => {
+      if (count > maxGCount) {
+        maxGCount = count;
+        maxGMonth = idx;
+      }
+    });
+    const gMonthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const mostCommonGMonth = maxGCount > 0 ? `${gMonthNames[maxGMonth]} (${maxGCount} events)` : 'N/A';
+
+    // Landmark Celebrations (1st, 10th, 25th, 50th, 60th, 70th, 75th, 80th, 90th)
+    const landmarkYears = [1, 10, 25, 50, 60, 70, 75, 80, 90];
+    const landmarks = allCalculatedReminders
+      .filter((r: any) => r && landmarkYears.includes(r.ordinal) && r.daysRemaining <= 180 && !deceasedContactIds.has(r.contact.id))
+      .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
+
+    return {
+      totalContacts,
+      avgAge,
+      gMonthCounts,
+      hMonthCounts,
+      mostCommonGMonth,
+      landmarks
+    };
+  }, [data.contacts, data.events, allCalculatedReminders, deceasedContactIds]);
 
   // Helper to group reminders by contact within each timeframe
   const groupRemindersByContact = (remindersList: any[]) => {
@@ -324,6 +433,62 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Real-time Countdown Widget */}
+      {nextEvent && timeLeft && (
+        <div className="card next-up-card" style={{
+          background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(197, 160, 89, 0.05) 100%)',
+          border: '1px solid rgba(197, 160, 89, 0.3)',
+          padding: '20px',
+          margin: '0 16px 20px 16px',
+          borderRadius: '16px',
+          boxShadow: 'var(--shadow-soft)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-gold)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              ⚡ Next Event Countdown
+            </span>
+            <span className={`badge ${getEventBadgeClass(nextEvent.eventType)}`} style={{ fontSize: '10px' }}>
+              {getEventLabel(nextEvent)}
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="avatar-gradient" style={{ height: '44px', width: '44px', fontSize: '14px', flexShrink: 0 }}>
+                {getInitials(nextEvent.contact)}
+              </div>
+              <div>
+                <h4 className="serif-font" style={{ fontSize: '16px', fontWeight: '700', margin: 0, color: 'var(--text-primary)' }}>
+                  {nextEvent.contact.first_name}{nextEvent.contact.middle_name ? ' ' + nextEvent.contact.middle_name : ''} {nextEvent.contact.last_name}
+                </h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                  {formatDateDisplay(nextEvent)} • {getEventLabel(nextEvent)}
+                </p>
+              </div>
+            </div>
+            
+            {/* Countdown Clock */}
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              {[
+                { value: timeLeft.days, label: 'Days' },
+                { value: timeLeft.hours, label: 'Hrs' },
+                { value: timeLeft.minutes, label: 'Mins' },
+                { value: timeLeft.seconds, label: 'Secs' }
+              ].map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '44px', padding: '6px 2px', backgroundColor: 'var(--bg-primary)', borderRadius: '8px', border: 'var(--border-light)' }}>
+                  <span className="serif-font" style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>
+                    {String(item.value).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: '8px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Today's Celebration Banner (Conditional Amber Gradient Banner) */}
       {todayEvents.length > 0 && (
         <div className="card" style={{
@@ -407,8 +572,127 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Elegant Search bar */}
-      <div className="search-bar-container">
+      {/* Segmented Tab Control */}
+      <div style={{ display: 'flex', gap: '8px', padding: '0 16px', marginBottom: '16px' }}>
+        <button 
+          onClick={() => setActiveTab('events')} 
+          className={`btn ${activeTab === 'events' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ flex: 1, height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backgroundColor: activeTab === 'events' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)', color: activeTab === 'events' ? 'var(--color-gold)' : 'var(--text-secondary)' }}
+        >
+          <Calendar size={15} /> Celebrations
+        </button>
+        <button 
+          onClick={() => setActiveTab('insights')} 
+          className={`btn ${activeTab === 'insights' ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ flex: 1, height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backgroundColor: activeTab === 'insights' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)', color: activeTab === 'insights' ? 'var(--color-gold)' : 'var(--text-secondary)' }}
+        >
+          <BarChart3 size={15} /> Insights & Analytics
+        </button>
+      </div>
+
+      {activeTab === 'insights' ? (
+        <div className="page-transition" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 16px' }}>
+          {/* Quick Stats Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+            <div className="card" style={{ padding: '16px', margin: 0, textAlign: 'center', borderRadius: '12px' }}>
+              <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', letterSpacing: '0.5px' }}>Average Age</span>
+              <span className="serif-font" style={{ display: 'block', fontSize: '22px', fontWeight: '700', color: 'var(--color-sage)', marginTop: '4px' }}>
+                {insights.avgAge} yrs
+              </span>
+            </div>
+            <div className="card" style={{ padding: '16px', margin: 0, textAlign: 'center', borderRadius: '12px' }}>
+              <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', letterSpacing: '0.5px' }}>Common Month</span>
+              <span className="serif-font" style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: 'var(--color-gold)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={insights.mostCommonGMonth}>
+                {insights.mostCommonGMonth}
+              </span>
+            </div>
+            <div className="card" style={{ padding: '16px', margin: 0, textAlign: 'center', borderRadius: '12px' }}>
+              <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', letterSpacing: '0.5px' }}>Active Directory</span>
+              <span className="serif-font" style={{ display: 'block', fontSize: '22px', fontWeight: '700', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                {insights.totalContacts} members
+              </span>
+            </div>
+          </div>
+
+          {/* Month Distribution Bar Chart */}
+          <div className="card" style={{ padding: '20px', margin: 0, borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 className="serif-font" style={{ fontSize: '14px', fontWeight: '700', margin: 0 }}>Month Distribution</h4>
+              <div style={{ display: 'flex', backgroundColor: 'var(--bg-input)', padding: '2px', borderRadius: '8px', gap: '2px' }}>
+                <button
+                  onClick={() => setInsightCalendarType('gregorian')}
+                  style={{ border: 'none', background: insightCalendarType === 'gregorian' ? 'var(--bg-card)' : 'none', color: insightCalendarType === 'gregorian' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
+                >
+                  Gregorian
+                </button>
+                <button
+                  onClick={() => setInsightCalendarType('hijri')}
+                  style={{ border: 'none', background: insightCalendarType === 'hijri' ? 'var(--bg-card)' : 'none', color: insightCalendarType === 'hijri' ? 'var(--color-gold)' : 'var(--text-secondary)', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer' }}
+                >
+                  Hijri
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {(insightCalendarType === 'gregorian'
+                ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                : ['Moharram', 'Safar', 'Rabi I', 'Rabi II', 'Jumada I', 'Jumada II', 'Rajab', 'Shabaan', 'Ramadaan', 'Shawwal', 'Zilqadah', 'Zilhaj']
+              ).map((name, idx) => {
+                const count = insightCalendarType === 'gregorian' ? insights.gMonthCounts[idx] : insights.hMonthCounts[idx];
+                const maxCount = Math.max(...(insightCalendarType === 'gregorian' ? insights.gMonthCounts : insights.hMonthCounts), 1);
+                const percent = (count / maxCount) * 100;
+                
+                return (
+                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '11.5px', width: '75px', color: 'var(--text-secondary)', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>{name}</span>
+                    <div style={{ flex: 1, height: '8px', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${percent}%`, backgroundColor: 'var(--color-gold)', borderRadius: '4px', transition: 'width 0.5s ease-out' }} />
+                    </div>
+                    <span style={{ fontSize: '11px', width: '20px', textAlign: 'right', fontWeight: '600', color: count > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                      {count}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Landmark Milestones */}
+          <div className="card" style={{ padding: '20px', margin: 0, borderRadius: '12px' }}>
+            <h4 className="serif-font" style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Award size={16} style={{ color: 'var(--color-gold)' }} /> Landmark Milestones (Next 6 Months)
+            </h4>
+
+            {insights.landmarks.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {insights.landmarks.map((r: any) => (
+                  <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', border: 'var(--border-light)' }}>
+                    <div>
+                      <span style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-primary)', display: 'block' }}>
+                        {r.contact.first_name}{r.contact.middle_name ? ' ' + r.contact.middle_name : ''} {r.contact.last_name}
+                      </span>
+                      <span className="reminder-subtext" style={{ fontSize: '11px' }}>
+                        {formatDateDisplay(r)} • {getEventLabel(r)}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--color-sage)' }}>
+                      {getCountdownText(r.daysRemaining)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
+                No landmark milestones coming up in the next 6 months.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Elegant Search bar */}
+          <div className="search-bar-container">
         <div className="search-input-wrapper">
           <Search size={18} className="search-icon" />
           <input 
@@ -534,6 +818,8 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+      </>
+      )}
 
       {/* WhatsApp Message Template Composer Drawer Modal */}
       {showModal && selectedReminder && (

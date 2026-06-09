@@ -125,6 +125,9 @@ async function ensureTables() {
     await sql.query(`
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ui_style VARCHAR(30) DEFAULT 'classic';
     `);
+    await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS share_announcements_enabled BOOLEAN DEFAULT false;
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

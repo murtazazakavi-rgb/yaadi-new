@@ -279,3 +279,68 @@ export async function getRelationships() {
 
   return res.rows;
 }
+
+/**
+ * Bulk updates group tags for multiple contacts.
+ */
+export async function bulkCategorizeContacts(
+  contactIds: string[],
+  groupIds: string[],
+  operation: 'add' | 'remove'
+) {
+  const session = await requireAuth();
+  const tenantId = session.userId;
+
+  if (!contactIds || contactIds.length === 0 || !groupIds || groupIds.length === 0) {
+    return { success: true };
+  }
+
+  // 1. Verify contacts belong to the tenant
+  const contactCheck = await query(
+    'SELECT id FROM contacts WHERE id = ANY($1) AND tenant_id = $2',
+    [contactIds, tenantId]
+  );
+  const verifiedContactIds = contactCheck.rows.map(r => r.id);
+
+  if (verifiedContactIds.length === 0) {
+    return { success: true };
+  }
+
+  // 2. Verify groups belong to the tenant
+  const groupCheck = await query(
+    'SELECT id FROM groups WHERE id = ANY($1) AND tenant_id = $2',
+    [groupIds, tenantId]
+  );
+  const verifiedGroupIds = groupCheck.rows.map(r => r.id);
+
+  if (verifiedGroupIds.length === 0) {
+    throw new Error('Access denied: Invalid group selection.');
+  }
+
+  // 3. Perform the bulk operation
+  if (operation === 'add') {
+    for (const cId of verifiedContactIds) {
+      for (const gId of verifiedGroupIds) {
+        await query(
+          `INSERT INTO contact_group_mappings (contact_id, group_id) 
+           VALUES ($1, $2) 
+           ON CONFLICT (contact_id, group_id) DO NOTHING`,
+          [cId, gId]
+        );
+      }
+    }
+  } else if (operation === 'remove') {
+    await query(
+      `DELETE FROM contact_group_mappings 
+       WHERE contact_id = ANY($1) AND group_id = ANY($2)`,
+      [verifiedContactIds, verifiedGroupIds]
+    );
+  }
+
+  revalidatePath('/contacts');
+  revalidatePath('/dashboard');
+  revalidatePath('/tree');
+
+  return { success: true };
+}
+

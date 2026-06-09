@@ -22,7 +22,7 @@ export async function getSettingsData() {
   const tenantId = session.userId;
 
   const res = await query(
-    'SELECT email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types FROM tenants WHERE id = $1',
+    'SELECT email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types, share_announcements_enabled FROM tenants WHERE id = $1',
     [tenantId]
   );
 
@@ -36,7 +36,9 @@ export async function getSettingsData() {
     displayName: tenant.display_name,
     emailRemindersEnabled: tenant.email_reminders_enabled,
     reminderDaysAhead: tenant.reminder_days_ahead,
-    reminderTypes: tenant.reminder_types ? tenant.reminder_types.split(',') : []
+    reminderTypes: tenant.reminder_types ? tenant.reminder_types.split(',') : [],
+    shareAnnouncementsEnabled: !!tenant.share_announcements_enabled,
+    tenantId: tenantId
   };
 }
 
@@ -196,5 +198,21 @@ export async function saveUIPreferences(theme: string, uiStyle: string) {
     uiStyle
   });
 
+  return { success: true };
+}
+
+/**
+ * Toggles the public announcement sharing link.
+ */
+export async function updateShareAnnouncements(enabled: boolean) {
+  const session = await requireAuth();
+  const tenantId = session.userId;
+
+  await query(
+    'UPDATE tenants SET share_announcements_enabled = $1 WHERE id = $2',
+    [enabled, tenantId]
+  );
+
+  revalidatePath('/settings');
   return { success: true };
 }

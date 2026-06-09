@@ -8,12 +8,13 @@ import {
   deleteContact, 
   addRelationship, 
   removeRelationship, 
-  getRelationships 
+  getRelationships,
+  bulkCategorizeContacts
 } from './actions';
 import { parseVoiceContact } from './voiceActions';
 import { getGroups, createGroup, deleteGroup, getGroupShareLink, toggleGroupShareLink } from './groupActions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy, Sparkles } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus, Upload, Download, Mic, Share2, Copy, Sparkles, Send } from 'lucide-react';
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
 import Portal from '@/app/components/Portal';
@@ -25,6 +26,15 @@ export default function ContactsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'withEvents' | 'familyTree' | 'passedAway'>('all');
+
+  // Multi-Select States
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [showBulkCategoryModal, setShowBulkCategoryModal] = useState(false);
+  const [bulkOperationType, setBulkOperationType] = useState<'add' | 'remove'>('add');
+  const [bulkSelectedGroupIds, setBulkSelectedGroupIds] = useState<string[]>([]);
+  const [processingBulk, setProcessingBulk] = useState(false);
+  const [showBulkMessageModal, setShowBulkMessageModal] = useState(false);
+  const [bulkMessageText, setBulkMessageText] = useState('Assalamu Alaikum {name}, sending you my warmest thoughts and prayers.');
 
   // Voice Speech-to-Text States
   const [showVoiceModal, setShowVoiceModal] = useState(false);
@@ -1170,6 +1180,31 @@ export default function ContactsPage() {
         </button>
       </div>
 
+      {filteredContacts.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', marginBottom: '8px', marginTop: '12px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+            <input 
+              type="checkbox" 
+              checked={selectedContactIds.length === filteredContacts.length && filteredContacts.length > 0}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedContactIds(filteredContacts.map(c => c.id));
+                } else {
+                  setSelectedContactIds([]);
+                }
+              }}
+              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--color-gold)' }}
+            />
+            <span style={{ fontWeight: '500' }}>Select All ({filteredContacts.length})</span>
+          </label>
+          {selectedContactIds.length > 0 && (
+            <span style={{ fontSize: '12px', color: 'var(--color-gold)', fontWeight: '600' }}>
+              {selectedContactIds.length} Selected
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Contacts List */}
       <div className="contacts-grid" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {filteredContacts.length === 0 ? (
@@ -1191,13 +1226,28 @@ export default function ContactsPage() {
                   margin: '0 16px',
                   padding: '16px',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
+                  flexDirection: 'row',
+                  gap: '16px',
+                  alignItems: 'flex-start',
                   backgroundColor: isActive ? 'var(--bg-card-active)' : 'var(--bg-card)',
                   borderColor: isActive ? 'var(--color-gold)' : 'rgba(197, 160, 89, 0.15)'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <input 
+                  type="checkbox"
+                  checked={selectedContactIds.includes(c.id)}
+                  onChange={(e) => {
+                    if (selectedContactIds.includes(c.id)) {
+                      setSelectedContactIds(selectedContactIds.filter(id => id !== c.id));
+                    } else {
+                      setSelectedContactIds([...selectedContactIds, c.id]);
+                    }
+                  }}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '6px', accentColor: 'var(--color-gold)' }}
+                />
+                
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div 
                     onClick={() => setActiveContactId(isActive ? null : c.id)} 
                     style={{ cursor: 'pointer', flex: 1 }}
@@ -1408,9 +1458,9 @@ export default function ContactsPage() {
                         </form>
                       )}
                     </div>
-
                   </div>
                 )}
+                </div>
               </div>
             );
           })
@@ -2122,6 +2172,246 @@ export default function ContactsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </Portal>
+      )}
+      {/* Floating Bottom Actions Bar */}
+      {selectedContactIds.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          bottom: '76px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--color-gold)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          padding: '12px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          zIndex: 999,
+          width: 'calc(100% - 32px)',
+          maxWidth: '500px',
+          justifyContent: 'space-between'
+        }} className="page-slide-up">
+          <span style={{ fontSize: '13px', fontWeight: '600' }}>
+            {selectedContactIds.length} Selected
+          </span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => {
+                setBulkOperationType('add');
+                setBulkSelectedGroupIds([]);
+                setShowBulkCategoryModal(true);
+              }}
+              className="btn btn-secondary btn-press"
+              style={{ width: 'auto', padding: '0 12px', height: '34px', fontSize: '12px' }}
+            >
+              🏷️ Tag Group
+            </button>
+            <button 
+              onClick={() => {
+                setShowBulkMessageModal(true);
+              }}
+              className="btn btn-primary btn-press"
+              style={{ width: 'auto', padding: '0 12px', height: '34px', fontSize: '12px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold)' }}
+            >
+              💬 Send Dua
+            </button>
+            <button
+              onClick={() => setSelectedContactIds([])}
+              className="btn btn-ghost"
+              style={{ width: 'auto', padding: '0 8px', height: '34px', color: 'var(--text-muted)' }}
+              title="Clear Selection"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Categorization Modal */}
+      {showBulkCategoryModal && (
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowBulkCategoryModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 className="serif-font" style={{ fontSize: '18px' }}>Bulk Categorize Tagging</h3>
+                <button className="modal-close" onClick={() => setShowBulkCategoryModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Applying to {selectedContactIds.length} selected contacts
+                </span>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">Operation Type</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBulkOperationType('add')}
+                    className={`btn ${bulkOperationType === 'add' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, height: '34px', fontSize: '12px' }}
+                  >
+                    Add Tags
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkOperationType('remove')}
+                    className={`btn ${bulkOperationType === 'remove' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, height: '34px', fontSize: '12px' }}
+                  >
+                    Remove Tags
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label">Select Groups</label>
+                {groups.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto', padding: '6px' }}>
+                    {groups.map((g: any) => {
+                      const checked = bulkSelectedGroupIds.includes(g.id);
+                      return (
+                        <label key={g.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              if (checked) {
+                                setBulkSelectedGroupIds(bulkSelectedGroupIds.filter(id => id !== g.id));
+                              } else {
+                                setBulkSelectedGroupIds([...bulkSelectedGroupIds, g.id]);
+                              }
+                            }}
+                            style={{ width: '16px', height: '16px' }}
+                          />
+                          <span style={{ display: 'inline-block', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: g.color || '#C4953A' }} />
+                          <span>{g.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    No groups defined. Create groups in the tag manager.
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-press"
+                onClick={async () => {
+                  if (bulkSelectedGroupIds.length === 0) {
+                    alert('Please select at least one group.');
+                    return;
+                  }
+                  setProcessingBulk(true);
+                  try {
+                    await bulkCategorizeContacts(selectedContactIds, bulkSelectedGroupIds, bulkOperationType);
+                    setShowBulkCategoryModal(false);
+                    setSelectedContactIds([]);
+                    loadAllData();
+                  } catch (err: any) {
+                    alert(err.message || 'Bulk tagging failed.');
+                  } finally {
+                    setProcessingBulk(false);
+                  }
+                }}
+                disabled={processingBulk || bulkSelectedGroupIds.length === 0}
+              >
+                {processingBulk ? 'Applying Changes...' : `Apply to ${selectedContactIds.length} Contacts`}
+              </button>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* Bulk Messaging Modal */}
+      {showBulkMessageModal && (
+        <Portal>
+          <div className="modal-overlay" onClick={() => setShowBulkMessageModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+              <div className="modal-header">
+                <h3 className="serif-font" style={{ fontSize: '18px' }}>Bulk WhatsApp Messages</h3>
+                <button className="modal-close" onClick={() => setShowBulkMessageModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label">Message Draft</label>
+                <textarea
+                  className="form-input"
+                  style={{ height: '90px', resize: 'none', fontSize: '13px', fontFamily: 'inherit' }}
+                  value={bulkMessageText}
+                  onChange={(e) => setBulkMessageText(e.target.value)}
+                  placeholder="Type a greeting or prayers to share... Use {name} as a placeholder for their name!"
+                />
+              </div>
+
+              <label className="form-label" style={{ marginBottom: '8px' }}>Send Queue ({selectedContactIds.length})</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '4px' }}>
+                {contacts
+                  .filter(c => selectedContactIds.includes(c.id))
+                  .map(c => {
+                    const phone = c.phone_number || '';
+                    const cleanPhone = phone.replace(/[^0-9]/g, '');
+                    const name = `${c.first_name}${c.middle_name ? ' ' + c.middle_name : ''} ${c.last_name}`;
+                    
+                    const customizedMessage = bulkMessageText.replace(/{name}/g, name);
+                    const waUrl = cleanPhone 
+                      ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(customizedMessage)}`
+                      : null;
+
+                    return (
+                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', border: 'var(--border-light)', gap: '8px' }}>
+                        <div style={{ overflow: 'hidden' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '600', display: 'block', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {name}
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {phone || 'No phone number'}
+                          </span>
+                        </div>
+                        
+                        {waUrl ? (
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-secondary btn-press"
+                            style={{ width: 'auto', padding: '4px 10px', height: '28px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                          >
+                            <Send size={10} style={{ color: 'var(--color-sage)' }} /> Send
+                          </a>
+                        ) : (
+                          <span style={{ fontSize: '10px', color: 'var(--color-rose)', fontWeight: '500' }}>
+                            Missing Number
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+
+              <div style={{ marginTop: '20px', borderTop: 'var(--border-light)', paddingTop: '12px', textAlign: 'right' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ width: 'auto', height: '34px', fontSize: '12px' }}
+                  onClick={() => setShowBulkMessageModal(false)}
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </Portal>

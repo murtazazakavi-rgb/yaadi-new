@@ -325,3 +325,68 @@ export async function rejectSubmission(submissionId: string) {
   revalidatePath('/approvals');
   return { success: true };
 }
+
+/**
+ * Guest/Public Action: Fetches read-only announcements data for a tenant if enabled.
+ */
+export async function getSharedAnnouncements(tenantId: string) {
+  // Validate UUID format to prevent SQL errors
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(tenantId)) {
+    return null;
+  }
+
+  try {
+    // 1. Fetch tenant sharing settings
+    const tenantRes = await query(
+      'SELECT display_name, theme, ui_style, share_announcements_enabled FROM tenants WHERE id = $1',
+      [tenantId]
+    );
+
+    if (tenantRes.rows.length === 0) {
+      return null;
+    }
+
+    const tenant = tenantRes.rows[0];
+    if (!tenant.share_announcements_enabled) {
+      return null;
+    }
+
+    // 2. Fetch contacts (only owned contacts, no connections to avoid leaking other spaces' data)
+    const contactsRes = await query(
+      `SELECT id, first_name, middle_name, last_name, phone_number, email, born_after_maghrib
+       FROM contacts
+       WHERE tenant_id = $1
+       ORDER BY first_name ASC`,
+      [tenantId]
+    );
+
+    // 3. Fetch events
+    const eventsRes = await query(
+      `SELECT e.id, e.contact_id, e.event_type, e.g_day, e.g_month, e.g_year, e.h_day, e.h_month, e.h_year 
+       FROM events e 
+       JOIN contacts c ON e.contact_id = c.id 
+       WHERE c.tenant_id = $1`,
+      [tenantId]
+    );
+
+    // 4. Fetch templates
+    const templatesRes = await query(
+      'SELECT event_type, message_body FROM templates WHERE tenant_id = $1',
+      [tenantId]
+    );
+
+    return {
+      displayName: tenant.display_name,
+      theme: tenant.theme || 'light',
+      uiStyle: tenant.ui_style || 'classic',
+      contacts: contactsRes.rows,
+      events: eventsRes.rows,
+      templates: templatesRes.rows
+    };
+  } catch (err) {
+    console.error('Error fetching shared announcements:', err);
+    return null;
+  }
+}
+
