@@ -149,7 +149,7 @@ export default function DashboardPage() {
   // Insights Stats
   const insights = React.useMemo(() => {
     if (!data.contacts || data.contacts.length === 0) {
-      return { totalContacts: 0, avgAge: 0, gMonthCounts: Array(12).fill(0), hMonthCounts: Array(12).fill(0), mostCommonGMonth: 'N/A', landmarks: [] };
+      return { totalContacts: 0, avgAge: 0, gMonthCounts: Array(12).fill(0), hMonthCounts: Array(12).fill(0), mostCommonGMonth: 'N/A', landmarks: [], topFamilyNames: [], decadeDistribution: [], avgLifespan: null, totalDeceased: 0 };
     }
 
     const totalContacts = data.contacts.length;
@@ -201,13 +201,81 @@ export default function DashboardPage() {
       .filter((r: any) => r && landmarkYears.includes(r.ordinal) && r.daysRemaining <= 180 && !deceasedContactIds.has(r.contact.id))
       .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
 
+    // Family Name Frequency (Name Trends)
+    const nameCounts: { [name: string]: number } = {};
+    data.contacts.forEach((c: any) => {
+      const lastName = (c.last_name || '').trim();
+      if (lastName) {
+        nameCounts[lastName] = (nameCounts[lastName] || 0) + 1;
+      }
+    });
+    const topFamilyNames = Object.entries(nameCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Generational / Decades Breakdown
+    const contactBirthYears: { [contactId: string]: number } = {};
+    const contactDeathYears: { [contactId: string]: number } = {};
+
+    data.events.forEach((e: any) => {
+      if (e.event_type === 'birthday_gregorian' && e.g_year) {
+        contactBirthYears[e.contact_id] = e.g_year;
+      } else if (e.event_type === 'birthday_hijri' && e.h_year) {
+        const hDate = new HijriDate(e.h_year, e.h_month ?? 0, e.h_day ?? 1);
+        try {
+          contactBirthYears[e.contact_id] = hDate.toGregorian().getFullYear();
+        } catch {
+          contactBirthYears[e.contact_id] = Math.round(e.h_year * 0.97 + 622);
+        }
+      } else if (e.event_type === 'death_gregorian' && e.g_year) {
+        contactDeathYears[e.contact_id] = e.g_year;
+      } else if (e.event_type === 'death_hijri' && e.h_year) {
+        const hDate = new HijriDate(e.h_year, e.h_month ?? 0, e.h_day ?? 1);
+        try {
+          contactDeathYears[e.contact_id] = hDate.toGregorian().getFullYear();
+        } catch {
+          contactDeathYears[e.contact_id] = Math.round(e.h_year * 0.97 + 622);
+        }
+      }
+    });
+
+    const decadeCounts: { [decade: string]: number } = {};
+    Object.entries(contactBirthYears).forEach(([cId, birthYear]) => {
+      if (deceasedContactIds.has(cId)) return; // living members only
+      const decadeStart = Math.floor(birthYear / 10) * 10;
+      const label = `${decadeStart}s`;
+      decadeCounts[label] = (decadeCounts[label] || 0) + 1;
+    });
+    const decadeDistribution = Object.entries(decadeCounts)
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+
+    // Lifespan & Remembrance Metrics (In Memoriam)
+    let totalLifespan = 0;
+    let lifespanCount = 0;
+    deceasedContactIds.forEach((cId) => {
+      const bYear = contactBirthYears[cId as string];
+      const dYear = contactDeathYears[cId as string];
+      if (bYear && dYear && dYear >= bYear) {
+        totalLifespan += (dYear - bYear);
+        lifespanCount++;
+      }
+    });
+    const avgLifespan = lifespanCount > 0 ? Math.round(totalLifespan / lifespanCount) : null;
+    const totalDeceased = deceasedContactIds.size;
+
     return {
       totalContacts,
       avgAge,
       gMonthCounts,
       hMonthCounts,
       mostCommonGMonth,
-      landmarks
+      landmarks,
+      topFamilyNames,
+      decadeDistribution,
+      avgLifespan,
+      totalDeceased
     };
   }, [data.contacts, data.events, allCalculatedReminders, deceasedContactIds]);
 
@@ -633,6 +701,24 @@ export default function DashboardPage() {
                 {insights.totalContacts} members
               </span>
             </div>
+            {insights.totalDeceased > 0 && (
+              <>
+                <div className="card" style={{ padding: '16px', margin: 0, textAlign: 'center', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', letterSpacing: '0.5px' }}>In Memoriam</span>
+                  <span className="serif-font" style={{ display: 'block', fontSize: '22px', fontWeight: '700', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    {insights.totalDeceased} members
+                  </span>
+                </div>
+                {insights.avgLifespan && (
+                  <div className="card" style={{ padding: '16px', margin: 0, textAlign: 'center', borderRadius: '12px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', letterSpacing: '0.5px' }}>Avg Lifespan</span>
+                    <span className="serif-font" style={{ display: 'block', fontSize: '22px', fontWeight: '700', color: 'var(--color-sage)', marginTop: '4px' }}>
+                      {insights.avgLifespan} yrs
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Month Distribution Bar Chart */}
@@ -676,6 +762,65 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Name Trends & Generational Breakdown */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            {/* Family Name Trends */}
+            <div className="card" style={{ padding: '20px', margin: 0, borderRadius: '12px' }}>
+              <h4 className="serif-font" style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>Family Surnames</h4>
+              {insights.topFamilyNames.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {insights.topFamilyNames.map((item: any) => {
+                    const maxCount = Math.max(...insights.topFamilyNames.map((n: any) => n.count), 1);
+                    const percent = (item.count / maxCount) * 100;
+                    return (
+                      <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '12.5px', width: '90px', fontWeight: '600', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.name}>
+                          {item.name}
+                        </span>
+                        <div style={{ flex: 1, height: '8px', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${percent}%`, backgroundColor: 'var(--color-sage)', borderRadius: '4px', transition: 'width 0.5s ease-out' }} />
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', width: '30px', textAlign: 'right' }}>
+                          {item.count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>No surnames found.</div>
+              )}
+            </div>
+
+            {/* Decades Breakdown */}
+            <div className="card" style={{ padding: '20px', margin: 0, borderRadius: '12px' }}>
+              <h4 className="serif-font" style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px' }}>Generational (Birth Decades)</h4>
+              {insights.decadeDistribution.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {insights.decadeDistribution.map((item: any) => {
+                    const maxCount = Math.max(...insights.decadeDistribution.map((d: any) => d.count), 1);
+                    const percent = (item.count / maxCount) * 100;
+                    return (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '12.5px', width: '70px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                          {item.label}
+                        </span>
+                        <div style={{ flex: 1, height: '8px', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${percent}%`, backgroundColor: 'var(--color-gold)', borderRadius: '4px', transition: 'width 0.5s ease-out' }} />
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-secondary)', width: '30px', textAlign: 'right' }}>
+                          {item.count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center', padding: '10px 0' }}>No birthdates registered.</div>
+              )}
             </div>
           </div>
 
