@@ -98,11 +98,12 @@ export default function DashboardPage() {
   })
   .filter(Boolean);
 
-  // Find next closest upcoming event
+  // Find next closest upcoming event (strictly in the future to avoid duplicating today's celebrations)
   const absoluteUpcoming = allCalculatedReminders
-    .filter((r: any) => r && r.daysRemaining >= 0)
+    .filter((r: any) => r && r.daysRemaining > 0)
     .sort((a: any, b: any) => a.daysRemaining - b.daysRemaining);
   const nextEvent = absoluteUpcoming[0];
+
 
   // Filter raw reminders by search query for UI lists
   const rawReminders = allCalculatedReminders
