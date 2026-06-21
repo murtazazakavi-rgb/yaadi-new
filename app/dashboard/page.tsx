@@ -620,12 +620,36 @@ export default function DashboardPage() {
                   <div className="avatar-gradient" style={{ height: '30px', width: '30px', fontSize: '10px', flexShrink: 0 }}>
                     {getInitials(group.contact)}
                   </div>
-                  <span style={{ fontSize: '13px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
-                    {deceasedContactIds.has(group.contact.id) && (
-                      <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
-                    )}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#FFFFFF' }}>
+                      {group.contact.first_name}{group.contact.middle_name ? ' ' + group.contact.middle_name : ''} {group.contact.last_name}
+                      {deceasedContactIds.has(group.contact.id) && (
+                        <span title="Passed Away" style={{ fontSize: '12px', cursor: 'help' }}>🤍</span>
+                      )}
+                    </span>
+                    {(() => {
+                      const cc = data.careCards?.find((card: any) => card.contact_id === group.contact.id);
+                      if (!cc) return null;
+                      let reminderMsg = '';
+                      const styleLower = (cc.appreciation_style || '').toLowerCase();
+                      if (styleLower.includes('dua') || styleLower.includes('heartfelt')) {
+                        reminderMsg = `${group.contact.first_name} appreciates duas. Remember them in your duas today.`;
+                      } else if (styleLower.includes('thoughtful') || styleLower.includes('message')) {
+                        reminderMsg = `${group.contact.first_name} loves thoughtful messages. Send a quick check-in.`;
+                      } else if (cc.current_focus && cc.current_focus.length > 0) {
+                        reminderMsg = `${group.contact.first_name}'s current focus is ${cc.current_focus[0].toLowerCase()}.`;
+                      } else if (cc.communication_preference) {
+                        reminderMsg = `${group.contact.first_name} prefers ${cc.communication_preference.toLowerCase()}.`;
+                      }
+                      
+                      if (!reminderMsg) return null;
+                      return (
+                        <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.9)', fontStyle: 'italic', marginTop: '2px' }}>
+                          💡 {reminderMsg}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingLeft: '40px' }}>
@@ -1012,6 +1036,43 @@ export default function DashboardPage() {
                 Phone: {selectedReminder.contact.phone_number || 'No number saved'}
               </span>
             </div>
+
+            {(() => {
+              const cc = data.careCards?.find((card: any) => card.contact_id === selectedReminder.contact.id);
+              if (!cc) return null;
+              return (
+                <div style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: 'var(--border-thin)',
+                  marginBottom: '16px',
+                  fontSize: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  <span style={{ fontSize: '10px', fontWeight: '750', textTransform: 'uppercase', color: 'var(--color-gold)', display: 'block', marginBottom: '4px' }}>
+                    💡 Relationship Context
+                  </span>
+                  {cc.communication_preference && (
+                    <div>📱 <strong>Reachability:</strong> Prefers {cc.communication_preference.toLowerCase()}</div>
+                  )}
+                  {cc.gift_preference && (
+                    <div>🎁 <strong>Gift Idea:</strong> Likes {cc.gift_preference.toLowerCase()} gifts</div>
+                  )}
+                  {cc.appreciation_style && (
+                    <div>❤️ <strong>Appreciation:</strong> Appreciates {cc.appreciation_style.toLowerCase()}</div>
+                  )}
+                  {cc.support_style && (
+                    <div>💪 <strong>When Stressed:</strong> Prefers {cc.support_style.toLowerCase()}</div>
+                  )}
+                  {cc.dua_requests && cc.dua_requests.length > 0 && (
+                    <div>🤲 <strong>Dua Requests:</strong> {cc.dua_requests.join(', ')}</div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="form-group" style={{ marginBottom: '20px' }}>
               <label className="form-label">Message Draft</label>

@@ -131,6 +131,53 @@ async function ensureTables() {
     await sql.query(`
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS share_announcements_enabled BOOLEAN DEFAULT false;
     `);
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS care_cards (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE UNIQUE,
+          token VARCHAR(100) UNIQUE NOT NULL,
+          status VARCHAR(20) DEFAULT 'not_started',
+          know_me_better_status VARCHAR(20) DEFAULT 'not_started',
+          
+          -- Care Card level 1
+          appreciation_style VARCHAR(100),
+          support_style VARCHAR(100),
+          communication_preference VARCHAR(100),
+          gift_preference VARCHAR(100),
+          social_style VARCHAR(100),
+          memory_priorities TEXT[],
+          interests TEXT[],
+          favourites JSONB DEFAULT '{}'::jsonb,
+          current_focus TEXT[],
+          dua_requests TEXT[],
+          
+          -- Know Me Better level 2
+          matters_most TEXT[],
+          energy_sources TEXT[],
+          energy_drains TEXT[],
+          support_preferences TEXT[],
+          hidden_traits TEXT[],
+          friendship_manual TEXT[],
+          life_season TEXT[],
+          dreams TEXT[],
+
+          -- Privacy/Visibility
+          privacy_settings JSONB DEFAULT '{}'::jsonb,
+          ai_insights TEXT,
+
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS care_card_history (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE,
+          responses JSONB NOT NULL,
+          submitted_by_ip VARCHAR(100),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

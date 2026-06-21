@@ -18,9 +18,12 @@ import { Search, UserPlus, Edit, Trash2, Link2, Unlink, Check, X, Calendar, Plus
 import { COUNTRY_CODES, parsePhoneNumber } from '@/lib/countries';
 import { bulkImportContacts } from './importActions';
 import Portal from '@/app/components/Portal';
+import { generateCareCardLink, getCareCardByContactId, savePrivacySettings, refreshAiInsights } from './careCardActions';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<any[]>([]);
+  const [activeCareCard, setActiveCareCard] = useState<any>(null);
+  const [loadingCareCard, setLoadingCareCard] = useState(false);
   const [events, setEvents] = useState<any[]>([]);
   const [relationships, setRelationships] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -587,6 +590,24 @@ export default function ContactsPage() {
   useEffect(() => {
     loadAllData();
   }, []);
+
+  useEffect(() => {
+    if (!activeContactId) {
+      setActiveCareCard(null);
+      return;
+    }
+    setLoadingCareCard(true);
+    getCareCardByContactId(activeContactId)
+      .then((cc) => {
+        setActiveCareCard(cc);
+      })
+      .catch((err) => {
+        console.error("Error fetching care card:", err);
+      })
+      .finally(() => {
+        setLoadingCareCard(false);
+      });
+  }, [activeContactId]);
 
   const loadAllData = async () => {
     setLoading(true);
@@ -1384,6 +1405,251 @@ export default function ContactsPage() {
                         <p style={{ color: 'var(--text-secondary)' }}>{c.notes}</p>
                       </div>
                     )}
+
+                    {/* Care Card & Relationship Intelligence Section */}
+                    <div style={{ borderTop: 'var(--border-light)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: '600', color: 'var(--color-gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        ❤️ Care Card & Relationship Intelligence
+                      </h4>
+                      
+                      {loadingCareCard ? (
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Loading relationship details...</span>
+                      ) : !activeCareCard ? (
+                        isOwn ? (
+                          <div style={{ padding: '8px 0' }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                              Ask this person to fill out their preferences (likes, support styles, reachability) so you can remember what matters to them.
+                            </p>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ width: 'auto', padding: '6px 12px', fontSize: '11px', height: '30px' }}
+                              onClick={async () => {
+                                try {
+                                  const res = await generateCareCardLink(c.id);
+                                  if (res.success) {
+                                    const cc = await getCareCardByContactId(c.id);
+                                    setActiveCareCard(cc);
+                                  }
+                                } catch (err: any) {
+                                  alert(err.message || "Failed to generate link");
+                                }
+                              }}
+                            >
+                              Request Care Card
+                            </button>
+                          </div>
+                        ) : (
+                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            No Care Card created for this contact yet.
+                          </p>
+                        )
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          
+                          {/* Link and Share section (only for owner) */}
+                          {isOwn && (
+                            <div style={{ backgroundColor: 'var(--bg-primary)', padding: '10px', borderRadius: '8px', border: 'var(--border-light)', fontSize: '12px' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <span>
+                                  <strong>Status:</strong>{' '}
+                                  <span style={{ color: activeCareCard.status === 'complete' ? 'var(--color-sage)' : 'var(--text-muted)', fontWeight: '600' }}>
+                                    {activeCareCard.status === 'complete' 
+                                      ? activeCareCard.know_me_better_status === 'complete' 
+                                        ? 'Care Card & Profile Complete' 
+                                        : 'Care Card Complete'
+                                      : 'Not Started'}
+                                  </span>
+                                </span>
+                                {activeCareCard.updated_at && (
+                                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                    Updated: {new Date(activeCareCard.updated_at).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                                  Public Link: <a href={`${window.location.origin}/profile/${activeCareCard.token}`} target="_blank" rel="noreferrer" style={{ color: 'var(--color-gold)', textDecoration: 'underline' }}>{`${window.location.origin}/profile/${activeCareCard.token}`}</a>
+                                </span>
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    style={{ padding: '4px 8px', height: '24px', width: 'auto', fontSize: '10px' }}
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(`${window.location.origin}/profile/${activeCareCard.token}`);
+                                      alert('Care Card link copied!');
+                                    }}
+                                  >
+                                    Copy Link
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{ padding: '4px 8px', height: '24px', width: 'auto', fontSize: '10px', backgroundColor: '#25D366', color: '#FFFFFF', boxShadow: 'none' }}
+                                    onClick={() => {
+                                      const shareText = `Help me remember what matters to you! I'm using Yaadi to stay connected with people I care about. Please take 2 minutes to fill out your Care Card: ${window.location.origin}/profile/${activeCareCard.token}`;
+                                      const waUrl = `https://wa.me/${(c.phone_number || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(shareText)}`;
+                                      window.open(waUrl, '_blank');
+                                    }}
+                                  >
+                                    WhatsApp
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{ padding: '4px 8px', height: '24px', width: 'auto', fontSize: '10px', backgroundColor: '#007AFF', color: '#FFFFFF', boxShadow: 'none' }}
+                                    onClick={() => {
+                                      const shareText = `Help me remember what matters to you! Please fill out your Yaadi Care Card: ${window.location.origin}/profile/${activeCareCard.token}`;
+                                      window.open(`sms:${c.phone_number || ''}?&body=${encodeURIComponent(shareText)}`, '_blank');
+                                    }}
+                                  >
+                                    SMS
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    style={{ padding: '4px 8px', height: '24px', width: 'auto', fontSize: '10px', backgroundColor: '#E2E8F0', color: 'var(--text-primary)', boxShadow: 'none', border: '1px solid rgba(0,0,0,0.1)' }}
+                                    onClick={() => {
+                                      const subject = `Help me remember what matters to you!`;
+                                      const body = `Hi,\n\nI'm using Yaadi to remember important dates and stay connected. Please fill out your Care Card: ${window.location.origin}/profile/${activeCareCard.token}`;
+                                      window.open(`mailto:${c.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+                                    }}
+                                  >
+                                    Email
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Snapshot and AI Insights (show if complete) */}
+                          {activeCareCard.status === 'complete' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                              
+                              {/* Snapshot Section */}
+                              <div style={{ backgroundColor: 'var(--bg-card-active)', border: 'var(--border-thin)', padding: '12px', borderRadius: '12px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: '750', textTransform: 'uppercase', color: 'var(--color-gold)', display: 'block', marginBottom: '8px' }}>
+                                  👤 Preferences Snapshot
+                                </span>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', fontSize: '12.5px' }}>
+                                  {activeCareCard.communication_preference && (
+                                    <div>📱 <strong>Prefers:</strong> {activeCareCard.communication_preference}</div>
+                                  )}
+                                  {activeCareCard.gift_preference && (
+                                    <div>🎁 <strong>Likes:</strong> {activeCareCard.gift_preference} gifts</div>
+                                  )}
+                                  {activeCareCard.appreciation_style && (
+                                    <div>❤️ <strong>Appreciates:</strong> {activeCareCard.appreciation_style}</div>
+                                  )}
+                                  {activeCareCard.support_style && (
+                                    <div>💪 <strong>Stressed support:</strong> {activeCareCard.support_style}</div>
+                                  )}
+                                  {activeCareCard.dua_requests && activeCareCard.dua_requests.length > 0 && (
+                                    <div>🤲 <strong>Duas for:</strong> {activeCareCard.dua_requests.join(', ')}</div>
+                                  )}
+                                  {activeCareCard.current_focus && activeCareCard.current_focus.length > 0 && (
+                                    <div>🎯 <strong>Focused on:</strong> {activeCareCard.current_focus.join(', ')}</div>
+                                  )}
+                                  {activeCareCard.interests && activeCareCard.interests.length > 0 && (
+                                    <div>🌱 <strong>Interests:</strong> {activeCareCard.interests.join(', ')}</div>
+                                  )}
+                                  
+                                  {/* Optional Favourites */}
+                                  {activeCareCard.favourites && Object.values(activeCareCard.favourites).some(Boolean) && (
+                                    <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '6px', marginTop: '2px', display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                      {activeCareCard.favourites.food && <span>🍕 {activeCareCard.favourites.food}</span>}
+                                      {activeCareCard.favourites.dessert && <span>🍰 {activeCareCard.favourites.dessert}</span>}
+                                      {activeCareCard.favourites.drink && <span>🥤 {activeCareCard.favourites.drink}</span>}
+                                      {activeCareCard.favourites.colour && <span>🎨 {activeCareCard.favourites.colour}</span>}
+                                      {activeCareCard.favourites.hobby && <span>⚽ {activeCareCard.favourites.hobby}</span>}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* AI Insights Section */}
+                              <div style={{ background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.03) 0%, rgba(107, 142, 110, 0.03) 100%)', border: '1px solid rgba(197, 160, 89, 0.15)', padding: '12px', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <span style={{ fontSize: '10px', fontWeight: '750', textTransform: 'uppercase', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    ✨ AI Relationship Insights
+                                  </span>
+                                  {isOwn && (
+                                    <button
+                                      type="button"
+                                      style={{ border: 'none', background: 'none', color: 'var(--color-gold)', fontSize: '10px', cursor: 'pointer', textDecoration: 'underline' }}
+                                      onClick={async () => {
+                                        setLoadingCareCard(true);
+                                        try {
+                                          await refreshAiInsights(c.id);
+                                          const cc = await getCareCardByContactId(c.id);
+                                          setActiveCareCard(cc);
+                                        } catch (e) {
+                                          alert("Error generating insights");
+                                        } finally {
+                                          setLoadingCareCard(false);
+                                        }
+                                      }}
+                                    >
+                                      Refresh
+                                    </button>
+                                  )}
+                                </div>
+                                
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                                  {activeCareCard.ai_insights ? (
+                                    activeCareCard.ai_insights.split('\n').map((line: string, i: number) => {
+                                      const clean = line.replace(/^-\s*/, '');
+                                      if (!clean.trim()) return null;
+                                      return <div key={i} style={{ marginBottom: '6px', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                                        <span style={{ color: 'var(--color-sage)' }}>•</span>
+                                        <span>{clean}</span>
+                                      </div>;
+                                    })
+                                  ) : (
+                                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>AI is analyzing profile... Click Refresh to update.</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Privacy Visibility settings (only for owner) */}
+                              {isOwn && (
+                                <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)' }}>
+                                    🔒 Privacy & Sharing
+                                  </span>
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px' }}>
+                                    <span>Who can view this profile data?</span>
+                                    <select
+                                      value={activeCareCard.privacy_settings?.visibility || 'owner'}
+                                      onChange={async (e) => {
+                                        const nextVal = e.target.value;
+                                        const nextPrivacy = { ...activeCareCard.privacy_settings, visibility: nextVal };
+                                        try {
+                                          await savePrivacySettings(c.id, nextPrivacy);
+                                          setActiveCareCard({ ...activeCareCard, privacy_settings: nextPrivacy });
+                                        } catch (err: any) {
+                                          alert(err.message || "Failed to save privacy settings");
+                                        }
+                                      }}
+                                      className="form-select"
+                                      style={{ width: 'auto', padding: '2px 8px', height: '26px', fontSize: '11px', margin: 0 }}
+                                    >
+                                      <option value="owner">Workspace Owner Only</option>
+                                      <option value="shared">Shared Connections</option>
+                                      <option value="private">Strictly Private</option>
+                                    </select>
+                                  </div>
+                                </div>
+                              )}
+
+                            </div>
+                          )}
+
+                        </div>
+                      )}
+                    </div>
 
                     {/* Relationships List */}
                     <div>

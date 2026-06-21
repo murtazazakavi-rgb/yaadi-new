@@ -96,6 +96,27 @@ export async function getDashboardData() {
     [tenantId]
   );
 
+  // Get care cards with proper privacy/visibility checks
+  const careCardsRes = await query(
+    `SELECT cc.* FROM care_cards cc
+     JOIN contacts c ON cc.contact_id = c.id
+     WHERE (c.tenant_id = $1)
+        OR (
+          c.id IN (
+            SELECT sc.contact_id 
+            FROM shared_contacts sc
+            JOIN tenant_connections tc ON sc.connection_id = tc.id
+            WHERE tc.status = 'accepted'
+              AND (
+                (tc.requester_id = $1 AND sc.shared_by = tc.receiver_id) OR
+                (tc.receiver_id = $1 AND sc.shared_by = tc.requester_id)
+              )
+          )
+          AND (cc.privacy_settings->>'visibility' = 'shared')
+        )`,
+    [tenantId]
+  );
+
   return {
     contacts: contactsRes.rows,
     events: eventsRes.rows,
@@ -104,6 +125,7 @@ export async function getDashboardData() {
     pendingConnectionsCount,
     groups: groupsRes.rows,
     groupMappings: mappingsRes.rows,
+    careCards: careCardsRes.rows,
   };
 }
 
