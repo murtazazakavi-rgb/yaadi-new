@@ -279,6 +279,24 @@ export default function DashboardPage() {
     };
   }, [data.contacts, data.events, allCalculatedReminders, deceasedContactIds]);
 
+  // Identify recently updated care cards
+  const recentUpdates = React.useMemo(() => {
+    if (!data.careCards || data.careCards.length === 0) return [];
+    
+    return data.careCards
+      .filter((cc: any) => {
+        const hasStarted = cc.status !== 'not_started' || cc.know_me_better_status !== 'not_started';
+        const isModified = cc.updated_at && cc.created_at && (new Date(cc.updated_at).getTime() > new Date(cc.created_at).getTime());
+        return hasStarted || isModified;
+      })
+      .sort((a: any, b: any) => {
+        const timeA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const timeB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return timeB - timeA;
+      })
+      .slice(0, 3);
+  }, [data.careCards]);
+
   // Helper to group reminders by contact within each timeframe
   const groupRemindersByContact = (remindersList: any[]) => {
     const groupedMap: { [contactId: string]: any } = {};
@@ -487,6 +505,71 @@ export default function DashboardPage() {
           >
             View
           </a>
+        </div>
+      )}
+
+      {recentUpdates.length > 0 && (
+        <div className="card page-transition" style={{
+          background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(197, 160, 89, 0.04) 100%)',
+          border: '1px solid rgba(197, 160, 89, 0.2)',
+          padding: '16px',
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          boxShadow: 'var(--shadow-soft)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '18px' }}>✨</span>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Recent Profile Updates
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {recentUpdates.map((cc: any, idx: number) => {
+              const name = `${cc.first_name || ''}${cc.middle_name ? ' ' + cc.middle_name : ''} ${cc.last_name || ''}`.trim() || 'Someone';
+              const timeStr = cc.updated_at 
+                ? new Date(cc.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '';
+              
+              let updateLabel = 'Updated profile details';
+              if (cc.status !== 'not_started' && cc.know_me_better_status !== 'not_started') {
+                updateLabel = 'Updated details & care preferences';
+              } else if (cc.status !== 'not_started') {
+                updateLabel = 'Shared care preferences (Level 1)';
+              } else if (cc.know_me_better_status !== 'not_started') {
+                updateLabel = 'Shared deep preferences (Level 2)';
+              }
+
+              return (
+                <div key={cc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', paddingBottom: idx === recentUpdates.length - 1 ? '0' : '8px', borderBottom: idx === recentUpdates.length - 1 ? 'none' : '1px solid rgba(0,0,0,0.03)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <div className="avatar-gradient" style={{ height: '32px', width: '32px', fontSize: '11px', flexShrink: 0 }}>
+                      {getInitials(cc)}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <span style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {name}
+                      </span>
+                      <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {updateLabel}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>
+                      {timeStr}
+                    </span>
+                    <a 
+                      href={`/contacts?id=${cc.contact_id}`}
+                      style={{ fontSize: '11px', color: 'var(--color-gold)', fontWeight: '600', textDecoration: 'none' }}
+                      className="btn-press"
+                    >
+                      View Profile
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

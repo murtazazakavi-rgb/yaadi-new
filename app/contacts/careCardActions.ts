@@ -3,6 +3,7 @@
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { sendProfileUpdateNotification } from '@/lib/mail';
 
 async function requireAuth() {
   const session = await getSession();
@@ -164,9 +165,15 @@ export async function saveCareCardResponses(
 ) {
   const { level, responses, clientIp } = data;
 
-  // 1. Fetch Care Card
+  // 1. Fetch Care Card and owner info
   const ccCheck = await query(
-    'SELECT contact_id, status, know_me_better_status FROM care_cards WHERE token = $1',
+    `SELECT cc.contact_id, cc.status, cc.know_me_better_status,
+            c.first_name, c.middle_name, c.last_name,
+            t.email as owner_email, t.display_name as owner_name
+     FROM care_cards cc
+     JOIN contacts c ON cc.contact_id = c.id
+     JOIN tenants t ON c.tenant_id = t.id
+     WHERE cc.token = $1`,
     [token]
   );
   if (ccCheck.rows.length === 0) {
@@ -174,6 +181,7 @@ export async function saveCareCardResponses(
   }
   const cc = ccCheck.rows[0];
   const contactId = cc.contact_id;
+  const contactName = `${cc.first_name}${cc.middle_name ? ' ' + cc.middle_name : ''} ${cc.last_name}`;
 
   // 2. Perform Save
   if (level === 1) {
@@ -278,6 +286,48 @@ export async function saveCareCardResponses(
     await generateAndSaveAiInsights(contactId);
   } catch (err) {
     console.error("Background AI insights generation failed:", err);
+  }
+
+  // 5. Send email notification to the owner
+  try {
+    const changeDetails: string[] = [];
+    if (level === 1) {
+      if (responses.appreciation_style) changeDetails.push('Appreciation style preference');
+      if (responses.support_style) changeDetails.push('Stress support style preference');
+      if (responses.communication_preference) changeDetails.push('Communication preference');
+      if (responses.gift_preference) changeDetails.push('Gift preference');
+      if (responses.social_style) changeDetails.push('Social energy battery style');
+      if (responses.small_joy) changeDetails.push('Small joys & comforts');
+      if (responses.dua_requests && responses.dua_requests.length > 0) changeDetails.push('Dua requests');
+      if (responses.interests && responses.interests.length > 0) changeDetails.push('Interests & hobbies');
+      if (responses.current_focus && responses.current_focus.length > 0) changeDetails.push('Current season focus');
+    } else {
+      if (responses.matters_most && responses.matters_most.length > 0) changeDetails.push('Core life values');
+      if (responses.dreams && responses.dreams.length > 0) changeDetails.push('Future dreams & goals');
+      if (responses.energy_sources && responses.energy_sources.length > 0) changeDetails.push('Energy sources');
+      if (responses.energy_drains && responses.energy_drains.length > 0) changeDetails.push('Energy drains');
+      if (responses.hidden_traits && responses.hidden_traits.length > 0) changeDetails.push('Hidden traits');
+      if (responses.friendship_manual && responses.friendship_manual.length > 0) changeDetails.push('Friendship expectations');
+      if (responses.life_season && responses.life_season.length > 0) changeDetails.push('Current life season reflection');
+      if (responses.care_expression && responses.care_expression.length > 0) changeDetails.push('Natural expression of care');
+      if (responses.shared_moments && responses.shared_moments.length > 0) changeDetails.push('Preferred shared moments');
+    }
+
+    if (changeDetails.length === 0) {
+      changeDetails.push('Care preferences');
+    }
+
+    if (cc.owner_email) {
+      await sendProfileUpdateNotification({
+        ownerEmail: cc.owner_email,
+        ownerName: cc.owner_name || 'there',
+        contactName,
+        updateType: 'preferences',
+        changeDetails,
+      });
+    }
+  } catch (mailErr) {
+    console.error('Failed to send profile update email notification:', mailErr);
   }
 
   revalidatePath('/contacts');
@@ -508,12 +558,23 @@ export async function updateContactPublicDetails(
     }>;
   }
 ) {
-  // 1. Fetch contact_id by token
-  const ccCheck = await query('SELECT contact_id FROM care_cards WHERE token = $1', [token]);
+  // 1. Fetch contact_id and owner details by token
+  const ccCheck = await query(
+    `SELECT cc.contact_id,
+            c.first_name, c.middle_name, c.last_name,
+            t.email as owner_email, t.display_name as owner_name
+     FROM care_cards cc
+     JOIN contacts c ON cc.contact_id = c.id
+     JOIN tenants t ON c.tenant_id = t.id
+     WHERE cc.token = $1`,
+    [token]
+  );
   if (ccCheck.rows.length === 0) {
     throw new Error('Care Card not found.');
   }
-  const contactId = ccCheck.rows[0].contact_id;
+  const cc = ccCheck.rows[0];
+  const contactId = cc.contact_id;
+  const oldContactName = `${cc.first_name}${cc.middle_name ? ' ' + cc.middle_name : ''} ${cc.last_name}`;
 
   const { firstName, middleName, lastName, phoneNumber, email, bornAfterMaghrib, events } = data;
   if (!firstName || !lastName) {
@@ -565,6 +626,49 @@ export async function updateContactPublicDetails(
         ev.hYear !== undefined && ev.hYear !== null ? ev.hYear : null,
       ]
     );
+  }
+
+  // 5. Update care_cards updated_at timestamp to sync with recent activity feed
+  await query(
+    `UPDATE care_cards 
+     SET updated_at = CURRENT_TIMESTAMP 
+     WHERE contact_id = $1`,
+    [contactId]
+  );
+
+  // 6. Send email notification to the owner
+  try {
+    const changeDetails: string[] = [];
+    const newContactName = `${firstName}${middleName ? ' ' + middleName : ''} ${lastName}`;
+    if (oldContactName !== newContactName) {
+      changeDetails.push(`Name (updated to: ${newContactName})`);
+    } else {
+      changeDetails.push('Name');
+    }
+    if (phoneNumber) {
+      changeDetails.push(`Phone Number: ${phoneNumber}`);
+    }
+    if (email) {
+      changeDetails.push(`Email Address: ${email}`);
+    }
+    if (events && events.length > 0) {
+      changeDetails.push('Birthdays & Anniversaries');
+    }
+    if (bornAfterMaghrib !== undefined) {
+      changeDetails.push(`Born after Sunset/Maghrib: ${bornAfterMaghrib ? 'Yes' : 'No'}`);
+    }
+
+    if (cc.owner_email) {
+      await sendProfileUpdateNotification({
+        ownerEmail: cc.owner_email,
+        ownerName: cc.owner_name || 'there',
+        contactName: newContactName,
+        updateType: 'details',
+        changeDetails,
+      });
+    }
+  } catch (mailErr) {
+    console.error('Failed to send profile update email notification:', mailErr);
   }
 
   revalidatePath('/contacts');

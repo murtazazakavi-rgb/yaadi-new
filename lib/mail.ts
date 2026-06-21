@@ -260,3 +260,90 @@ export function generateHtmlDigest(
     </html>
   `;
 }
+
+export async function sendProfileUpdateNotification({
+  ownerEmail,
+  ownerName,
+  contactName,
+  updateType,
+  changeDetails,
+}: {
+  ownerEmail: string;
+  ownerName: string;
+  contactName: string;
+  updateType: 'preferences' | 'details';
+  changeDetails: string[];
+}) {
+  const subject = `✨ Profile Update: ${contactName}`;
+  
+  const changeItems = changeDetails
+    .map(item => `<li style="margin-bottom: 8px; color: #55514C; font-size: 14px;"><strong>${item}</strong></li>`)
+    .join('');
+
+  const typeLabel = updateType === 'preferences' ? 'Care & Connection Preferences' : 'Personal Details & Events';
+  const accentColor = updateType === 'preferences' ? '#C4953A' : '#0E5ECA';
+  const typeDescription = updateType === 'preferences' 
+    ? 'shared their preferences on how they feel appreciated, supported, and connected.' 
+    : 'updated their basic contact details, birth date, or anniversary information.';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Profile Updated</title>
+      </head>
+      <body style="background-color: #F6F5F2; margin: 0; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+        <div style="max-width: 500px; background-color: #ffffff; border: 1px solid #EAE8E2; border-radius: 12px; padding: 32px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          
+          <!-- Header -->
+          <div style="text-align: center; border-bottom: 1px solid #ECEBE6; padding-bottom: 20px; margin-bottom: 24px;">
+            <div style="font-size: 26px; font-weight: 700; color: #3C3935; font-family: 'Playfair Display', Georgia, serif; letter-spacing: -0.5px;">
+              Yaadi
+            </div>
+            <div style="font-size: 12px; color: #8C8984; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-weight: 600;">
+              Profile Update Alert
+            </div>
+          </div>
+
+          <!-- Content -->
+          <p style="font-size: 15px; color: #3C3935; line-height: 1.6; font-family: Georgia, serif; font-style: italic; margin-bottom: 20px;">
+            Hello ${ownerName},
+          </p>
+
+          <p style="font-size: 14px; color: #55514C; line-height: 1.6; margin-bottom: 20px;">
+            <strong>${contactName}</strong> has updated their connection profile on Yaadi! They ${typeDescription}
+          </p>
+
+          <div style="background-color: #FAF9F6; border-left: 4px solid ${accentColor}; border-radius: 6px; padding: 20px; margin-bottom: 24px;">
+            <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #3C3935; font-weight: 700;">
+              ${typeLabel} Updated
+            </h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              ${changeItems}
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin-top: 28px; margin-bottom: 12px;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://yaadi-five.vercel.app/'}" style="display: inline-block; background-color: #3C3935; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 6px; font-family: sans-serif; transition: background-color 0.2s;">
+              View Contact Profile
+            </a>
+          </div>
+
+          <!-- Footer -->
+          <div style="margin-top: 32px; border-top: 1px solid #ECEBE6; padding-top: 16px; text-align: center; font-size: 11px; color: #8C8984;">
+            This is an automated notification from your Yaadi Family Directory.
+          </div>
+
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: ownerEmail,
+    subject,
+    html,
+  });
+}
+

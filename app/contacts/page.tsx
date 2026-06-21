@@ -592,6 +592,16 @@ export default function ContactsPage() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const contactIdParam = params.get('id');
+      if (contactIdParam) {
+        setActiveContactId(contactIdParam);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (!activeContactId) {
       setActiveCareCard(null);
       return;
