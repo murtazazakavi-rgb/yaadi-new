@@ -149,9 +149,9 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
     }
   };
 
-  // If path is root or register, don't wrap with navigation bars
+  // If path is root, register or public forms, don't wrap with navigation bars
   const noNavPaths = ['/', '/register', '/share'];
-  const isNoNav = noNavPaths.includes(pathname) || pathname.startsWith('/share/');
+  const isNoNav = noNavPaths.includes(pathname) || pathname.startsWith('/share/') || pathname.startsWith('/profile/');
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });

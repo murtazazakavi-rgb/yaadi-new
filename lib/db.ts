@@ -150,6 +150,7 @@ async function ensureTables() {
           favourites JSONB DEFAULT '{}'::jsonb,
           current_focus TEXT[],
           dua_requests TEXT[],
+          small_joy VARCHAR(255),
           
           -- Know Me Better level 2
           matters_most TEXT[],
@@ -160,6 +161,8 @@ async function ensureTables() {
           friendship_manual TEXT[],
           life_season TEXT[],
           dreams TEXT[],
+          care_expression TEXT[],
+          shared_moments TEXT[],
 
           -- Privacy/Visibility
           privacy_settings JSONB DEFAULT '{}'::jsonb,

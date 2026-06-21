@@ -1555,6 +1555,15 @@ export default function ContactsPage() {
                                   {activeCareCard.interests && activeCareCard.interests.length > 0 && (
                                     <div>🌱 <strong>Interests:</strong> {activeCareCard.interests.join(', ')}</div>
                                   )}
+                                  {activeCareCard.small_joy && (
+                                    <div>😊 <strong>Small joy:</strong> "{activeCareCard.small_joy}"</div>
+                                  )}
+                                  {activeCareCard.care_expression && activeCareCard.care_expression.length > 0 && (
+                                    <div>❤️ <strong>Expresses care:</strong> {activeCareCard.care_expression.join(', ')}</div>
+                                  )}
+                                  {activeCareCard.shared_moments && activeCareCard.shared_moments.length > 0 && (
+                                    <div>☕ <strong>Shared moments:</strong> {activeCareCard.shared_moments.join(', ')}</div>
+                                  )}
                                   
                                   {/* Optional Favourites */}
                                   {activeCareCard.favourites && Object.values(activeCareCard.favourites).some(Boolean) && (

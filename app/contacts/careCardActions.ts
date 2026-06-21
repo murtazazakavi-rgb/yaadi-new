@@ -175,7 +175,8 @@ export async function saveCareCardResponses(
       interests,
       favourites,
       current_focus,
-      dua_requests
+      dua_requests,
+      small_joy
     } = responses;
 
     await query(
@@ -190,9 +191,10 @@ export async function saveCareCardResponses(
            favourites = $8,
            current_focus = $9,
            dua_requests = $10,
+           small_joy = $11,
            status = 'complete',
            updated_at = CURRENT_TIMESTAMP
-       WHERE token = $11`,
+       WHERE token = $12`,
       [
         appreciation_style || null,
         support_style || null,
@@ -204,6 +206,7 @@ export async function saveCareCardResponses(
         favourites || {},
         current_focus || [],
         dua_requests || [],
+        small_joy || null,
         token
       ]
     );
@@ -216,7 +219,9 @@ export async function saveCareCardResponses(
       hidden_traits,
       friendship_manual,
       life_season,
-      dreams
+      dreams,
+      care_expression,
+      shared_moments
     } = responses;
 
     await query(
@@ -229,9 +234,11 @@ export async function saveCareCardResponses(
            friendship_manual = $6,
            life_season = $7,
            dreams = $8,
+           care_expression = $9,
+           shared_moments = $10,
            know_me_better_status = 'complete',
            updated_at = CURRENT_TIMESTAMP
-       WHERE token = $9`,
+       WHERE token = $11`,
       [
         matters_most || [],
         energy_sources || [],
@@ -241,6 +248,8 @@ export async function saveCareCardResponses(
         friendship_manual || [],
         life_season || [],
         dreams || [],
+        care_expression || [],
+        shared_moments || [],
         token
       ]
     );
@@ -342,6 +351,7 @@ CARE CARD (LEVEL 1):
 - Interests: ${JSON.stringify(cc.interests)}
 - Current Season Focus: ${JSON.stringify(cc.current_focus)}
 - Dua Requests: ${JSON.stringify(cc.dua_requests)}
+- Small Joy (brings a smile): "${cc.small_joy}"
 
 KNOW ME BETTER (LEVEL 2):
 - Matters most values (ranked): ${JSON.stringify(cc.matters_most)}
@@ -351,6 +361,8 @@ KNOW ME BETTER (LEVEL 2):
 - Friendship manual expectations: ${JSON.stringify(cc.friendship_manual)}
 - Dreams: ${JSON.stringify(cc.dreams)}
 - Hidden traits they wish people knew: ${JSON.stringify(cc.hidden_traits)}
+- Natural expression of care for others: ${JSON.stringify(cc.care_expression)}
+- Simple shared moments they enjoy: ${JSON.stringify(cc.shared_moments)}
 
 Please generate 3-4 simple, heartfelt bullet points of Relationship Insights for the user about how to care for, contact, and support ${name}.
 `;
@@ -406,6 +418,17 @@ Please generate 3-4 simple, heartfelt bullet points of Relationship Insights for
       bulletPoints.push(`- Currently focusing their energy on: ${cc.current_focus.slice(0, 2).join(', ').toLowerCase()}.`);
     } else if (cc.dreams && cc.dreams.length > 0) {
       bulletPoints.push(`- Dream-oriented around: ${cc.dreams.slice(0, 2).join(', ').toLowerCase()}.`);
+    }
+
+    // Intimate preferences
+    if (cc.small_joy) {
+      bulletPoints.push(`- Smiles at small joys like: ${cc.small_joy.toLowerCase()}.`);
+    }
+    if (cc.care_expression && cc.care_expression.length > 0) {
+      bulletPoints.push(`- Expresses care naturally through ${cc.care_expression.slice(0, 2).join(', ').toLowerCase()}.`);
+    }
+    if (cc.shared_moments && cc.shared_moments.length > 0) {
+      bulletPoints.push(`- Enjoys simple connection over: ${cc.shared_moments.slice(0, 2).join(', ').toLowerCase()}.`);
     }
 
     // Communication preference

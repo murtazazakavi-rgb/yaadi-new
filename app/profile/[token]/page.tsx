@@ -16,8 +16,8 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   // Flow State
   // 'landing' | 'level1' | 'completion1' | 'level2' | 'completion2'
   const [flowStage, setFlowStage] = useState<'landing' | 'level1' | 'completion1' | 'level2' | 'completion2'>('landing');
-  const [level1Step, setLevel1Step] = useState(0); // 0 to 9 (10 steps)
-  const [level2Step, setLevel2Step] = useState(0); // 0 to 7 (8 steps)
+  const [level1Step, setLevel1Step] = useState(0); // 0 to 10 (11 steps now)
+  const [level2Step, setLevel2Step] = useState(0); // 0 to 9 (10 steps now)
 
   // Level 1 Form State
   const [appreciationStyle, setAppreciationStyle] = useState('');
@@ -34,6 +34,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   const [favHobby, setFavHobby] = useState('');
   const [currentFocus, setCurrentFocus] = useState<string[]>([]);
   const [duaRequests, setDuaRequests] = useState<string[]>([]);
+  const [smallJoy, setSmallJoy] = useState('');
 
   // Level 2 Form State
   const [mattersMost, setMattersMost] = useState<string[]>([
@@ -46,6 +47,8 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   const [friendshipManual, setFriendshipManual] = useState<string[]>([]);
   const [lifeSeason, setLifeSeason] = useState<string[]>([]);
   const [dreams, setDreams] = useState<string[]>([]);
+  const [careExpression, setCareExpression] = useState<string[]>([]);
+  const [sharedMoments, setSharedMoments] = useState<string[]>([]);
 
   // Submit states
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +82,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           setFavHobby(data.favourites?.hobby || '');
           setCurrentFocus(data.current_focus || []);
           setDuaRequests(data.dua_requests || []);
+          setSmallJoy(data.small_joy || '');
         }
 
         if (data.know_me_better_status === 'complete') {
@@ -90,6 +94,8 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           setFriendshipManual(data.friendship_manual || []);
           setLifeSeason(data.life_season || []);
           setDreams(data.dreams || []);
+          setCareExpression(data.care_expression || []);
+          setSharedMoments(data.shared_moments || []);
         }
 
         setLoading(false);
@@ -122,7 +128,8 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           hobby: favHobby
         },
         current_focus: currentFocus,
-        dua_requests: duaRequests
+        dua_requests: duaRequests,
+        small_joy: smallJoy
       };
 
       await saveCareCardResponses(token, {
@@ -149,7 +156,9 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
         hidden_traits: hiddenTraits,
         friendship_manual: friendshipManual,
         life_season: lifeSeason,
-        dreams: dreams
+        dreams: dreams,
+        care_expression: careExpression,
+        shared_moments: sharedMoments
       };
 
       await saveCareCardResponses(token, {
@@ -305,21 +314,22 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ height: '100dvh', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}>
       <div style={{
         width: '100%',
         maxWidth: '480px',
-        minHeight: '100vh',
+        height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: 'var(--bg-primary)',
         boxShadow: '0 0 40px rgba(0,0,0,0.02)',
-        position: 'relative'
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         
         {/* Landing Page */}
         {flowStage === 'landing' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 24px', justifyContent: 'center', textAlign: 'center' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', justifyContent: 'center', textAlign: 'center' }}>
             <div style={{ marginBottom: '24px' }}>
               <div style={{
                 display: 'inline-flex',
@@ -500,6 +510,32 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
                 "Health", "Parents", "Marriage", "Children", "Studies", "Rizq",
                 "Business", "Spiritual Growth", "Peace of Mind"
               ])
+            },
+            {
+              title: "A Small Joy",
+              question: "A simple thing that always brings a smile to my face is...",
+              render: () => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+                  <textarea
+                    placeholder="e.g. A hot cup of tea in the morning, hearing rain on the window, or a message from an old friend..."
+                    value={smallJoy}
+                    onChange={(e) => setSmallJoy(e.target.value)}
+                    rows={4}
+                    style={{
+                      padding: '16px',
+                      fontSize: '15px',
+                      borderRadius: '16px',
+                      border: '1px solid var(--border-light)',
+                      backgroundColor: 'var(--bg-card)',
+                      color: 'var(--text-primary)',
+                      resize: 'none',
+                      lineHeight: '1.5',
+                      boxShadow: 'var(--shadow-soft)',
+                      fontFamily: 'var(--font-sans)'
+                    }}
+                  />
+                </div>
+              )
             }
           ];
 
@@ -560,7 +596,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
               </div>
 
               {/* Bottom Buttons */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: 'var(--border-light)' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', paddingTop: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', borderTop: 'var(--border-light)' }}>
                 <button
                   onClick={handleNext}
                   className="btn btn-primary"
@@ -815,6 +851,34 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
                 "Good Health",
                 "Peaceful Life"
               ], 5)
+            },
+            {
+              title: "How I Show Care",
+              question: "I naturally express my care for others by...",
+              subtitle: "Select all that apply",
+              render: () => renderMultiSelect(careExpression, setCareExpression, [
+                "Sending check-in messages",
+                "Giving small, unexpected gifts",
+                "Planning quality time together",
+                "Helping out with chores or tasks",
+                "Offering sincere prayers/duas",
+                "Listening without trying to fix things",
+                "Sharing food or cooking for them"
+              ])
+            },
+            {
+              title: "Shared Moments",
+              question: "If we had a free afternoon together, I'd love to...",
+              subtitle: "Select all that apply",
+              render: () => renderMultiSelect(sharedMoments, setSharedMoments, [
+                "Go for a walk in nature",
+                "Grab a warm drink and chat",
+                "Explore a new bookstore or museum",
+                "Watch a good movie or show",
+                "Cook or share a meal together",
+                "Sit in comfortable silence",
+                "Work on side-by-side projects"
+              ])
             }
           ];
 
@@ -875,7 +939,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
               </div>
 
               {/* Bottom Buttons */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: 'var(--border-light)' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', paddingTop: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))', borderTop: 'var(--border-light)' }}>
                 <button
                   onClick={handleNext}
                   className="btn btn-primary"
