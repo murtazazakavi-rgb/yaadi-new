@@ -558,7 +558,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           };
 
           return (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', minHeight: 0, overflow: 'hidden' }}>
               {/* Header Navigation & Progress */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
                 <button onClick={handleBack} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
@@ -579,7 +579,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
               </div>
 
               {/* Card Question content */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }} className="page-transition">
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 0, overflow: 'hidden' }} className="page-transition">
                 <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-gold)', letterSpacing: '0.5px' }}>
                   Care Card • {currentStep.title}
                 </span>
@@ -901,7 +901,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           };
 
           return (
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', minHeight: 0, overflow: 'hidden' }}>
               {/* Header Navigation & Progress */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
                 <button onClick={handleBack} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}>
@@ -922,7 +922,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
               </div>
 
               {/* Card Question content */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }} className="page-transition">
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', minHeight: 0, overflow: 'hidden' }} className="page-transition">
                 <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-sage)', letterSpacing: '0.5px' }}>
                   Know Me Better • {currentStep.title}
                 </span>
