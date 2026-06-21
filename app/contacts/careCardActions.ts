@@ -85,7 +85,7 @@ export async function getCareCardByToken(token: string) {
 
   const res = await query(
     `SELECT cc.*, 
-            c.first_name, c.middle_name, c.last_name,
+            c.id as contact_id_raw, c.first_name, c.middle_name, c.last_name, c.phone_number, c.email, c.born_after_maghrib,
             t.display_name as owner_name
      FROM care_cards cc
      JOIN contacts c ON cc.contact_id = c.id
@@ -98,7 +98,19 @@ export async function getCareCardByToken(token: string) {
     return null;
   }
 
-  return res.rows[0];
+  const cc = res.rows[0];
+
+  // Fetch events for this contact
+  const eventsRes = await query(
+    `SELECT event_type, g_day, g_month, g_year, h_day, h_month, h_year 
+     FROM events 
+     WHERE contact_id = $1`,
+    [cc.contact_id_raw]
+  );
+  
+  cc.events = eventsRes.rows;
+
+  return cc;
 }
 
 /**
@@ -470,5 +482,92 @@ export async function refreshAiInsights(contactId: string) {
 
   await generateAndSaveAiInsights(contactId);
   revalidatePath('/contacts');
+  return { success: true };
+}
+
+/**
+ * Public action to directly update contact basic details and events from the dashboard link.
+ */
+export async function updateContactPublicDetails(
+  token: string,
+  data: {
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    phoneNumber?: string;
+    email?: string;
+    bornAfterMaghrib?: boolean;
+    events: Array<{
+      eventType: string;
+      gDay?: number;
+      gMonth?: number;
+      gYear?: number;
+      hDay?: number;
+      hMonth?: number;
+      hYear?: number;
+    }>;
+  }
+) {
+  // 1. Fetch contact_id by token
+  const ccCheck = await query('SELECT contact_id FROM care_cards WHERE token = $1', [token]);
+  if (ccCheck.rows.length === 0) {
+    throw new Error('Care Card not found.');
+  }
+  const contactId = ccCheck.rows[0].contact_id;
+
+  const { firstName, middleName, lastName, phoneNumber, email, bornAfterMaghrib, events } = data;
+  if (!firstName || !lastName) {
+    throw new Error('First name and last name are required.');
+  }
+
+  // 2. Update contacts table
+  await query(
+    `UPDATE contacts 
+     SET first_name = $1,
+         middle_name = $2,
+         last_name = $3,
+         phone_number = $4,
+         email = $5,
+         born_after_maghrib = $6
+     WHERE id = $7`,
+    [
+      firstName.trim(),
+      middleName?.trim() || null,
+      lastName.trim(),
+      phoneNumber?.trim() || null,
+      email?.trim() || null,
+      bornAfterMaghrib || false,
+      contactId
+    ]
+  );
+
+  // 3. Delete existing events of these 3 types (birthday_gregorian, birthday_hijri, anniversary)
+  await query(
+    `DELETE FROM events 
+     WHERE contact_id = $1 
+       AND event_type IN ('birthday_gregorian', 'birthday_hijri', 'anniversary')`,
+    [contactId]
+  );
+
+  // 4. Insert new events
+  for (const ev of events) {
+    await query(
+      `INSERT INTO events (contact_id, event_type, g_day, g_month, g_year, h_day, h_month, h_year) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        contactId,
+        ev.eventType,
+        ev.gDay || null,
+        ev.gMonth || null,
+        ev.gYear || null,
+        ev.hDay !== undefined && ev.hDay !== null ? ev.hDay : null,
+        ev.hMonth !== undefined && ev.hMonth !== null ? ev.hMonth : null,
+        ev.hYear !== undefined && ev.hYear !== null ? ev.hYear : null,
+      ]
+    );
+  }
+
+  revalidatePath('/contacts');
+  revalidatePath('/dashboard');
   return { success: true };
 }

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-import { getCareCardByToken, saveCareCardResponses } from '@/app/contacts/careCardActions';
-import { ArrowLeft, ArrowRight, Heart, Sparkles, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { getCareCardByToken, saveCareCardResponses, updateContactPublicDetails } from '@/app/contacts/careCardActions';
+import { ArrowLeft, ArrowRight, Heart, Sparkles, Check, ChevronUp, ChevronDown, Calendar, User, Phone, Mail, Edit } from 'lucide-react';
+import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 
 export default function PublicCareCardPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -14,10 +15,23 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   const [ownerName, setOwnerName] = useState('');
 
   // Flow State
-  // 'landing' | 'level1' | 'completion1' | 'level2' | 'completion2'
-  const [flowStage, setFlowStage] = useState<'landing' | 'level1' | 'completion1' | 'level2' | 'completion2'>('landing');
+  // 'landing' | 'level1' | 'completion1' | 'level2' | 'completion2' | 'edit_details'
+  const [flowStage, setFlowStage] = useState<'landing' | 'level1' | 'completion1' | 'level2' | 'completion2' | 'edit_details'>('landing');
   const [level1Step, setLevel1Step] = useState(0); // 0 to 10 (11 steps now)
   const [level2Step, setLevel2Step] = useState(0); // 0 to 9 (10 steps now)
+
+  // Basic Details & Dates State
+  const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
+  const [gBirthday, setGBirthday] = useState('');
+  const [hBDate, setHBDate] = useState('');
+  const [hBMonth, setHBMonth] = useState('');
+  const [hBYear, setHBYear] = useState('');
+  const [gAnniversary, setGAnniversary] = useState('');
 
   // Level 1 Form State
   const [appreciationStyle, setAppreciationStyle] = useState('');
@@ -63,8 +77,32 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           return;
         }
 
+        setFirstName(data.first_name || '');
+        setMiddleName(data.middle_name || '');
+        setLastName(data.last_name || '');
         setContactName(`${data.first_name}${data.middle_name ? ' ' + data.middle_name : ''} ${data.last_name}`);
         setOwnerName(data.owner_name || 'Someone');
+        setPhoneNumber(data.phone_number || '');
+        setEmail(data.email || '');
+        setBornAfterMaghrib(data.born_after_maghrib || false);
+
+        // Parse events
+        if (data.events && data.events.length > 0) {
+          const gregBirth = data.events.find((e: any) => e.event_type === 'birthday_gregorian');
+          if (gregBirth) {
+            setGBirthday(`${gregBirth.g_year}-${String(gregBirth.g_month).padStart(2, '0')}-${String(gregBirth.g_day).padStart(2, '0')}`);
+          }
+          const hijriBirth = data.events.find((e: any) => e.event_type === 'birthday_hijri');
+          if (hijriBirth) {
+            setHBDate(hijriBirth.h_day?.toString() || '');
+            setHBMonth(hijriBirth.h_month?.toString() || '');
+            setHBYear(hijriBirth.h_year?.toString() || '');
+          }
+          const anniv = data.events.find((e: any) => e.event_type === 'anniversary');
+          if (anniv) {
+            setGAnniversary(`${anniv.g_year}-${String(anniv.g_month).padStart(2, '0')}-${String(anniv.g_day).padStart(2, '0')}`);
+          }
+        }
 
         // Pre-fill existing data if they are editing
         if (data.status === 'complete') {
@@ -313,6 +351,47 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
     );
   }
 
+  // --- Gregorian to Hijri Date conversion logic ---
+  const handleGBirthdayChange = (val: string, isAfterMaghrib = bornAfterMaghrib) => {
+    setGBirthday(val);
+    if (!val) return;
+    const d = new Date(val + 'T12:00:00');
+    if (!isNaN(d.getTime())) {
+      let calcDate = d;
+      if (isAfterMaghrib) {
+        calcDate = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+      }
+      const h = HijriDate.fromGregorian(calcDate);
+      setHBDate(h.day.toString());
+      setHBMonth(h.month.toString());
+      setHBYear(h.year.toString());
+    }
+  };
+
+  const handleBornAfterMaghribToggle = (checked: boolean) => {
+    setBornAfterMaghrib(checked);
+    if (gBirthday) {
+      handleGBirthdayChange(gBirthday, checked);
+    }
+  };
+
+  const syncHBirthdayToGregorian = (d: string, m: string, y: string, isAfterMaghrib = bornAfterMaghrib) => {
+    if (d && m && y) {
+      try {
+        const h = new HijriDate(parseInt(y), parseInt(m), parseInt(d));
+        let gDateObj = h.toGregorian();
+        if (isAfterMaghrib) {
+          gDateObj = new Date(gDateObj.getTime() - 24 * 60 * 60 * 1000);
+        }
+        const year = gDateObj.getFullYear();
+        const month = String(gDateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(gDateObj.getDate()).padStart(2, '0');
+        const formatted = `${year}-${month}-${day}`;
+        setGBirthday(formatted);
+      } catch (err) {}
+    }
+  };
+
   return (
     <div style={{ height: '100dvh', backgroundColor: 'var(--bg-primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}>
       <div style={{
@@ -329,56 +408,395 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
         
         {/* Landing Page */}
         {flowStage === 'landing' && (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', justifyContent: 'center', textAlign: 'center' }}>
-            <div style={{ marginBottom: '24px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' }}>
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '24px', marginTop: '12px' }}>
               <div style={{
                 display: 'inline-flex',
-                width: '64px',
-                height: '64px',
+                width: '56px',
+                height: '56px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(196, 149, 58, 0.1)',
+                backgroundColor: 'var(--color-gold-light)',
                 color: 'var(--color-gold)',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '16px'
+                marginBottom: '12px'
               }}>
-                <Heart size={32} fill="var(--color-gold)" style={{ opacity: 0.8 }} />
+                <Heart size={28} fill="var(--color-gold)" style={{ opacity: 0.8 }} />
               </div>
-              <h1 className="serif-font" style={{ fontSize: '28px', color: 'var(--text-primary)', fontWeight: '600', marginBottom: '12px' }}>
-                Help Me Remember You ❤️
+              <h1 className="serif-font" style={{ fontSize: '26px', color: 'var(--text-primary)', fontWeight: '600', marginBottom: '6px' }}>
+                Welcome, {firstName || 'Friend'}! 👋
               </h1>
-              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: '0 auto 24px auto', maxWidth: '320px' }}>
-                I'm using Yaadi to remember important dates and stay connected with people I care about.
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0 auto', maxWidth: '300px' }}>
+                This is your personal connection card with <strong>{ownerName}</strong>. Keep your details and preferences up to date.
               </p>
-              <div className="card" style={{
-                background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(197, 160, 89, 0.05) 100%)',
-                padding: '20px',
-                borderRadius: '16px',
-                border: '1px solid rgba(197, 160, 89, 0.2)',
-                textAlign: 'left',
-                margin: '0 0 24px 0'
-              }}>
-                <span style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-gold)', marginBottom: '8px' }}>Invitation from</span>
-                <h4 className="serif-font" style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)' }}>{ownerName}</h4>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  Answer a few fun questions so I can better remember what matters to you.
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  <span>⏱ Takes about 2 minutes</span>
-                </div>
-              </div>
             </div>
 
-            <button
-              onClick={() => setFlowStage('level1')}
-              className="btn btn-accent"
-              style={{ padding: '16px', fontSize: '15px', fontWeight: '600', height: 'auto', borderRadius: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* CARD A: Personal Details */}
+              <div className="card" style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-soft)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'var(--border-light)', paddingBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-gold)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <User size={14} /> Personal Details & Dates
+                  </span>
+                  <button
+                    onClick={() => setFlowStage('edit_details')}
+                    style={{ border: 'none', background: 'none', color: 'var(--color-gold)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                  >
+                    <Edit size={13} /> Edit
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Full Name:</strong> {firstName} {middleName ? middleName + ' ' : ''}{lastName}
+                  </div>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Phone:</strong> {phoneNumber || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not set</span>}
+                  </div>
+                  <div>
+                    <strong style={{ color: 'var(--text-primary)' }}>Email:</strong> {email || <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not set</span>}
+                  </div>
+                  <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '10px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div>
+                      📅 <strong style={{ color: 'var(--text-primary)' }}>Birthday:</strong> {(() => {
+                        if (!gBirthday) return 'Not set';
+                        try {
+                          const d = new Date(gBirthday + 'T00:00:00');
+                          return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                        } catch (e) {
+                          return gBirthday;
+                        }
+                      })()}
+                      {bornAfterMaghrib && <span style={{ fontSize: '11px', color: 'var(--color-gold)', marginLeft: '6px' }}>(Born after Maghrib)</span>}
+                    </div>
+                    <div>
+                      🌙 <strong style={{ color: 'var(--text-primary)' }}>Waras (Hijri):</strong> {(() => {
+                        if (!hBDate || !hBMonth) return 'Not set';
+                        const monthName = HIJRI_MONTH_NAMES[parseInt(hBMonth)] || hBMonth;
+                        return `${hBDate} ${monthName} ${hBYear || ''}`.trim();
+                      })()}
+                    </div>
+                    <div>
+                      💍 <strong style={{ color: 'var(--text-primary)' }}>Anniversary:</strong> {(() => {
+                        if (!gAnniversary) return 'Not set';
+                        try {
+                          const d = new Date(gAnniversary + 'T00:00:00');
+                          return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                        } catch (e) {
+                          return gAnniversary;
+                        }
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD B: Care Preferences */}
+              <div className="card" style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-soft)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'var(--border-light)', paddingBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-sage)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={14} /> Care Preferences
+                  </span>
+                  <button
+                    onClick={() => setFlowStage('level1')}
+                    style={{ border: 'none', background: 'none', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                  >
+                    <Edit size={13} /> {appreciationStyle ? 'Update' : 'Fill'}
+                  </button>
+                </div>
+
+                {appreciationStyle ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                    <div>
+                      ❤️ <strong style={{ color: 'var(--text-primary)' }}>Appreciates:</strong> {appreciationStyle}
+                    </div>
+                    <div>
+                      💪 <strong style={{ color: 'var(--text-primary)' }}>When Stressed:</strong> {supportStyle}
+                    </div>
+                    {smallJoy && (
+                      <div>
+                        😊 <strong style={{ color: 'var(--text-primary)' }}>Small Joy:</strong> "{smallJoy}"
+                      </div>
+                    )}
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px dashed var(--border-light)', paddingTop: '8px', marginTop: '2px' }}>
+                      Preferences are active and visible in {ownerName}'s directory.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>
+                      You haven't shared your care preferences yet. Share them to help {ownerName} remember what matters to you.
+                    </p>
+                    <button
+                      onClick={() => setFlowStage('level1')}
+                      className="btn btn-primary"
+                      style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '600', height: 'auto', borderRadius: '10px', backgroundColor: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      Fill Preferences <ArrowRight size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Details Page */}
+        {flowStage === 'edit_details' && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', minHeight: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <button 
+                onClick={() => setFlowStage('landing')} 
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h2 className="serif-font" style={{ fontSize: '22px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+                Edit Personal Details
+              </h2>
+            </div>
+
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setSubmitting(true);
+                try {
+                  const finalEvents: any[] = [];
+                  
+                  // Gregorian Birthday
+                  if (gBirthday) {
+                    const parts = gBirthday.split('-');
+                    finalEvents.push({
+                      eventType: 'birthday_gregorian',
+                      gYear: parseInt(parts[0]),
+                      gMonth: parseInt(parts[1]),
+                      gDay: parseInt(parts[2])
+                    });
+                  }
+
+                  // Hijri Birthday / Waras
+                  if (hBDate && hBMonth && hBYear) {
+                    finalEvents.push({
+                      eventType: 'birthday_hijri',
+                      hDay: parseInt(hBDate),
+                      hMonth: parseInt(hBMonth),
+                      hYear: parseInt(hBYear)
+                    });
+                  }
+
+                  // Wedding Anniversary
+                  if (gAnniversary) {
+                    const parts = gAnniversary.split('-');
+                    finalEvents.push({
+                      eventType: 'anniversary',
+                      gYear: parseInt(parts[0]),
+                      gMonth: parseInt(parts[1]),
+                      gDay: parseInt(parts[2])
+                    });
+                  }
+
+                  await updateContactPublicDetails(token, {
+                    firstName,
+                    middleName,
+                    lastName,
+                    phoneNumber,
+                    email,
+                    bornAfterMaghrib,
+                    events: finalEvents
+                  });
+
+                  setContactName(`${firstName}${middleName ? ' ' + middleName : ''} ${lastName}`);
+                  setFlowStage('landing');
+                } catch (err: any) {
+                  alert(err.message || 'Failed to save details.');
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
             >
-              Start Care Card <ArrowRight size={18} />
-            </button>
-            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px' }}>
-              You can skip any question.
-            </span>
+              {/* Names row */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '80px', margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>First Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    style={{ padding: '10px 12px', fontSize: '14px', borderRadius: '10px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1, minWidth: '80px', margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Middle Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={middleName}
+                    onChange={(e) => setMiddleName(e.target.value)}
+                    style={{ padding: '10px 12px', fontSize: '14px', borderRadius: '10px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1, minWidth: '80px', margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Last Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-input"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    style={{ padding: '10px 12px', fontSize: '14px', borderRadius: '10px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Phone & Email */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Phone Number</label>
+                <input
+                  type="tel"
+                  className="form-input"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="e.g. +919825535907"
+                  style={{ padding: '10px 12px', fontSize: '14px', borderRadius: '10px' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Email Address</label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. ahmed@example.com"
+                  style={{ padding: '10px 12px', fontSize: '14px', borderRadius: '10px' }}
+                />
+              </div>
+
+              {/* Solar Birthday & Maghrib & Hijri Converter */}
+              <div style={{ border: '1px solid var(--border-light)', padding: '16px', borderRadius: '12px', backgroundColor: 'var(--bg-card-active)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '750', textTransform: 'uppercase', color: 'var(--color-gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Calendar size={13} /> Birthday & Hijri Waras
+                </span>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'none' }}>Gregorian Birthday (Solar)</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={gBirthday}
+                    onChange={(e) => handleGBirthdayChange(e.target.value)}
+                    style={{ padding: '8px 12px', fontSize: '14px', borderRadius: '10px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    id="born-maghrib"
+                    checked={bornAfterMaghrib}
+                    onChange={(e) => handleBornAfterMaghribToggle(e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="born-maghrib" style={{ fontSize: '12.5px', color: 'var(--text-primary)', cursor: 'pointer', margin: 0, textTransform: 'none', letterSpacing: 'normal' }}>
+                    Born after Maghrib (Islamic date shifts +1 day)
+                  </label>
+                </div>
+
+                <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '10px', marginTop: '4px' }}>
+                  <label className="form-label" style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'none', marginBottom: '8px', display: 'block' }}>Hijri Birthday (Waras) - Calculated automatically</label>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <div className="form-group" style={{ width: '60px', margin: 0 }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="30"
+                        placeholder="Day"
+                        className="form-input"
+                        value={hBDate}
+                        onChange={(e) => {
+                          setHBDate(e.target.value);
+                          syncHBirthdayToGregorian(e.target.value, hBMonth, hBYear);
+                        }}
+                        style={{ padding: '8px 6px', fontSize: '13px', borderRadius: '8px', textAlign: 'center' }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 1, margin: 0 }}>
+                      <select
+                        className="form-select"
+                        value={hBMonth}
+                        onChange={(e) => {
+                          setHBMonth(e.target.value);
+                          syncHBirthdayToGregorian(hBDate, e.target.value, hBYear);
+                        }}
+                        style={{ padding: '8px 6px', fontSize: '13px', borderRadius: '8px' }}
+                      >
+                        <option value="">Select Hijri Month...</option>
+                        {HIJRI_MONTH_NAMES.map((name, idx) => (
+                          <option key={idx} value={idx}>{name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ width: '70px', margin: 0 }}>
+                      <input
+                        type="number"
+                        min="1300"
+                        max="1600"
+                        placeholder="Year"
+                        className="form-input"
+                        value={hBYear}
+                        onChange={(e) => {
+                          setHBYear(e.target.value);
+                          syncHBirthdayToGregorian(hBDate, hBMonth, e.target.value);
+                        }}
+                        style={{ padding: '8px 6px', fontSize: '13px', borderRadius: '8px', textAlign: 'center' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wedding Anniversary */}
+              <div style={{ border: '1px solid var(--border-light)', padding: '16px', borderRadius: '12px', backgroundColor: 'var(--bg-card-active)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '750', textTransform: 'uppercase', color: 'var(--color-anniversary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Heart size={13} /> Wedding Anniversary
+                </span>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={gAnniversary}
+                    onChange={(e) => setGAnniversary(e.target.value)}
+                    style={{ padding: '8px 12px', fontSize: '14px', borderRadius: '10px' }}
+                  />
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '12px', marginTop: '12px', borderTop: 'var(--border-light)', paddingTop: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setFlowStage('landing')}
+                  className="btn btn-secondary"
+                  disabled={submitting}
+                  style={{ flex: 1, padding: '12px', borderRadius: '10px', fontSize: '14px', fontWeight: '600' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={submitting}
+                  style={{ flex: 1, padding: '12px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', backgroundColor: 'var(--color-gold)' }}
+                >
+                  {submitting ? 'Saving...' : 'Save Details'}
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
