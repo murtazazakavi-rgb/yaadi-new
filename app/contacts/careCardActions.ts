@@ -241,7 +241,12 @@ export async function saveCareCardResponses(
       life_season,
       dreams,
       care_expression,
-      shared_moments
+      shared_moments,
+      connection_rhythm,
+      relational_role,
+      resolving_tension,
+      relational_validation,
+      confidence_boost
     } = responses;
 
     await query(
@@ -256,9 +261,14 @@ export async function saveCareCardResponses(
            dreams = $8,
            care_expression = $9,
            shared_moments = $10,
+           connection_rhythm = $11,
+           relational_role = $12,
+           resolving_tension = $13,
+           relational_validation = $14,
+           confidence_boost = $15,
            know_me_better_status = 'complete',
            updated_at = CURRENT_TIMESTAMP
-       WHERE token = $11`,
+       WHERE token = $16`,
       [
         matters_most || [],
         energy_sources || [],
@@ -270,6 +280,11 @@ export async function saveCareCardResponses(
         dreams || [],
         care_expression || [],
         shared_moments || [],
+        connection_rhythm || null,
+        relational_role || null,
+        resolving_tension || null,
+        relational_validation || null,
+        confidence_boost || null,
         token
       ]
     );
@@ -311,6 +326,11 @@ export async function saveCareCardResponses(
       if (responses.life_season && responses.life_season.length > 0) changeDetails.push('Current life season reflection');
       if (responses.care_expression && responses.care_expression.length > 0) changeDetails.push('Natural expression of care');
       if (responses.shared_moments && responses.shared_moments.length > 0) changeDetails.push('Preferred shared moments');
+      if (responses.connection_rhythm) changeDetails.push('Connection rhythm preference');
+      if (responses.relational_role) changeDetails.push('Relational role preference');
+      if (responses.resolving_tension) changeDetails.push('Tension resolution preference');
+      if (responses.relational_validation) changeDetails.push('Relational validation preference');
+      if (responses.confidence_boost) changeDetails.push('Confidence boost preference');
     }
 
     if (changeDetails.length === 0) {
@@ -425,6 +445,11 @@ KNOW ME BETTER (LEVEL 2):
 - Hidden traits they wish people knew: ${JSON.stringify(cc.hidden_traits)}
 - Natural expression of care for others: ${JSON.stringify(cc.care_expression)}
 - Simple shared moments they enjoy: ${JSON.stringify(cc.shared_moments)}
+- Preferred connection pace: "${cc.connection_rhythm}"
+- Role they value in relationship: "${cc.relational_role}"
+- Preferred way to clear air/resolve tension: "${cc.resolving_tension}"
+- What makes them feel seen/appreciated: "${cc.relational_validation}"
+- Simple way to lift their spirits: "${cc.confidence_boost}"
 
 Please generate 3-4 simple, heartfelt bullet points of Relationship Insights for the user about how to care for, contact, and support ${name}.
 `;

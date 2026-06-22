@@ -1574,6 +1574,21 @@ export default function ContactsPage() {
                                   {activeCareCard.shared_moments && activeCareCard.shared_moments.length > 0 && (
                                     <div>☕ <strong>Shared moments:</strong> {activeCareCard.shared_moments.join(', ')}</div>
                                   )}
+                                  {activeCareCard.connection_rhythm && (
+                                    <div>⚡ <strong>Connection Pace:</strong> {activeCareCard.connection_rhythm}</div>
+                                  )}
+                                  {activeCareCard.relational_role && (
+                                    <div>👥 <strong>Role:</strong> {activeCareCard.relational_role}</div>
+                                  )}
+                                  {activeCareCard.resolving_tension && (
+                                    <div>🕊️ <strong>Resolving Tension:</strong> {activeCareCard.resolving_tension}</div>
+                                  )}
+                                  {activeCareCard.relational_validation && (
+                                    <div>🌟 <strong>Feels Appreciated:</strong> {activeCareCard.relational_validation}</div>
+                                  )}
+                                  {activeCareCard.confidence_boost && (
+                                    <div>🚀 <strong>Lifting Spirits:</strong> {activeCareCard.confidence_boost}</div>
+                                  )}
                                   
                                   {/* Optional Favourites */}
                                   {activeCareCard.favourites && Object.values(activeCareCard.favourites).some(Boolean) && (

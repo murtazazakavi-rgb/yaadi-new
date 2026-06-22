@@ -181,6 +181,14 @@ async function ensureTables() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await sql.query(`
+      ALTER TABLE care_cards 
+      ADD COLUMN IF NOT EXISTS connection_rhythm VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS relational_role VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS resolving_tension VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS relational_validation VARCHAR(100),
+      ADD COLUMN IF NOT EXISTS confidence_boost VARCHAR(100);
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

@@ -63,6 +63,11 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   const [dreams, setDreams] = useState<string[]>([]);
   const [careExpression, setCareExpression] = useState<string[]>([]);
   const [sharedMoments, setSharedMoments] = useState<string[]>([]);
+  const [connectionRhythm, setConnectionRhythm] = useState('');
+  const [relationalRole, setRelationalRole] = useState('');
+  const [resolvingTension, setResolvingTension] = useState('');
+  const [relationalValidation, setRelationalValidation] = useState('');
+  const [confidenceBoost, setConfidenceBoost] = useState('');
 
   // Submit states
   const [submitting, setSubmitting] = useState(false);
@@ -134,6 +139,11 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           setDreams(data.dreams || []);
           setCareExpression(data.care_expression || []);
           setSharedMoments(data.shared_moments || []);
+          setConnectionRhythm(data.connection_rhythm || '');
+          setRelationalRole(data.relational_role || '');
+          setResolvingTension(data.resolving_tension || '');
+          setRelationalValidation(data.relational_validation || '');
+          setConfidenceBoost(data.confidence_boost || '');
         }
 
         setLoading(false);
@@ -196,7 +206,12 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
         life_season: lifeSeason,
         dreams: dreams,
         care_expression: careExpression,
-        shared_moments: sharedMoments
+        shared_moments: sharedMoments,
+        connection_rhythm: connectionRhythm,
+        relational_role: relationalRole,
+        resolving_tension: resolvingTension,
+        relational_validation: relationalValidation,
+        confidence_boost: confidenceBoost
       };
 
       await saveCareCardResponses(token, {
@@ -1296,6 +1311,58 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
                 "Cook or share a meal together",
                 "Sit in comfortable silence",
                 "Work on side-by-side projects"
+              ])
+            },
+            {
+              title: "Connection Rhythm",
+              question: "When it comes to staying in touch, I usually prefer...",
+              render: () => renderSingleSelect(connectionRhythm, setConnectionRhythm, [
+                "Catching up frequently over quick, casual messages",
+                "Having a long, deep phone call once in a while",
+                "Meeting up in person for face-to-face catch-ups",
+                "Picking up right where we left off, even after months of silence"
+              ])
+            },
+            {
+              title: "Relational Role",
+              question: "In our relationship, I value you most as...",
+              render: () => renderSingleSelect(relationalRole, setRelationalRole, [
+                "Someone I can vent to and feel heard by",
+                "Someone who offers wise advice and perspective when I'm stuck",
+                "Someone to laugh, have fun, and share good times with",
+                "A quiet, steady presence in my corner who is always there"
+              ])
+            },
+            {
+              title: "Resolving Tension",
+              question: "If we ever have a misunderstanding or hurt feelings, my preferred way to clear the air is...",
+              render: () => renderSingleSelect(resolvingTension, setResolvingTension, [
+                "A quick text to sort things out immediately",
+                "A phone call so we can hear each other's voice",
+                "A face-to-face chat over a warm drink",
+                "Giving it a day or two of space before we talk it through"
+              ])
+            },
+            {
+              title: "Relational Validation",
+              question: "I feel most seen and appreciated when you notice...",
+              render: () => renderSingleSelect(relationalValidation, setRelationalValidation, [
+                "My appearance or style (e.g. telling me I look nice, beautiful, or handsome)",
+                "My intellect (e.g. asking for my advice, opinion, or thoughts)",
+                "My heart (e.g. recognizing my kindness, empathy, or loyalty)",
+                "My hard work (e.g. acknowledging my projects, career, or personal goals)",
+                "My energy (e.g. saying I bring good vibes or make you laugh)"
+              ])
+            },
+            {
+              title: "Confidence Boost",
+              question: "When I'm feeling a bit low or insecure, a simple way you can lift my spirits is to...",
+              render: () => renderSingleSelect(confidenceBoost, setConfidenceBoost, [
+                "Send a text sharing what you value about our relationship",
+                "Call me up just to chat and hear about my day",
+                "Ask for my input on something, showing you trust my judgment",
+                "Remind me of a strength or quality of mine that I might be forgetting",
+                "Plan a relaxed, low-pressure hang-out to help get my mind off things"
               ])
             }
           ];
