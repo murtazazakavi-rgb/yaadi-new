@@ -71,6 +71,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
 
   // Submit states
   const [submitting, setSubmitting] = useState(false);
+  const [customInputText, setCustomInputText] = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -233,6 +234,8 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
     setValue: (val: string) => void,
     options: string[]
   ) => {
+    const isCustom = currentValue && !options.includes(currentValue);
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
         {options.map((opt) => {
@@ -260,6 +263,30 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
             </button>
           );
         })}
+        
+        {/* Custom Write-in Input */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+          <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Or write your own:
+          </label>
+          <input
+            type="text"
+            placeholder="Type your own answer..."
+            value={isCustom ? currentValue : ''}
+            onChange={(e) => setValue(e.target.value)}
+            maxLength={100}
+            style={{
+              padding: '14px 18px',
+              borderRadius: '16px',
+              border: isCustom ? '2px solid var(--color-gold)' : '1px solid var(--border-light)',
+              backgroundColor: isCustom ? 'var(--color-gold-light)' : 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              outline: 'none',
+              boxShadow: isCustom ? 'var(--shadow-hover)' : 'var(--shadow-soft)'
+            }}
+          />
+        </div>
       </div>
     );
   };
@@ -283,9 +310,32 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
       }
     };
 
+    const handleAddCustom = () => {
+      const trimmed = customInputText.trim();
+      if (!trimmed) return;
+      if (currentValues.includes(trimmed)) {
+        setCustomInputText('');
+        return;
+      }
+      if (maxSelection && currentValues.length >= maxSelection) {
+        alert(`You can select a maximum of ${maxSelection} choices.`);
+        return;
+      }
+      setValues([...currentValues, trimmed]);
+      setCustomInputText('');
+    };
+
+    // Combine predefined options with any custom options already selected
+    const allOptions = [...options];
+    currentValues.forEach((val) => {
+      if (!allOptions.includes(val)) {
+        allOptions.push(val);
+      }
+    });
+
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', marginTop: '16px' }}>
-        {options.map((opt) => {
+        {allOptions.map((opt) => {
           const isSelected = currentValues.includes(opt);
           return (
             <button
@@ -327,6 +377,56 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
             </button>
           );
         })}
+
+        {/* Add Custom Option Input */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+          <label style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Or add your own:
+          </label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input
+              type="text"
+              placeholder="Type a custom option..."
+              value={customInputText}
+              onChange={(e) => setCustomInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCustom();
+                }
+              }}
+              maxLength={100}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--border-light)',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                fontSize: '14px',
+                outline: 'none',
+                boxShadow: 'var(--shadow-soft)'
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleAddCustom}
+              style={{
+                padding: '0 16px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--color-gold)',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-soft)'
+              }}
+            >
+              Add
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
@@ -975,6 +1075,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           const currentStep = steps[level1Step];
 
           const handleNext = () => {
+            setCustomInputText('');
             if (level1Step < steps.length - 1) {
               setLevel1Step(level1Step + 1);
             } else {
@@ -983,6 +1084,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           };
 
           const handleBack = () => {
+            setCustomInputText('');
             if (level1Step > 0) {
               setLevel1Step(level1Step - 1);
             } else {
@@ -1370,6 +1472,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           const currentStep = steps[level2Step];
 
           const handleNext = () => {
+            setCustomInputText('');
             if (level2Step < steps.length - 1) {
               setLevel2Step(level2Step + 1);
             } else {
@@ -1378,6 +1481,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           };
 
           const handleBack = () => {
+            setCustomInputText('');
             if (level2Step > 0) {
               setLevel2Step(level2Step - 1);
             } else {
