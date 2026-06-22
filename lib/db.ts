@@ -189,6 +189,17 @@ async function ensureTables() {
       ADD COLUMN IF NOT EXISTS relational_validation VARCHAR(100),
       ADD COLUMN IF NOT EXISTS confidence_boost VARCHAR(100);
     `);
+    await sql.query(`
+      CREATE TABLE IF NOT EXISTS ibaadat_tracker (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+          date DATE NOT NULL,
+          logs JSONB NOT NULL DEFAULT '{}'::jsonb,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(tenant_id, date)
+      );
+    `);
     isInitialized = true;
   } catch (err) {
     console.error("Auto-migration error:", err);

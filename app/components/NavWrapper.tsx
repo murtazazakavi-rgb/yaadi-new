@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon, FileText, Settings } from 'lucide-react';
+import { Home, Users, Network, MessageSquare, CheckSquare, ShieldAlert, LogOut, Share2, MoreHorizontal, X, Calendar, Sun, Moon, FileText, Settings, Compass } from 'lucide-react';
 import { saveUIPreferences } from '@/app/settings/actions';
 
 interface NavWrapperProps {
@@ -163,7 +163,7 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
     return <>{children}</>;
   }
 
-  const isMoreActive = ['/connections', '/templates', '/approvals', '/admin', '/documents', '/settings'].includes(pathname);
+  const isMoreActive = ['/connections', '/templates', '/approvals', '/admin', '/documents', '/settings', '/ibaadat'].includes(pathname);
 
   return (
     <div className="app-container">
@@ -218,6 +218,11 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
         <Link href="/calendar" prefetch={false} className={`nav-item ${pathname === '/calendar' ? 'active' : ''}`}>
           <Calendar />
           <span>Calendar</span>
+        </Link>
+        
+        <Link href="/ibaadat" prefetch={false} className={`nav-item desktop-only ${pathname === '/ibaadat' ? 'active' : ''}`}>
+          <Compass />
+          <span>Ibaadat</span>
         </Link>
         
         <Link href="/contacts" prefetch={false} className={`nav-item ${pathname === '/contacts' ? 'active' : ''}`}>
@@ -385,6 +390,28 @@ export default function NavWrapper({ children, user }: NavWrapperProps) {
               </button>
             </div>
             <div className="mobile-drawer-links" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Link 
+                href="/ibaadat" 
+                prefetch={false}
+                onClick={() => setShowMoreMenu(false)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '14px 18px', 
+                  borderRadius: '12px', 
+                  backgroundColor: pathname === '/ibaadat' ? 'var(--color-gold-light)' : 'rgba(0,0,0,0.02)',
+                  color: pathname === '/ibaadat' ? 'var(--color-gold)' : 'var(--text-primary)',
+                  textDecoration: 'none',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'var(--transition-smooth)'
+                }}
+              >
+                <Compass size={18} style={{ color: pathname === '/ibaadat' ? 'var(--color-gold)' : 'var(--text-muted)' }} />
+                <span>Ibaadat Tracker</span>
+              </Link>
+
               <Link 
                 href="/documents" 
                 prefetch={false}
