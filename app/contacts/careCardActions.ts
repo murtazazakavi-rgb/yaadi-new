@@ -458,11 +458,12 @@ Please generate 3-4 simple, heartfelt bullet points of Relationship Insights for
     const bulletPoints = [];
     
     // Appreciation preference
-    if (cc.appreciation_style === 'thoughtful message' || cc.appreciation_style === 'Love a thoughtful message') {
+    const appreciation = (cc.appreciation_style || '').toLowerCase();
+    if (appreciation.includes('message') || appreciation.includes('thoughtful')) {
       bulletPoints.push(`- Loves receiving thoughtful check-in messages in their day-to-day.`);
-    } else if (cc.appreciation_style === 'Enjoy a phone call') {
+    } else if (appreciation.includes('call') || appreciation.includes('phone')) {
       bulletPoints.push(`- Appreciates hearing your voice; try calling them to brighten their day.`);
-    } else if (cc.appreciation_style === 'Value a heartfelt dua') {
+    } else if (appreciation.includes('dua') || appreciation.includes('prayer') || appreciation.includes('heartfelt')) {
       bulletPoints.push(`- Deeply values heartfelt prayers and duas from family and friends.`);
     }
 

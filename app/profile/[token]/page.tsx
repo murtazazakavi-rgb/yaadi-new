@@ -805,13 +805,13 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           const steps = [
             {
               title: "Make My Day",
-              question: `If I wanted to make your day, I'd probably...`,
+              question: "To make my day, I'd love...",
               render: () => renderSingleSelect(appreciationStyle, setAppreciationStyle, [
-                "Love a thoughtful message",
-                "Enjoy a phone call",
-                "Appreciate food or dessert",
-                "Value a heartfelt dua",
-                "Prefer peaceful alone time"
+                "A thoughtful message",
+                "A phone call",
+                "Some food or dessert",
+                "A heartfelt dua",
+                "Peaceful alone time"
               ])
             },
             {
@@ -827,11 +827,11 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
             },
             {
               title: "Best Way To Reach Me",
-              question: "What's usually the best way to reach you?",
+              question: "The best way to reach me is...",
               render: () => renderSingleSelect(communicationPreference, setCommunicationPreference, [
-                "WhatsApp message",
-                "Voice note",
-                "Phone call",
+                "A WhatsApp message",
+                "A voice note",
+                "A phone call",
                 "In person",
                 "Only if it's important 😄"
               ])
@@ -1167,7 +1167,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
             },
             {
               title: "What Gives Me Energy",
-              question: "Things that give me energy:",
+              question: "What energizes me:",
               subtitle: "Select up to 5 options",
               render: () => renderMultiSelect(energySources, setEnergySources, [
                 "Family time",
@@ -1256,7 +1256,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
             },
             {
               title: "My Dreams",
-              question: "My dreams for the future:",
+              question: "My dreams for the future include:",
               subtitle: "Select up to 5 options",
               render: () => renderMultiSelect(dreams, setDreams, [
                 "Financial Freedom",
