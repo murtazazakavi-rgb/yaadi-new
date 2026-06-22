@@ -19,6 +19,8 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
   const [flowStage, setFlowStage] = useState<'landing' | 'level1' | 'completion1' | 'level2' | 'completion2' | 'edit_details'>('landing');
   const [level1Step, setLevel1Step] = useState(0); // 0 to 10 (11 steps now)
   const [level2Step, setLevel2Step] = useState(0); // 0 to 9 (10 steps now)
+  const [status, setStatus] = useState('not_started');
+  const [knowMeBetterStatus, setKnowMeBetterStatus] = useState('not_started');
 
   // Basic Details & Dates State
   const [firstName, setFirstName] = useState('');
@@ -110,6 +112,9 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
           }
         }
 
+        setStatus(data.status || 'not_started');
+        setKnowMeBetterStatus(data.know_me_better_status || 'not_started');
+
         // Pre-fill existing data if they are editing
         if (data.status === 'complete') {
           setAppreciationStyle(data.appreciation_style || '');
@@ -186,6 +191,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
         responses
       });
 
+      setStatus('complete');
       setFlowStage('completion1');
     } catch (err: any) {
       alert(err.message || 'Failed to save Care Card.');
@@ -220,6 +226,7 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
         responses
       });
 
+      setKnowMeBetterStatus('complete');
       setFlowStage('completion2');
     } catch (err: any) {
       alert(err.message || 'Failed to save details.');
@@ -613,27 +620,119 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
                   <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-sage)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Sparkles size={14} /> Care Preferences
                   </span>
-                  <button
-                    onClick={() => setFlowStage('level1')}
-                    style={{ border: 'none', background: 'none', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
-                  >
-                    <Edit size={13} /> {appreciationStyle ? 'Update' : 'Fill'}
-                  </button>
+                  {status === 'complete' && (
+                    <button
+                      onClick={() => setFlowStage('level1')}
+                      style={{ border: 'none', background: 'none', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      <Edit size={13} /> Update
+                    </button>
+                  )}
                 </div>
 
-                {appreciationStyle ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
-                    <div>
-                      ❤️ <strong style={{ color: 'var(--text-primary)' }}>Appreciates:</strong> {appreciationStyle}
+                {status === 'complete' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                    {/* Core style items */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {appreciationStyle && (
+                        <div>
+                          ❤️ <strong style={{ color: 'var(--text-primary)' }}>Appreciates:</strong> {appreciationStyle}
+                        </div>
+                      )}
+                      {supportStyle && (
+                        <div>
+                          💪 <strong style={{ color: 'var(--text-primary)' }}>When Stressed:</strong> {supportStyle}
+                        </div>
+                      )}
+                      {communicationPreference && (
+                        <div>
+                          📱 <strong style={{ color: 'var(--text-primary)' }}>Best Way to Reach:</strong> {communicationPreference}
+                        </div>
+                      )}
+                      {giftPreference && (
+                        <div>
+                          🎁 <strong style={{ color: 'var(--text-primary)' }}>Gift Cheat Code:</strong> {giftPreference}
+                        </div>
+                      )}
+                      {socialStyle && (
+                        <div>
+                          🔋 <strong style={{ color: 'var(--text-primary)' }}>Social Battery:</strong> {socialStyle}
+                        </div>
+                      )}
+                      {smallJoy && (
+                        <div>
+                          😊 <strong style={{ color: 'var(--text-primary)' }}>Small Joy:</strong> "{smallJoy}"
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      💪 <strong style={{ color: 'var(--text-primary)' }}>When Stressed:</strong> {supportStyle}
-                    </div>
-                    {smallJoy && (
-                      <div>
-                        😊 <strong style={{ color: 'var(--text-primary)' }}>Small Joy:</strong> "{smallJoy}"
+
+                    {/* Favourites Section */}
+                    {(favFood || favDessert || favDrink || favColour || favHobby) && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>My Favourites</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', fontSize: '12.5px' }}>
+                          {favFood && <div>🍽️ <strong style={{ color: 'var(--text-primary)' }}>Food:</strong> {favFood}</div>}
+                          {favDessert && <div>🍰 <strong style={{ color: 'var(--text-primary)' }}>Dessert:</strong> {favDessert}</div>}
+                          {favDrink && <div>🥤 <strong style={{ color: 'var(--text-primary)' }}>Drink:</strong> {favDrink}</div>}
+                          {favColour && <div>🎨 <strong style={{ color: 'var(--text-primary)' }}>Colour:</strong> {favColour}</div>}
+                          {favHobby && <div>🎸 <strong style={{ color: 'var(--text-primary)' }}>Hobby:</strong> {favHobby}</div>}
+                        </div>
                       </div>
                     )}
+
+                    {/* Tag Lists: Memory Priorities, Interests, Focus, Dua */}
+                    {memoryPriorities && memoryPriorities.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Remember About Me</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {memoryPriorities.map((item) => (
+                            <span key={item} style={{ padding: '4px 8px', borderRadius: '8px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-primary)' }}>
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {interests && interests.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Interests</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {interests.map((item) => (
+                            <span key={item} style={{ padding: '4px 8px', borderRadius: '8px', backgroundColor: 'rgba(107, 142, 110, 0.08)', border: '1px solid rgba(107, 142, 110, 0.15)', fontSize: '11px', color: 'var(--color-sage)' }}>
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {currentFocus && currentFocus.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Focus Areas</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {currentFocus.map((item) => (
+                            <span key={item} style={{ padding: '4px 8px', borderRadius: '8px', backgroundColor: 'rgba(196, 149, 58, 0.08)', border: '1px solid rgba(196, 149, 58, 0.15)', fontSize: '11px', color: 'var(--color-gold)' }}>
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {duaRequests && duaRequests.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Dua Requests</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {duaRequests.map((item) => (
+                            <span key={item} style={{ padding: '4px 8px', borderRadius: '8px', backgroundColor: 'rgba(74, 119, 122, 0.08)', border: '1px solid rgba(74, 119, 122, 0.15)', fontSize: '11px', color: '#4A777A' }}>
+                              {item}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px dashed var(--border-light)', paddingTop: '8px', marginTop: '2px' }}>
                       Preferences are active and visible in {ownerName}'s directory.
                     </div>
@@ -653,6 +752,205 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
                   </div>
                 )}
               </div>
+
+              {/* CARD C: Know Me Better */}
+              {status === 'complete' && (
+                <div className="card" style={{ padding: '20px', borderRadius: '16px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px', backgroundColor: 'var(--bg-card)', boxShadow: 'var(--shadow-soft)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'var(--border-light)', paddingBottom: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--color-sage)', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Sparkles size={14} /> Know Me Better 🌱
+                    </span>
+                    {knowMeBetterStatus === 'complete' && (
+                      <button
+                        onClick={() => setFlowStage('level2')}
+                        style={{ border: 'none', background: 'none', color: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                      >
+                        <Edit size={13} /> Update
+                      </button>
+                    )}
+                  </div>
+
+                  {knowMeBetterStatus === 'complete' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
+                      {/* Matters Most ranking */}
+                      {mattersMost && mattersMost.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Top Priorities (Ranked)</span>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {mattersMost.map((item, idx) => (
+                              <span key={item} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', borderRadius: '8px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-primary)' }}>
+                                <span style={{ fontWeight: '750', color: 'var(--color-gold)', fontSize: '10px' }}>{idx + 1}</span> {item}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Social/Relational Dynamics */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                        {connectionRhythm && (
+                          <div>
+                            🔄 <strong style={{ color: 'var(--text-primary)' }}>Check-in Rhythm:</strong> {connectionRhythm}
+                          </div>
+                        )}
+                        {relationalRole && (
+                          <div>
+                            🎭 <strong style={{ color: 'var(--text-primary)' }}>Relational Role:</strong> {relationalRole}
+                          </div>
+                        )}
+                        {resolvingTension && (
+                          <div>
+                            ⚡ <strong style={{ color: 'var(--text-primary)' }}>Resolving Tension:</strong> {resolvingTension}
+                          </div>
+                        )}
+                        {relationalValidation && (
+                          <div>
+                            🎖️ <strong style={{ color: 'var(--text-primary)' }}>Validation Needed:</strong> {relationalValidation}
+                          </div>
+                        )}
+                        {confidenceBoost && (
+                          <div>
+                            🚀 <strong style={{ color: 'var(--text-primary)' }}>Confidence Booster:</strong> {confidenceBoost}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Energy Dynamics */}
+                      {((energySources && energySources.length > 0) || (energyDrains && energyDrains.length > 0)) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                          {energySources && energySources.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Energy Givers ⚡</span>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {energySources.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'rgba(107, 142, 110, 0.06)', border: '1px solid rgba(107, 142, 110, 0.12)', fontSize: '11px', color: 'var(--color-sage)' }}>
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {energyDrains && energyDrains.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Energy Drains 📉</span>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {energyDrains.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'rgba(196, 70, 70, 0.06)', border: '1px solid rgba(196, 70, 70, 0.12)', fontSize: '11px', color: '#C44646' }}>
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Support & Relationship Details */}
+                      {((supportPreferences && supportPreferences.length > 0) || 
+                        (friendshipManual && friendshipManual.length > 0) || 
+                        (hiddenTraits && hiddenTraits.length > 0) || 
+                        (lifeSeason && lifeSeason.length > 0) ||
+                        (dreams && dreams.length > 0) ||
+                        (careExpression && careExpression.length > 0) ||
+                        (sharedMoments && sharedMoments.length > 0)) && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                          
+                          {lifeSeason && lifeSeason.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Current Season 🍂</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {lifeSeason.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {supportPreferences && supportPreferences.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Support Needs 🤝</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {supportPreferences.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {friendshipManual && friendshipManual.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Friendship Guidelines 📖</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {friendshipManual.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {hiddenTraits && hiddenTraits.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Hidden Traits 🧩</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {hiddenTraits.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {dreams && dreams.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Dreams & Goals 💭</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {dreams.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {careExpression && careExpression.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Expressing Care 💌</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {careExpression.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {sharedMoments && sharedMoments.length > 0 && (
+                            <div>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Favoured Moments 🫂</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {sharedMoments.map((item) => (
+                                  <span key={item} style={{ padding: '3px 6px', borderRadius: '6px', backgroundColor: 'var(--bg-card-active)', border: '1px solid var(--border-light)', fontSize: '11px' }}>{item}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '16px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>
+                        Go deeper. Share your priorities, energy dynamics, connection rhythms, and how you deal with tension.
+                      </p>
+                      <button
+                        onClick={() => setFlowStage('level2')}
+                        className="btn btn-primary"
+                        style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '600', height: 'auto', borderRadius: '10px', backgroundColor: 'var(--color-sage)', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        Share More Details <ArrowRight size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1197,11 +1495,11 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
                 Continue To Know Me Better 🌱
               </button>
               <button
-                onClick={() => setFlowStage('completion2')}
+                onClick={() => setFlowStage('landing')}
                 className="btn btn-ghost"
                 style={{ padding: '14px', fontSize: '13px', color: 'var(--text-secondary)' }}
               >
-                Finish & Exit
+                Finish & View Dashboard
               </button>
             </div>
           </div>
@@ -1568,9 +1866,18 @@ export default function PublicCareCardPage({ params }: { params: Promise<{ token
               </p>
             </div>
             
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '32px' }}>
-              You can close this browser window now.
-            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+              <button
+                onClick={() => setFlowStage('landing')}
+                className="btn btn-primary"
+                style={{ padding: '14px 28px', fontSize: '14px', fontWeight: '600', borderRadius: '12px', height: 'auto', backgroundColor: 'var(--color-sage)', color: '#FFFFFF', border: 'none', cursor: 'pointer', width: '200px' }}
+              >
+                View Profile Card
+              </button>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '4px 0 0 0' }}>
+                Or you can close this window now.
+              </p>
+            </div>
           </div>
         )}
 
