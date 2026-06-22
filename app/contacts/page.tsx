@@ -619,6 +619,18 @@ export default function ContactsPage() {
       });
   }, [activeContactId]);
 
+  useEffect(() => {
+    if (activeContactId && !loading) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`contact-card-${activeContactId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [activeContactId, loading]);
+
   const loadAllData = async () => {
     setLoading(true);
     try {
@@ -1252,6 +1264,7 @@ export default function ContactsPage() {
             return (
               <div 
                 key={c.id} 
+                id={`contact-card-${c.id}`}
                 className="card contact-card"
                 style={{
                   margin: '0 16px',
