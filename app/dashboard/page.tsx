@@ -279,23 +279,55 @@ export default function DashboardPage() {
     };
   }, [data.contacts, data.events, allCalculatedReminders, deceasedContactIds]);
 
-  // Identify recently updated care cards
+  // Identify recently updated care cards and approved submissions
   const recentUpdates = React.useMemo(() => {
-    if (!data.careCards || data.careCards.length === 0) return [];
-    
-    return data.careCards
-      .filter((cc: any) => {
+    const list: any[] = [];
+
+    // Process care cards
+    if (data.careCards && data.careCards.length > 0) {
+      data.careCards.forEach((cc: any) => {
         const hasStarted = cc.status !== 'not_started' || cc.know_me_better_status !== 'not_started';
         const isModified = cc.updated_at && cc.created_at && (new Date(cc.updated_at).getTime() > new Date(cc.created_at).getTime());
-        return hasStarted || isModified;
-      })
+        if (hasStarted || isModified) {
+          list.push({
+            id: `carecard-${cc.id}`,
+            first_name: cc.first_name,
+            middle_name: cc.middle_name,
+            last_name: cc.last_name,
+            updated_at: cc.updated_at,
+            contact_id: cc.contact_id || cc.contact_id_raw,
+            type: 'care_card',
+            status: cc.status,
+            know_me_better_status: cc.know_me_better_status
+          });
+        }
+      });
+    }
+
+    // Process approved submissions
+    if ((data as any).approvedSubmissions && (data as any).approvedSubmissions.length > 0) {
+      (data as any).approvedSubmissions.forEach((sub: any) => {
+        list.push({
+          id: `submission-${sub.id}`,
+          first_name: sub.first_name,
+          middle_name: sub.middle_name,
+          last_name: sub.last_name,
+          updated_at: sub.updated_at,
+          contact_id: sub.contact_id,
+          type: 'approved_submission'
+        });
+      });
+    }
+
+    // Sort by updated_at descending
+    return list
       .sort((a: any, b: any) => {
         const timeA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
         const timeB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
         return timeB - timeA;
       })
       .slice(0, 3);
-  }, [data.careCards]);
+  }, [data.careCards, (data as any).approvedSubmissions]);
 
   // Helper to group reminders by contact within each timeframe
   const groupRemindersByContact = (remindersList: any[]) => {
@@ -531,12 +563,16 @@ export default function DashboardPage() {
                 : '';
               
               let updateLabel = 'Updated profile details';
-              if (cc.status !== 'not_started' && cc.know_me_better_status !== 'not_started') {
-                updateLabel = 'Updated details & care preferences';
-              } else if (cc.status !== 'not_started') {
-                updateLabel = 'Shared care preferences (Level 1)';
-              } else if (cc.know_me_better_status !== 'not_started') {
-                updateLabel = 'Shared deep preferences (Level 2)';
+              if (cc.type === 'approved_submission') {
+                updateLabel = 'Approved & added to directory';
+              } else {
+                if (cc.status !== 'not_started' && cc.know_me_better_status !== 'not_started') {
+                  updateLabel = 'Updated details & care preferences';
+                } else if (cc.status !== 'not_started') {
+                  updateLabel = 'Shared care preferences (Level 1)';
+                } else if (cc.know_me_better_status !== 'not_started') {
+                  updateLabel = 'Shared deep preferences (Level 2)';
+                }
               }
 
               return (

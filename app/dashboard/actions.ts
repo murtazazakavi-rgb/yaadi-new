@@ -117,6 +117,16 @@ export async function getDashboardData() {
     [tenantId]
   );
 
+  // Query recently approved submissions
+  const approvedSubmissionsRes = await query(
+    `SELECT id, first_name, middle_name, last_name, updated_at, contact_id
+     FROM submissions
+     WHERE tenant_id = $1 AND status = 'approved' AND contact_id IS NOT NULL
+     ORDER BY updated_at DESC
+     LIMIT 5`,
+    [tenantId]
+  );
+
   return {
     contacts: contactsRes.rows,
     events: eventsRes.rows,
@@ -126,6 +136,7 @@ export async function getDashboardData() {
     groups: groupsRes.rows,
     groupMappings: mappingsRes.rows,
     careCards: careCardsRes.rows,
+    approvedSubmissions: approvedSubmissionsRes.rows,
   };
 }
 

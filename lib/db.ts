@@ -42,6 +42,12 @@ async function ensureTables() {
       ALTER TABLE submissions ADD COLUMN IF NOT EXISTS born_after_maghrib BOOLEAN DEFAULT false;
     `);
     await sql.query(`
+      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+    `);
+    await sql.query(`
+      ALTER TABLE submissions ADD COLUMN IF NOT EXISTS contact_id UUID REFERENCES contacts(id) ON DELETE SET NULL;
+    `);
+    await sql.query(`
       CREATE TABLE IF NOT EXISTS groups (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,

@@ -289,8 +289,8 @@ export async function approveSubmission(
 
   // 3. Mark Submission Approved
   await query(
-    'UPDATE submissions SET status = \'approved\' WHERE id = $1',
-    [submissionId]
+    'UPDATE submissions SET status = \'approved\', updated_at = CURRENT_TIMESTAMP, contact_id = $1 WHERE id = $2',
+    [contactId, submissionId]
   );
 
   revalidatePath('/approvals');
