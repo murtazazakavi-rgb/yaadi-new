@@ -3,6 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Shield, Bell, Check, AlertTriangle, KeyRound, User, Mail, Send, Share2 } from 'lucide-react';
 import { getSettingsData, updateProfile, changePassword, updateReminderSettings, sendTestEmail, updateShareAnnouncements } from './actions';
+import { getContactsWithEmailsCount, sendBroadcastEmail } from './broadcastActions';
+
+const PRESETS = [
+  {
+    id: 'care_cards',
+    label: 'Introduce Care Cards ("Know Me Better")',
+    subject: "Help us know you better! Share your preferences",
+    body: "Hi {first_name},\n\nWe have set up a family space on Yaadi. We want to know you better and support you in the best way possible. \n\nPlease click the link below to share your preferences, favorite things, and support style with us:\n{care_card_link}\n\nWarm regards,\n{workspace_name}"
+  },
+  {
+    id: 'profile_pic',
+    label: 'Request Profile Pictures',
+    subject: "Please add your profile picture for our family tree",
+    body: "Hi {first_name},\n\nWe are building our family tree and would love to have your picture displayed on it. \n\nPlease take a quick moment to click the link below and upload your profile picture:\n{care_card_link}\n\nThank you,\n{workspace_name}"
+  },
+  {
+    id: 'verify_details',
+    label: 'Verify Family Details',
+    subject: "Please verify your birthday and contact details",
+    body: "Hi {first_name},\n\nWe want to ensure our family reminders and milestones calendar are accurate. \n\nPlease review and verify your contact details and event dates here:\n{care_card_link}\n\nBest wishes,\n{workspace_name}"
+  }
+];
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -33,6 +55,14 @@ export default function SettingsPage() {
   const [tenantId, setTenantId] = useState('');
   const [shareUrl, setShareUrl] = useState('');
 
+  // Section 5: Broadcast Announcements
+  const [contactsWithEmailsCount, setContactsWithEmailsCount] = useState(0);
+  const [broadcastSubject, setBroadcastSubject] = useState('');
+  const [broadcastBody, setBroadcastBody] = useState('');
+  const [selectedPreset, setSelectedPreset] = useState('');
+  const [sendingBroadcast, setSendingBroadcast] = useState(false);
+  const [sendingTestBroadcast, setSendingTestBroadcast] = useState(false);
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -51,11 +81,87 @@ export default function SettingsPage() {
       setTenantId(data.tenantId);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
       setShareUrl(`${origin}/share/announcements/${data.tenantId}`);
+      
+      const count = await getContactsWithEmailsCount();
+      setContactsWithEmailsCount(count);
     } catch (err) {
       console.error(err);
       triggerToast('Failed to load settings.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectPreset = (presetId: string) => {
+    setSelectedPreset(presetId);
+    if (!presetId) {
+      setBroadcastSubject('');
+      setBroadcastBody('');
+      return;
+    }
+    const selected = PRESETS.find(p => p.id === presetId);
+    if (selected) {
+      setBroadcastSubject(selected.subject);
+      setBroadcastBody(selected.body);
+    }
+  };
+
+  const handleSendTestBroadcast = async () => {
+    if (!broadcastSubject.trim() || !broadcastBody.trim()) {
+      triggerToast('Please enter both subject and body.');
+      return;
+    }
+    setSendingTestBroadcast(true);
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await sendBroadcastEmail({
+        subject: broadcastSubject,
+        bodyTemplate: broadcastBody,
+        origin,
+        isTest: true
+      });
+      if (res.success) {
+        triggerToast(res.message);
+      }
+    } catch (err: any) {
+      triggerToast(err.message || 'Failed to send test email.');
+    } finally {
+      setSendingTestBroadcast(false);
+    }
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastSubject.trim() || !broadcastBody.trim()) {
+      triggerToast('Please enter both subject and body.');
+      return;
+    }
+    if (contactsWithEmailsCount === 0) {
+      triggerToast('No contacts with email addresses registered.');
+      return;
+    }
+
+    const confirmSend = window.confirm(
+      `Are you sure you want to broadcast this email to all ${contactsWithEmailsCount} contacts? This action cannot be undone.`
+    );
+    if (!confirmSend) return;
+
+    setSendingBroadcast(true);
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await sendBroadcastEmail({
+        subject: broadcastSubject,
+        bodyTemplate: broadcastBody,
+        origin,
+        isTest: false
+      });
+      if (res.success) {
+        triggerToast(res.message);
+      }
+    } catch (err: any) {
+      triggerToast(err.message || 'Failed to send broadcast.');
+    } finally {
+      setSendingBroadcast(false);
     }
   };
 
@@ -408,6 +514,96 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* BROADCAST FEATURE ANNOUNCEMENTS */}
+        <div className="card" style={{ margin: 0, padding: '20px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-gold)', textTransform: 'uppercase', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Mail size={16} /> Broadcast Feature Updates
+          </h4>
+
+          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', display: 'block', marginBottom: '16px', lineHeight: '1.4' }}>
+            Send an email notification about new app features (like Care Cards, or requesting profile picture uploads) to all contacts.
+          </span>
+
+          <form onSubmit={handleSendBroadcast}>
+            {/* Recipient Count Indicator */}
+            <div style={{ padding: '10px 12px', backgroundColor: 'var(--bg-primary)', borderRadius: '10px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px', border: 'var(--border-light)' }}>
+              📢 This broadcast email will be sent to <strong>{contactsWithEmailsCount}</strong> contact{contactsWithEmailsCount === 1 ? '' : 's'} with registered email addresses.
+            </div>
+
+            {/* Template Presets Dropdown */}
+            <div className="form-group">
+              <label className="form-label">Template Preset</label>
+              <select
+                className="form-select"
+                value={selectedPreset}
+                onChange={(e) => handleSelectPreset(e.target.value)}
+              >
+                <option value="">-- Choose a preset template or compose custom --</option>
+                {PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Email Subject */}
+            <div className="form-group">
+              <label className="form-label">Email Subject</label>
+              <input
+                type="text"
+                required
+                className="form-input"
+                value={broadcastSubject}
+                onChange={(e) => {
+                  setBroadcastSubject(e.target.value);
+                  setSelectedPreset(''); // clear preset highlight on manual edits
+                }}
+                placeholder="e.g. Help us know you better! Share your preferences"
+              />
+            </div>
+
+            {/* Email Body */}
+            <div className="form-group">
+              <label className="form-label">Email Body</label>
+              <textarea
+                required
+                className="form-input"
+                rows={8}
+                value={broadcastBody}
+                onChange={(e) => {
+                  setBroadcastBody(e.target.value);
+                  setSelectedPreset(''); // clear preset highlight on manual edits
+                }}
+                placeholder="Compose your email here. You can use placeholders: {first_name}, {last_name}, {care_card_link}, {workspace_name}"
+                style={{ resize: 'vertical', fontSize: '13px', fontFamily: 'inherit', padding: '10px' }}
+              />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '6px', lineHeight: '1.4' }}>
+                <strong>Dynamic Placeholders:</strong> <code>{'{first_name}'}</code>, <code>{'{last_name}'}</code>, <code>{'{care_card_link}'}</code>, <code>{'{workspace_name}'}</code>. They will automatically be replaced with each contact's custom details and unique link.
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleSendTestBroadcast}
+                className="btn btn-secondary btn-press"
+                style={{ width: 'auto', minWidth: '160px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px' }}
+                disabled={sendingTestBroadcast || sendingBroadcast}
+              >
+                <Send size={14} /> {sendingTestBroadcast ? 'Sending Test...' : 'Send Test to Myself'}
+              </button>
+
+              <button
+                type="submit"
+                className="btn btn-primary btn-press"
+                style={{ width: 'auto', minWidth: '180px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '13px' }}
+                disabled={sendingBroadcast || sendingTestBroadcast || contactsWithEmailsCount === 0}
+              >
+                <Share2 size={14} /> {sendingBroadcast ? 'Broadcasting...' : 'Broadcast to Contacts'}
+              </button>
+            </div>
+          </form>
         </div>
 
 
