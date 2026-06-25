@@ -284,6 +284,10 @@ export default function FamilyTreePage() {
     const partnerB = couple.partnerB;
     const children = couple.children || [];
 
+    // Sibling row gap is 40px, so horizontal extensions should be half of the gap (20px) to bridge siblings
+    const siblingGap = 40;
+    const halfGap = siblingGap / 2;
+
     return (
       <div style={{
         display: 'flex',
@@ -293,7 +297,13 @@ export default function FamilyTreePage() {
       }}>
         {/* Incoming vertical and horizontal line for children */}
         {!isRoot && (
-          <div style={{ display: 'flex', width: '100%', height: '24px', position: 'relative' }}>
+          <div style={{ 
+            display: 'flex', 
+            width: `calc(100% + ${siblingGap}px)`, 
+            marginLeft: `-${halfGap}px`, 
+            height: '24px', 
+            position: 'relative' 
+          }}>
             <div style={{
               flex: 1,
               borderTop: isFirstChild ? 'none' : '2px solid var(--color-gold)',
@@ -451,7 +461,7 @@ export default function FamilyTreePage() {
         {children.length > 0 && (
           <div style={{
             display: 'flex',
-            gap: '40px',
+            gap: `${siblingGap}px`,
             justifyContent: 'center',
             alignItems: 'flex-start',
             position: 'relative'
