@@ -349,7 +349,7 @@ export default function FamilyTreePage() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '50px',
+        gap: '0px',
         position: 'relative'
       }}>
         {treeGenerations.length === 0 ? (
@@ -384,6 +384,27 @@ export default function FamilyTreePage() {
                       position: 'relative'
                     }}
                   >
+                    {/* Incoming vertical and horizontal lines for children */}
+                    {gIdx > 0 && (
+                      <div style={{ display: 'flex', width: '100%', height: '24px', position: 'relative' }}>
+                        <div style={{
+                          flex: 1,
+                          borderTop: (cIdx === 0) ? 'none' : '2px solid var(--color-gold)',
+                          marginTop: '0'
+                        }} />
+                        <div style={{
+                          width: '2px',
+                          backgroundColor: 'var(--color-gold)',
+                          height: '24px'
+                        }} />
+                        <div style={{
+                          flex: 1,
+                          borderTop: (cIdx === gen.couples.length - 1) ? 'none' : '2px solid var(--color-gold)',
+                          marginTop: '0'
+                        }} />
+                      </div>
+                    )}
+
                     {/* Couple Box */}
                     <div style={{
                       display: 'flex',
@@ -402,7 +423,7 @@ export default function FamilyTreePage() {
                       {/* Partner A */}
                       <div 
                         onClick={() => setSelectedContact(partnerA)}
-                        style={{ textAlign: 'center', minWidth: '90px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+                        style={{ textAlign: 'center', minWidth: '95px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                         title="Click to view details"
                       >
                         <span className="tree-node-name" style={{ display: 'block', fontWeight: '600', color: 'var(--color-gold)' }}>
@@ -428,7 +449,7 @@ export default function FamilyTreePage() {
                           {/* Partner B */}
                           <div 
                             onClick={() => setSelectedContact(partnerB)}
-                            style={{ textAlign: 'center', minWidth: '90px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+                            style={{ textAlign: 'center', minWidth: '95px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                             title="Click to view details"
                           >
                             <span className="tree-node-name" style={{ display: 'block', fontWeight: '600', color: 'var(--color-gold)' }}>
@@ -477,7 +498,7 @@ export default function FamilyTreePage() {
                         onClick={() => openAddMemberModal('child', partnerA.id)}
                         style={{
                           position: 'absolute',
-                          bottom: '-14px',
+                          bottom: '-12px',
                           left: '50%',
                           transform: 'translateX(-50%)',
                           width: '24px',
@@ -504,37 +525,15 @@ export default function FamilyTreePage() {
                       </button>
                     )}
 
-                    {/* SVG Connector Lines to next Generation */}
+                    {/* Outgoing vertical line going down to children */}
                     {gIdx < treeGenerations.length - 1 && couple.children?.length > 0 && (
-                      <svg 
-                        style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: '200px',
-                          height: '50px',
-                          zIndex: 1,
-                          overflow: 'visible'
-                        }}
-                      >
-                        {couple.children.map((_: any, idx: number, arr: any[]) => {
-                          const childCount = arr.length;
-                          const spacing = childCount > 1 ? 160 / (childCount - 1) : 0;
-                          const x = childCount > 1 ? 20 + idx * spacing : 100;
-                          return (
-                            <path 
-                              key={idx}
-                              d={`M 100,0 C 100,25 ${x},25 ${x},50`}
-                              fill="transparent"
-                              stroke="var(--color-gold)"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              opacity="0.8"
-                            />
-                          );
-                        })}
-                      </svg>
+                      <div style={{
+                        width: '2px',
+                        height: '26px',
+                        backgroundColor: 'var(--color-gold)',
+                        position: 'relative',
+                        zIndex: 1
+                      }} />
                     )}
                   </div>
                 );
@@ -803,7 +802,7 @@ export default function FamilyTreePage() {
                       .filter(c => c.id !== addMemberSourceContactId)
                       .map(c => (
                         <option key={c.id} value={c.id}>
-                          {c.first_name} {c.last_name} ({c.gender || 'unspecified'})
+                          {c.first_name}{c.middle_name ? ' ' + c.middle_name : ''} {c.last_name} ({c.gender || 'unspecified'})
                         </option>
                       ))}
                   </select>
