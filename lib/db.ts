@@ -39,6 +39,9 @@ async function ensureTables() {
       ALTER TABLE contacts ADD COLUMN IF NOT EXISTS born_after_maghrib BOOLEAN DEFAULT false;
     `);
     await sql.query(`
+      ALTER TABLE contacts ADD COLUMN IF NOT EXISTS gender VARCHAR(10);
+    `);
+    await sql.query(`
       ALTER TABLE submissions ADD COLUMN IF NOT EXISTS born_after_maghrib BOOLEAN DEFAULT false;
     `);
     await sql.query(`

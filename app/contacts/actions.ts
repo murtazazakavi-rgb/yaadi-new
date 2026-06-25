@@ -24,6 +24,7 @@ export async function createContact(formData: {
   notes?: string;
   bornAfterMaghrib?: boolean;
   groupIds?: string[];
+  gender?: string;
   events: Array<{
     eventType: string;
     gDay?: number;
@@ -37,7 +38,7 @@ export async function createContact(formData: {
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, groupIds, events } = formData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, groupIds, gender, events } = formData;
 
   if (!firstName || !lastName) {
     throw new Error('First name and last name are required.');
@@ -45,9 +46,9 @@ export async function createContact(formData: {
 
   // Insert contact
   const contactRes = await query(
-    `INSERT INTO contacts (tenant_id, first_name, middle_name, last_name, phone_number, email, notes, born_after_maghrib) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-    [tenantId, firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null, bornAfterMaghrib || false]
+    `INSERT INTO contacts (tenant_id, first_name, middle_name, last_name, phone_number, email, notes, born_after_maghrib, gender) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+    [tenantId, firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null, bornAfterMaghrib || false, gender || null]
   );
 
   const contactId = contactRes.rows[0].id;
@@ -100,6 +101,7 @@ export async function updateContact(
     notes?: string;
     bornAfterMaghrib?: boolean;
     groupIds?: string[];
+    gender?: string;
     events: Array<{
       eventType: string;
       gDay?: number;
@@ -114,7 +116,7 @@ export async function updateContact(
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, groupIds, events } = formData;
+  const { firstName, middleName, lastName, phoneNumber, email, notes, bornAfterMaghrib, groupIds, gender, events } = formData;
 
   // Verify ownership
   const check = await query('SELECT id FROM contacts WHERE id = $1 AND tenant_id = $2', [contactId, tenantId]);
@@ -125,9 +127,9 @@ export async function updateContact(
   // Update contact details
   await query(
     `UPDATE contacts 
-     SET first_name = $1, middle_name = $2, last_name = $3, phone_number = $4, email = $5, notes = $6, born_after_maghrib = $7 
-     WHERE id = $8`,
-    [firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null, bornAfterMaghrib || false, contactId]
+     SET first_name = $1, middle_name = $2, last_name = $3, phone_number = $4, email = $5, notes = $6, born_after_maghrib = $7, gender = $8 
+     WHERE id = $9`,
+    [firstName.trim(), middleName?.trim() || null, lastName.trim(), phoneNumber?.trim() || null, email?.trim() || null, notes || null, bornAfterMaghrib || false, gender || null, contactId]
   );
 
   // Clear existing events

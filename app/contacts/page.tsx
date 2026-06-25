@@ -279,6 +279,7 @@ export default function ContactsPage() {
   const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [bornAfterMaghrib, setBornAfterMaghrib] = useState(false);
+  const [gender, setGender] = useState('');
   const [isDeceased, setIsDeceased] = useState(false);
 
   // Grouping & Share Links States
@@ -318,6 +319,51 @@ export default function ContactsPage() {
   const [importError, setImportError] = useState('');
   const [importResult, setImportResult] = useState<any>(null);
   const [importing, setImporting] = useState(false);
+
+  const calculateAge = (contactId: string) => {
+    const today = new Date();
+    const currentGregorianYear = today.getFullYear();
+    const currentHijriYear = HijriDate.fromGregorian(today).year;
+
+    const cEvents = events.filter((e) => e.contact_id === contactId);
+    const birthGreg = cEvents.find((e) => e.event_type === 'birthday_gregorian');
+    const birthHijri = cEvents.find((e) => e.event_type === 'birthday_hijri');
+    const deathGreg = cEvents.find((e) => e.event_type === 'death_gregorian');
+    const deathHijri = cEvents.find((e) => e.event_type === 'death_hijri');
+
+    let gregAge: number | null = null;
+    let hijriAge: number | null = null;
+
+    if (birthGreg && birthGreg.g_year) {
+      const endYear = (deathGreg && deathGreg.g_year) ? deathGreg.g_year : currentGregorianYear;
+      gregAge = endYear - birthGreg.g_year;
+    }
+
+    if (birthHijri && birthHijri.h_year) {
+      const endYear = (deathHijri && deathHijri.h_year) ? deathHijri.h_year : currentHijriYear;
+      hijriAge = endYear - birthHijri.h_year;
+    }
+
+    return { gregAge, hijriAge };
+  };
+
+  const getAgeDisplay = (contactId: string) => {
+    const { gregAge, hijriAge } = calculateAge(contactId);
+    const isContactDeceased = events.some((e) => e.contact_id === contactId && (e.event_type === 'death_gregorian' || e.event_type === 'death_hijri'));
+    
+    if (gregAge === null && hijriAge === null) return null;
+    
+    let text = '';
+    if (gregAge !== null && hijriAge !== null) {
+      text = `${gregAge}G / ${hijriAge}H`;
+    } else if (gregAge !== null) {
+      text = `${gregAge}`;
+    } else if (hijriAge !== null) {
+      text = `${hijriAge}H`;
+    }
+    
+    return isContactDeceased ? `Age: ${text} at death` : `Age: ${text}`;
+  };
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -747,6 +793,7 @@ export default function ContactsPage() {
     setHDYear('');
     setGAnniversary('');
     setBornAfterMaghrib(false);
+    setGender('');
     setSelectedGroupIds([]);
     setIsDeceased(false);
     setFormStep(1);
@@ -764,6 +811,7 @@ export default function ContactsPage() {
     setEmail(contact.email || '');
     setNotes(contact.notes || '');
     setBornAfterMaghrib(contact.born_after_maghrib || false);
+    setGender(contact.gender || '');
 
     const mapped = groupMappings.filter(m => m.contact_id === contact.id).map(m => m.group_id);
     setSelectedGroupIds(mapped);
@@ -878,6 +926,7 @@ export default function ContactsPage() {
       email: (isDeceased && !email.trim()) ? undefined : email,
       notes,
       bornAfterMaghrib,
+      gender: gender || undefined,
       groupIds: selectedGroupIds,
       events: finalEvents,
     };
@@ -1341,6 +1390,38 @@ export default function ContactsPage() {
                           border: '1px solid rgba(197, 160, 89, 0.2)'
                         }}>
                           Shared by {c.owner_name}
+                        </span>
+                      )}
+                      {c.gender && (
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 'normal',
+                          backgroundColor: c.gender === 'male' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(236, 72, 153, 0.08)',
+                          color: c.gender === 'male' ? '#3b82f6' : '#ec4899',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          border: c.gender === 'male' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(236, 72, 153, 0.2)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {c.gender === 'male' ? '♂ Male' : '♀ Female'}
+                        </span>
+                      )}
+                      {getAgeDisplay(c.id) && (
+                        <span style={{
+                          fontSize: 'var(--font-size-xs)',
+                          fontWeight: 'normal',
+                          backgroundColor: 'rgba(196, 149, 58, 0.08)',
+                          color: 'var(--color-gold)',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(196, 149, 58, 0.2)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          🎂 {getAgeDisplay(c.id)}
                         </span>
                       )}
                     </h3>
@@ -1884,6 +1965,19 @@ export default function ContactsPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
+                    </div>
+                    <div className="form-group" style={{ width: '120px', flexGrow: 0, minWidth: '120px' }}>
+                      <label className="form-label">Gender</label>
+                      <select 
+                        className="form-select" 
+                        style={{ width: '100%' }}
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                      >
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
                     </div>
                   </div>
 

@@ -5,11 +5,39 @@ import { getDashboardData } from '@/app/dashboard/actions';
 import { HijriDate, HIJRI_MONTH_NAMES } from '@/lib/hijri';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
+const MIQAATS = [
+  { month: 0, day: 10, label: "Ashara Mubaraka (Aashura)" },
+  { month: 1, day: 20, label: "Chehlum Imam Husain (AS)" },
+  { month: 2, day: 12, label: "Miladun Nabi (SAW)" },
+  { month: 3, day: 19, label: "Milad Syedna Taher Saifuddin (RA)" },
+  { month: 5, day: 20, label: "Milad Syedna Mohammed Burhanuddin (RA)" },
+  { month: 6, day: 27, label: "Mab'as (Ma'raj)" },
+  { month: 7, day: 15, label: "Lailat al-Bara'ah" },
+  { month: 8, day: 19, label: "Shahadat of Amirul Mumineen Imam Ali (AS)" },
+  { month: 8, day: 21, label: "Shahadat of Imam Ali (AS)" },
+  { month: 8, day: 23, label: "Lailat al-Qadr" },
+  { month: 9, day: 1, label: "Eid ul-Fitr" },
+  { month: 11, day: 18, label: "Eid al-Ghadir" }
+];
+
 export default function CalendarPage() {
   const [data, setData] = useState<any>({ contacts: [], events: [] });
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [showMiqaats, setShowMiqaats] = useState<boolean>(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('calendar_show_miqaats');
+    if (saved === 'false') {
+      setShowMiqaats(false);
+    }
+  }, []);
+
+  const handleToggleMiqaats = (val: boolean) => {
+    setShowMiqaats(val);
+    localStorage.setItem('calendar_show_miqaats', String(val));
+  };
 
   useEffect(() => {
     fetchData();
@@ -119,6 +147,9 @@ export default function CalendarPage() {
   for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
     const thisDate = new Date(year, month, dayNum);
     const dayEvents = getEventsForDate(thisDate);
+    const hDate = HijriDate.fromGregorian(thisDate);
+    const dayMiqaat = showMiqaats ? MIQAATS.find(m => m.month === hDate.month && m.day === hDate.day) : null;
+
     const isSelected = selectedDate && 
                       selectedDate.getFullYear() === year && 
                       selectedDate.getMonth() === month && 
@@ -149,9 +180,21 @@ export default function CalendarPage() {
         className="btn-press"
       >
         <span style={{ fontSize: '14px' }}>{dayNum}</span>
-        {dayEvents.length > 0 && (
+        {((dayEvents.length > 0) || dayMiqaat) && (
           <div style={{ display: 'flex', gap: '3px', position: 'absolute', bottom: '6px' }}>
-            {dayEvents.slice(0, 3).map((e: any, idx: number) => (
+            {dayMiqaat && (
+              <span 
+                style={{ 
+                  height: '5px', 
+                  width: '5px', 
+                  borderRadius: '50%', 
+                  backgroundColor: isSelected ? '#FFFFFF' : '#10B981',
+                  boxShadow: '0 0 2px rgba(16, 185, 129, 0.5)'
+                }} 
+                title={dayMiqaat.label}
+              />
+            )}
+            {dayEvents.slice(0, dayMiqaat ? 2 : 3).map((e: any, idx: number) => (
               <span 
                 key={idx} 
                 style={{ 
@@ -176,13 +219,27 @@ export default function CalendarPage() {
   return (
     <div style={{ padding: '20px 0' }} className="page-transition">
       {/* Header */}
-      <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
-        <h2 className="serif-font page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Calendar style={{ color: 'var(--color-gold)' }} /> Family Calendar
-        </h2>
-        <p className="page-subtitle">
-          Browse birthdates, wafaat days, and wedding anniversaries by month.
-        </p>
+      <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h2 className="serif-font page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Calendar style={{ color: 'var(--color-gold)' }} /> Family Calendar
+          </h2>
+          <p className="page-subtitle">
+            Browse birthdates, wafaat days, and wedding anniversaries by month.
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <input 
+            type="checkbox" 
+            id="show-miqaats-toggle"
+            checked={showMiqaats}
+            onChange={(e) => handleToggleMiqaats(e.target.checked)}
+            style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--color-gold)' }}
+          />
+          <label htmlFor="show-miqaats-toggle" style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', margin: 0 }}>
+            Show Hijri Miqaats 🕌
+          </label>
+        </div>
       </div>
 
       {/* Calendar Grid Card */}
@@ -250,6 +307,9 @@ export default function CalendarPage() {
             : []
         );
 
+        const hDate = HijriDate.fromGregorian(selectedDate);
+        const dayMiqaat = showMiqaats ? MIQAATS.find(m => m.month === hDate.month && m.day === hDate.day) : null;
+
         return (
           <div style={{ padding: '0 20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: 'var(--border-light)', paddingBottom: '8px', marginBottom: '12px' }}>
@@ -262,12 +322,53 @@ export default function CalendarPage() {
                 </span>
               )}
             </div>
-            {selectedDateEvents.length === 0 ? (
+            {selectedDateEvents.length === 0 && !dayMiqaat ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic', backgroundColor: 'var(--bg-card)', borderRadius: '16px', border: 'var(--border-card)' }}>
-                No celebrations or wafaat events today.
+                No celebrations, wafaat events, or Hijri Miqaats today.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {dayMiqaat && (
+                  <div 
+                    className="card"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      margin: 0,
+                      borderRadius: '12px',
+                      borderLeft: '4px solid #10B981',
+                      backgroundColor: 'rgba(16, 185, 129, 0.04)',
+                      borderColor: 'rgba(16, 185, 129, 0.2)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        color: '#10B981',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '16px'
+                      }}>
+                        🕌
+                      </div>
+                      <div>
+                        <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', margin: 0, fontSize: '14px' }}>
+                          {dayMiqaat.label}
+                        </h4>
+                        <span style={{ fontSize: '11px', color: '#10B981', fontWeight: '500' }}>
+                          Hijri Miqaat (Important Date)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {selectedDateEvents.map((e: any) => {
                   const getInitials = (c: any) => `${c.first_name[0] || ''}${c.last_name[0] || ''}`.toUpperCase();
                   
