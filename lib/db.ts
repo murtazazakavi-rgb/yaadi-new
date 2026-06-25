@@ -138,6 +138,9 @@ async function ensureTables() {
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS share_announcements_enabled BOOLEAN DEFAULT false;
     `);
     await sql.query(`
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS additional_reminder_emails TEXT;
+    `);
+    await sql.query(`
       CREATE TABLE IF NOT EXISTS care_cards (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE UNIQUE,

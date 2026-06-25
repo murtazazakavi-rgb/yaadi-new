@@ -24,6 +24,7 @@ export default function SettingsPage() {
   const [emailRemindersEnabled, setEmailRemindersEnabled] = useState(true);
   const [reminderDaysAhead, setReminderDaysAhead] = useState(7);
   const [reminderTypes, setReminderTypes] = useState<string[]>([]);
+  const [additionalReminderEmails, setAdditionalReminderEmails] = useState('');
   const [updatingReminders, setUpdatingReminders] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
 
@@ -45,6 +46,7 @@ export default function SettingsPage() {
       setEmailRemindersEnabled(data.emailRemindersEnabled);
       setReminderDaysAhead(data.reminderDaysAhead);
       setReminderTypes(data.reminderTypes);
+      setAdditionalReminderEmails(data.additionalReminderEmails || '');
       setShareAnnouncementsEnabled(data.shareAnnouncementsEnabled);
       setTenantId(data.tenantId);
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -107,12 +109,23 @@ export default function SettingsPage() {
 
   const handleUpdateReminders = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (additionalReminderEmails.trim()) {
+      const emailList = additionalReminderEmails.split(',').map(e => e.trim()).filter(Boolean);
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      for (const email of emailList) {
+        if (!emailRegex.test(email)) {
+          triggerToast(`Invalid email address: "${email}"`);
+          return;
+        }
+      }
+    }
     setUpdatingReminders(true);
     try {
       await updateReminderSettings({
         emailRemindersEnabled,
         reminderDaysAhead,
-        reminderTypes
+        reminderTypes,
+        additionalReminderEmails
       });
       triggerToast('Preferences saved successfully!');
     } catch (err: any) {
@@ -283,6 +296,21 @@ export default function SettingsPage() {
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Additional Reminder Emails */}
+                <div className="form-group">
+                  <label className="form-label">Additional Reminder Emails</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="spouse@example.com, sibling@example.com"
+                    value={additionalReminderEmails}
+                    onChange={(e) => setAdditionalReminderEmails(e.target.value)}
+                  />
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                    Enter email addresses separated by commas to send them the same daily reminders.
+                  </span>
                 </div>
 
                 {/* Manual SMTP Test email */}

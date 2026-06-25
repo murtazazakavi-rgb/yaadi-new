@@ -22,7 +22,7 @@ export async function getSettingsData() {
   const tenantId = session.userId;
 
   const res = await query(
-    'SELECT email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types, share_announcements_enabled FROM tenants WHERE id = $1',
+    'SELECT email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types, share_announcements_enabled, additional_reminder_emails FROM tenants WHERE id = $1',
     [tenantId]
   );
 
@@ -38,6 +38,7 @@ export async function getSettingsData() {
     reminderDaysAhead: tenant.reminder_days_ahead,
     reminderTypes: tenant.reminder_types ? tenant.reminder_types.split(',') : [],
     shareAnnouncementsEnabled: !!tenant.share_announcements_enabled,
+    additionalReminderEmails: tenant.additional_reminder_emails || '',
     tenantId: tenantId
   };
 }
@@ -105,19 +106,20 @@ export async function updateReminderSettings(payload: {
   emailRemindersEnabled: boolean;
   reminderDaysAhead: number;
   reminderTypes: string[];
+  additionalReminderEmails: string;
 }) {
   const session = await requireAuth();
   const tenantId = session.userId;
 
-  const { emailRemindersEnabled, reminderDaysAhead, reminderTypes } = payload;
+  const { emailRemindersEnabled, reminderDaysAhead, reminderTypes, additionalReminderEmails } = payload;
 
   const reminderTypesStr = reminderTypes.join(',');
 
   await query(
     `UPDATE tenants 
-     SET email_reminders_enabled = $1, reminder_days_ahead = $2, reminder_types = $3 
-     WHERE id = $4`,
-    [emailRemindersEnabled, reminderDaysAhead, reminderTypesStr, tenantId]
+     SET email_reminders_enabled = $1, reminder_days_ahead = $2, reminder_types = $3, additional_reminder_emails = $4 
+     WHERE id = $5`,
+    [emailRemindersEnabled, reminderDaysAhead, reminderTypesStr, additionalReminderEmails.trim(), tenantId]
   );
 
   revalidatePath('/settings');

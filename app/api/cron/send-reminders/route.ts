@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     }
 
     // Fetch all tenants with email reminder preferences
-    const tenantsRes = await query('SELECT id, email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types FROM tenants');
+    const tenantsRes = await query('SELECT id, email, display_name, email_reminders_enabled, reminder_days_ahead, reminder_types, additional_reminder_emails FROM tenants');
     const tenants = tenantsRes.rows;
 
     const summaryResults: any[] = [];
@@ -132,18 +132,40 @@ export async function GET(request: Request) {
           ? `Yaadi Reminders: Family Events Today! (${todayEvents.length})`
           : `Yaadi Reminders: Weekly Digest Preview`;
 
-        const mailResult = await sendEmail({
-          to: tenant.email,
-          subject,
-          html
-        });
+        // Collate all recipient email addresses
+        const recipients = [tenant.email];
+        if (tenant.additional_reminder_emails) {
+          const list = tenant.additional_reminder_emails
+            .split(',')
+            .map((e: string) => e.trim())
+            .filter(Boolean);
+          recipients.push(...list);
+        }
+
+        const mailResults = [];
+        for (const recipient of recipients) {
+          try {
+            const mailResult = await sendEmail({
+              to: recipient,
+              subject,
+              html
+            });
+            mailResults.push(mailResult);
+          } catch (err: any) {
+            mailResults.push({ success: false, error: err.message });
+          }
+        }
+
+        const mainMailSuccess = mailResults[0]?.success || false;
+        const mainMailError = mailResults[0]?.error || null;
 
         summaryResults.push({
           tenantEmail: tenant.email,
+          recipientsCount: recipients.length,
           todayCount: todayEvents.length,
           upcomingCount: upcomingEvents.length,
-          sent: mailResult.success,
-          error: mailResult.error || null
+          sent: mainMailSuccess,
+          error: mainMailError
         });
       }
     }
