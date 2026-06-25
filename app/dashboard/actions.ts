@@ -16,7 +16,7 @@ async function requireAuth() {
 /**
  * Fetches all contacts and events for the logged-in tenant.
  */
-export async function getDashboardData() {
+export async function getDashboardData(todayStr?: string) {
   const session = await requireAuth();
   const tenantId = session.userId;
 
@@ -127,6 +127,19 @@ export async function getDashboardData() {
     [tenantId]
   );
 
+  let todayIbaadat = {};
+  if (todayStr) {
+    try {
+      const ibaadatRes = await query(
+        `SELECT logs FROM ibaadat_tracker WHERE tenant_id = $1 AND date = $2`,
+        [tenantId, todayStr]
+      );
+      todayIbaadat = ibaadatRes.rows[0]?.logs || {};
+    } catch (err) {
+      console.error('Failed to get today ibaadat:', err);
+    }
+  }
+
   return {
     contacts: contactsRes.rows,
     events: eventsRes.rows,
@@ -137,6 +150,7 @@ export async function getDashboardData() {
     groupMappings: mappingsRes.rows,
     careCards: careCardsRes.rows,
     approvedSubmissions: approvedSubmissionsRes.rows,
+    todayIbaadat,
   };
 }
 

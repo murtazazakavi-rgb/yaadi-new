@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { getDashboardData } from './actions';
+import { updateIbaadatRecord } from '@/app/ibaadat/actions';
 import { HijriDate, getNextGregorianEvent, getNextHijriEvent, HIJRI_MONTH_NAMES } from '@/lib/hijri';
-import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X, Clock, BarChart3, Award } from 'lucide-react';
+import { Search, Send, Calendar, Cake, ShieldCheck, Heart, UserMinus, MessageCircle, X, Clock, BarChart3, Award, Check, Compass } from 'lucide-react';
 import Portal from '@/app/components/Portal';
 
 export default function DashboardPage() {
@@ -20,10 +21,20 @@ export default function DashboardPage() {
   const [gregorianTodayStr, setGregorianTodayStr] = useState('');
   const [hijriTodayStr, setHijriTodayStr] = useState('');
 
+  // Ibaadat Tracker Widget States
+  const [todayIbaadat, setTodayIbaadat] = useState<any>({});
+
   // Added States for Countdown and Analytics Tab
   const [activeTab, setActiveTab] = useState<'events' | 'insights'>('events');
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [insightCalendarType, setInsightCalendarType] = useState<'gregorian' | 'hijri'>('gregorian');
+
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
     const today = new Date();
@@ -38,12 +49,43 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     try {
-      const res = await getDashboardData();
+      const todayStr = getLocalDateString(new Date());
+      const res = await getDashboardData(todayStr);
       setData(res);
+      if (res.todayIbaadat) {
+        setTodayIbaadat(res.todayIbaadat);
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleIbaadat = async (key: string, status: string | null) => {
+    const todayStr = getLocalDateString(new Date());
+    const currentVal = todayIbaadat[key];
+    const newVal = currentVal === status ? null : status;
+
+    // Optimistic Update
+    const updated = { ...todayIbaadat };
+    if (newVal === null) {
+      delete updated[key];
+    } else {
+      updated[key] = newVal;
+    }
+    setTodayIbaadat(updated);
+
+    try {
+      const res = await updateIbaadatRecord(todayStr, key, newVal);
+      if (!res.success) {
+        // Revert
+        setTodayIbaadat(todayIbaadat);
+      }
+    } catch (err) {
+      console.error(err);
+      // Revert
+      setTodayIbaadat(todayIbaadat);
     }
   };
 
@@ -539,6 +581,95 @@ export default function DashboardPage() {
           </a>
         </div>
       )}
+
+      {/* Today's Ibaadat Tracker Widget */}
+      <div className="card page-transition" style={{
+        background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(197, 160, 89, 0.04) 100%)',
+        border: '1px solid rgba(197, 160, 89, 0.2)',
+        padding: '16px',
+        margin: '0 16px 16px 16px',
+        borderRadius: '12px',
+        boxShadow: 'var(--shadow-soft)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Compass size={18} style={{ color: 'var(--color-gold)' }} />
+            <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
+              Today's Ibaadat Tracker
+            </span>
+          </div>
+          <a 
+            href="/ibaadat"
+            style={{ fontSize: '11px', color: 'var(--color-gold)', fontWeight: '600', textDecoration: 'none' }}
+            className="btn-press"
+          >
+            Go to full tracker →
+          </a>
+        </div>
+
+        {/* Prayer Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+          {[
+            { key: 'fajar', label: 'Fajar' },
+            { key: 'zohar_asr', label: 'Zohar / Asr' },
+            { key: 'maghrib_isha', label: 'Maghrib / Isha' }
+          ].map((prayer) => {
+            const status = todayIbaadat[prayer.key] || null;
+            return (
+              <div 
+                key={prayer.key} 
+                style={{ 
+                  background: 'var(--bg-card)', 
+                  border: '1px solid rgba(0, 0, 0, 0.05)', 
+                  borderRadius: '10px', 
+                  padding: '10px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                  {prayer.label}
+                </span>
+                
+                {/* 3 buttons: Prayed, Not Prayed, Qaza */}
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  {[
+                    { value: 'prayed', icon: <Check size={11} />, color: 'var(--color-sage)', bg: 'var(--color-sage-light)' },
+                    { value: 'not_prayed', icon: <X size={11} />, color: 'var(--color-rose)', bg: 'var(--color-rose-light)' },
+                    { value: 'qaza', icon: <Clock size={11} />, color: 'var(--color-gold)', bg: 'var(--color-gold-light)' }
+                  ].map((btn) => {
+                    const isActive = status === btn.value;
+                    return (
+                      <button
+                        key={btn.value}
+                        onClick={() => handleToggleIbaadat(prayer.key, btn.value)}
+                        style={{
+                          flex: 1,
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '6px',
+                          border: isActive ? `1px solid ${btn.color}` : '1px solid var(--border-light)',
+                          background: isActive ? btn.bg : 'transparent',
+                          color: isActive ? btn.color : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          transition: 'var(--transition-smooth)'
+                        }}
+                        className="btn-press"
+                        title={btn.value.replace('_', ' ')}
+                      >
+                        {btn.icon}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {recentUpdates.length > 0 && (
         <div className="card page-transition" style={{
