@@ -9,14 +9,15 @@ const MIQAATS = [
   { month: 0, day: 10, label: "Ashara Mubaraka (Aashura)" },
   { month: 1, day: 20, label: "Chehlum Imam Husain (AS)" },
   { month: 2, day: 12, label: "Miladun Nabi (SAW)" },
-  { month: 3, day: 19, label: "Milad Syedna Taher Saifuddin (RA)" },
-  { month: 5, day: 20, label: "Milad Syedna Mohammed Burhanuddin (RA)" },
+  { month: 3, day: 20, label: "Milad Syedna Mohammed Burhanuddin (RA)" },
+  { month: 5, day: 20, label: "Milad Maulatena Fatema (AS)" },
   { month: 6, day: 27, label: "Mab'as (Ma'raj)" },
   { month: 7, day: 15, label: "Lailat al-Bara'ah" },
   { month: 8, day: 19, label: "Shahadat of Amirul Mumineen Imam Ali (AS)" },
   { month: 8, day: 21, label: "Shahadat of Imam Ali (AS)" },
-  { month: 8, day: 23, label: "Lailat al-Qadr" },
+  { month: 8, day: 23, label: "Lailat al-Qadr & Milad Syedna Mufaddal Saifuddin (TUS)" },
   { month: 9, day: 1, label: "Eid ul-Fitr" },
+  { month: 10, day: 27, label: "Milad Syedna Taher Saifuddin (RA)" },
   { month: 11, day: 18, label: "Eid al-Ghadir" }
 ];
 
