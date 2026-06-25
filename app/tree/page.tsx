@@ -188,8 +188,32 @@ export default function FamilyTreePage() {
     return treeData;
   };
 
-  const treeGenerations = buildTree(rootId);
+  // Trace upward to find the highest ancestor to render a complete connected tree
+  const findUltimateAncestor = (personId: string): string => {
+    if (!personId) return '';
+    let currentId = personId;
+    const visited = new Set<string>([currentId]);
+    
+    while (true) {
+      const parentRel = relationships.find(
+        (r) => r.relation_type === 'parent' && r.contact_b_id === currentId
+      );
+      
+      if (!parentRel) break;
+      
+      const parentId = parentRel.contact_a_id;
+      if (visited.has(parentId)) break;
+      
+      visited.add(parentId);
+      currentId = parentId;
+    }
+    return currentId;
+  };
+
+  const ultimateRootId = findUltimateAncestor(rootId) || rootId;
+  const treeGenerations = buildTree(ultimateRootId);
   const selectedRootContact = contacts.find((c) => c.id === rootId);
+  const ultimateRootContact = contacts.find((c) => c.id === ultimateRootId);
 
   // Add Family Member Modal Setup
   const openAddMemberModal = (role: 'spouse' | 'child', sourceId: string) => {
@@ -324,7 +348,15 @@ export default function FamilyTreePage() {
           <div>
             <span style={{ fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600' }}>Select Tree Root</span>
             <h4 className="serif-font" style={{ fontSize: '16px', color: 'var(--text-primary)' }}>
-              {selectedRootContact ? `${selectedRootContact.first_name}${selectedRootContact.middle_name ? ' ' + selectedRootContact.middle_name : ''} ${selectedRootContact.last_name}'s Tree` : 'No contact selected'}
+              {selectedRootContact ? (
+                selectedRootContact.id === ultimateRootId ? (
+                  `${selectedRootContact.first_name}${selectedRootContact.middle_name ? ' ' + selectedRootContact.middle_name : ''} ${selectedRootContact.last_name}'s Tree`
+                ) : (
+                  <>
+                    {selectedRootContact.first_name}'s Connected Tree <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 'normal' }}>(Root: {ultimateRootContact?.first_name} {ultimateRootContact?.last_name})</span>
+                  </>
+                )
+              ) : 'No contact selected'}
             </h4>
           </div>
           <select 
