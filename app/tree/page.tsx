@@ -131,63 +131,6 @@ export default function FamilyTreePage() {
     return isContactDeceased ? `Age: ${ageText} at death` : `Age: ${ageText}`;
   };
 
-  // Build generation levels starting from selected root person
-  const buildTree = (rootPersonId: string) => {
-    if (!rootPersonId) return [];
-
-    const root = contacts.find((c) => c.id === rootPersonId);
-    if (!root) return [];
-
-    const treeData: any[] = [];
-    
-    // Gen 0: Root + Spouse
-    const gen0 = {
-      level: 0,
-      couples: [
-        {
-          partnerA: root,
-          partnerB: getSpouse(root.id),
-          children: getChildren(root.id)
-        }
-      ]
-    };
-    treeData.push(gen0);
-
-    // Gen 1: Children + their spouses
-    const gen0Children = gen0.couples[0].children;
-    if (gen0Children.length > 0) {
-      const gen1Couples = gen0Children.map((child) => ({
-        partnerA: child,
-        partnerB: getSpouse(child.id),
-        children: getChildren(child.id)
-      }));
-
-      treeData.push({
-        level: 1,
-        couples: gen1Couples
-      });
-
-      // Gen 2: Grandchildren
-      const gen2Children: any[] = [];
-      gen1Couples.forEach((c) => {
-        gen2Children.push(...c.children);
-      });
-
-      if (gen2Children.length > 0) {
-        treeData.push({
-          level: 2,
-          couples: gen2Children.map((grandchild) => ({
-            partnerA: grandchild,
-            partnerB: getSpouse(grandchild.id),
-            children: []
-          }))
-        });
-      }
-    }
-
-    return treeData;
-  };
-
   // Trace upward to find the highest ancestor to render a complete connected tree
   const findUltimateAncestor = (personId: string): string => {
     if (!personId) return '';
@@ -211,7 +154,6 @@ export default function FamilyTreePage() {
   };
 
   const ultimateRootId = findUltimateAncestor(rootId) || rootId;
-  const treeGenerations = buildTree(ultimateRootId);
   const selectedRootContact = contacts.find((c) => c.id === rootId);
   const ultimateRootContact = contacts.find((c) => c.id === ultimateRootId);
 
@@ -310,17 +252,240 @@ export default function FamilyTreePage() {
     }
   };
 
-  // Calculate statistics
+  // Calculate statistics recursively
   let coupleCount = 0;
   const uniqueMembers = new Set<string>();
-  treeGenerations.forEach(gen => {
-    gen.couples.forEach((c: any) => {
-      if (c.partnerB) coupleCount++;
-      if (c.partnerA) uniqueMembers.add(c.partnerA.id);
-      if (c.partnerB) uniqueMembers.add(c.partnerB.id);
-    });
-  });
+  
+  const traverseStats = (personId: string, visited = new Set<string>()) => {
+    if (!personId || visited.has(personId)) return;
+    visited.add(personId);
+    
+    uniqueMembers.add(personId);
+    const spouse = getSpouse(personId);
+    if (spouse) {
+      uniqueMembers.add(spouse.id);
+      coupleCount++;
+    }
+    
+    const children = getChildren(personId);
+    children.forEach(c => traverseStats(c.id, visited));
+  };
+
+  if (ultimateRootId) {
+    traverseStats(ultimateRootId);
+  }
   const memberCount = uniqueMembers.size;
+
+  // Recursive Node Renderer Component
+  const renderCoupleNode = (couple: any, isRoot = false, isLastChild = false, isFirstChild = false, depth = 0) => {
+    if (depth > 4) return null; // recursion limit safety
+
+    const partnerA = couple.partnerA;
+    const partnerB = couple.partnerB;
+    const children = couple.children || [];
+
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        position: 'relative'
+      }}>
+        {/* Incoming vertical and horizontal line for children */}
+        {!isRoot && (
+          <div style={{ display: 'flex', width: '100%', height: '24px', position: 'relative' }}>
+            <div style={{
+              flex: 1,
+              borderTop: isFirstChild ? 'none' : '2px solid var(--color-gold)',
+              marginTop: '0'
+            }} />
+            <div style={{
+              width: '2px',
+              backgroundColor: 'var(--color-gold)',
+              height: '24px'
+            }} />
+            <div style={{
+              flex: 1,
+              borderTop: isLastChild ? 'none' : '2px solid var(--color-gold)',
+              marginTop: '0'
+            }} />
+          </div>
+        )}
+
+        {/* Couple Box */}
+        <div 
+          onMouseEnter={() => setHoveredCoupleId(partnerA.id)}
+          onMouseLeave={() => setHoveredCoupleId(null)}
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            backgroundColor: 'var(--bg-card)',
+            border: 'var(--border-thin)',
+            borderRadius: '12px',
+            padding: '8px 12px',
+            gap: '12px',
+            boxShadow: 'var(--shadow-soft)',
+            position: 'relative',
+            zIndex: 2,
+            transition: 'border-color 0.2s',
+            borderColor: hoveredCoupleId === partnerA.id ? 'var(--color-gold)' : 'rgba(196, 149, 58, 0.15)'
+          }}
+        >
+          {/* Partner A */}
+          <div 
+            onClick={() => setSelectedContact(partnerA)}
+            style={{ textAlign: 'center', minWidth: '95px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+            title="Click to view details"
+          >
+            <span className="tree-node-name" style={{ display: 'block', fontWeight: '600', color: 'var(--color-gold)' }}>
+              {partnerA.first_name}{partnerA.middle_name ? ' ' + partnerA.middle_name : ''}
+            </span>
+            <span className="tree-node-sub" style={{ display: 'block' }}>
+              {partnerA.last_name}
+            </span>
+            {getAgeText(partnerA.id) && (
+              <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                {getAgeText(partnerA.id).replace('Age: ', '')}
+              </span>
+            )}
+          </div>
+
+          {/* Spouse Heart / dashed connector */}
+          {partnerB ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Heart size={14} className="heart-pulse" style={{ color: 'var(--color-rose)', fill: 'var(--color-rose-light)' }} />
+              </div>
+              
+              {/* Partner B */}
+              <div 
+                onClick={() => setSelectedContact(partnerB)}
+                style={{ textAlign: 'center', minWidth: '95px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+                title="Click to view details"
+              >
+                <span className="tree-node-name" style={{ display: 'block', fontWeight: '600', color: 'var(--color-gold)' }}>
+                  {partnerB.first_name}{partnerB.middle_name ? ' ' + partnerB.middle_name : ''}
+                </span>
+                <span className="tree-node-sub" style={{ display: 'block' }}>
+                  {partnerB.last_name}
+                </span>
+                {getAgeText(partnerB.id) && (
+                  <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                    {getAgeText(partnerB.id).replace('Age: ', '')}
+                  </span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div 
+              onClick={() => openAddMemberModal('spouse', partnerA.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1.5px dashed rgba(196, 149, 58, 0.3)',
+                borderRadius: '8px',
+                padding: '4px 8px',
+                minWidth: '85px',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+                fontSize: '11px',
+                fontWeight: '500',
+                backgroundColor: 'rgba(196, 149, 58, 0.02)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.backgroundColor = 'rgba(196, 149, 58, 0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(196, 149, 58, 0.3)'; e.currentTarget.style.backgroundColor = 'rgba(196, 149, 58, 0.02)'; }}
+              title="Add Spouse"
+            >
+              + Add Spouse
+            </div>
+          )}
+        </div>
+
+        {/* Add Child Button (appears below the couple card on hover) */}
+        {hoveredCoupleId === partnerA.id && (
+          <button
+            onClick={() => openAddMemberModal('child', partnerA.id)}
+            style={{
+              position: 'absolute',
+              bottom: '-12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-gold)',
+              color: '#FFFFFF',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(196, 149, 58, 0.4)',
+              zIndex: 10,
+              fontSize: '14px',
+              fontWeight: 'bold',
+              transition: 'transform 0.15s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(-50%) scale(1.15)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(-50%) scale(1.0)'}
+            title="Add Child"
+          >
+            +
+          </button>
+        )}
+
+        {/* Outgoing vertical line going down to children */}
+        {children.length > 0 && (
+          <div style={{
+            width: '2px',
+            height: '26px',
+            backgroundColor: 'var(--color-gold)',
+            position: 'relative',
+            zIndex: 1
+          }} />
+        )}
+
+        {/* Children Row */}
+        {children.length > 0 && (
+          <div style={{
+            display: 'flex',
+            gap: '40px',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            position: 'relative'
+          }}>
+            {children.map((child: any, idx: number) => {
+              const childCouple = {
+                partnerA: child,
+                partnerB: getSpouse(child.id),
+                children: getChildren(child.id)
+              };
+              return (
+                <React.Fragment key={child.id}>
+                  {renderCoupleNode(
+                    childCouple,
+                    false,
+                    idx === children.length - 1,
+                    idx === 0,
+                    depth + 1
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const rootContact = contacts.find((c) => c.id === ultimateRootId);
+  const rootCouple = rootContact ? {
+    partnerA: rootContact,
+    partnerB: getSpouse(rootContact.id),
+    children: getChildren(rootContact.id)
+  } : null;
 
   if (loading) {
     return (
@@ -384,199 +549,17 @@ export default function FamilyTreePage() {
         gap: '0px',
         position: 'relative'
       }}>
-        {treeGenerations.length === 0 ? (
+        {!rootCouple ? (
           <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
             Select a tree root above to generate the pedigree chart.
           </div>
         ) : (
-          treeGenerations.map((gen, gIdx) => (
-            <div 
-              key={gen.level}
-              style={{
-                display: 'flex',
-                gap: '50px',
-                justifyContent: 'center',
-                width: '100%',
-                position: 'relative'
-              }}
-            >
-              {gen.couples.map((couple: any, cIdx: number) => {
-                const partnerA = couple.partnerA;
-                const partnerB = couple.partnerB;
-
-                return (
-                  <div 
-                    key={partnerA.id}
-                    onMouseEnter={() => setHoveredCoupleId(partnerA.id)}
-                    onMouseLeave={() => setHoveredCoupleId(null)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      position: 'relative'
-                    }}
-                  >
-                    {/* Incoming vertical and horizontal lines for children */}
-                    {gIdx > 0 && (
-                      <div style={{ display: 'flex', width: '100%', height: '24px', position: 'relative' }}>
-                        <div style={{
-                          flex: 1,
-                          borderTop: (cIdx === 0) ? 'none' : '2px solid var(--color-gold)',
-                          marginTop: '0'
-                        }} />
-                        <div style={{
-                          width: '2px',
-                          backgroundColor: 'var(--color-gold)',
-                          height: '24px'
-                        }} />
-                        <div style={{
-                          flex: 1,
-                          borderTop: (cIdx === gen.couples.length - 1) ? 'none' : '2px solid var(--color-gold)',
-                          marginTop: '0'
-                        }} />
-                      </div>
-                    )}
-
-                    {/* Couple Box */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'stretch',
-                      backgroundColor: 'var(--bg-card)',
-                      border: 'var(--border-thin)',
-                      borderRadius: '12px',
-                      padding: '8px 12px',
-                      gap: '12px',
-                      boxShadow: 'var(--shadow-soft)',
-                      position: 'relative',
-                      zIndex: 2,
-                      transition: 'border-color 0.2s',
-                      borderColor: hoveredCoupleId === partnerA.id ? 'var(--color-gold)' : 'rgba(196, 149, 58, 0.15)'
-                    }}>
-                      {/* Partner A */}
-                      <div 
-                        onClick={() => setSelectedContact(partnerA)}
-                        style={{ textAlign: 'center', minWidth: '95px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
-                        title="Click to view details"
-                      >
-                        <span className="tree-node-name" style={{ display: 'block', fontWeight: '600', color: 'var(--color-gold)' }}>
-                          {partnerA.first_name}{partnerA.middle_name ? ' ' + partnerA.middle_name : ''}
-                        </span>
-                        <span className="tree-node-sub" style={{ display: 'block' }}>
-                          {partnerA.last_name}
-                        </span>
-                        {getAgeText(partnerA.id) && (
-                          <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
-                            {getAgeText(partnerA.id).replace('Age: ', '')}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Spouse Heart / dashed connector */}
-                      {partnerB ? (
-                        <>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <Heart size={14} className="heart-pulse" style={{ color: 'var(--color-rose)', fill: 'var(--color-rose-light)' }} />
-                          </div>
-                          
-                          {/* Partner B */}
-                          <div 
-                            onClick={() => setSelectedContact(partnerB)}
-                            style={{ textAlign: 'center', minWidth: '95px', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
-                            title="Click to view details"
-                          >
-                            <span className="tree-node-name" style={{ display: 'block', fontWeight: '600', color: 'var(--color-gold)' }}>
-                              {partnerB.first_name}{partnerB.middle_name ? ' ' + partnerB.middle_name : ''}
-                            </span>
-                            <span className="tree-node-sub" style={{ display: 'block' }}>
-                              {partnerB.last_name}
-                            </span>
-                            {getAgeText(partnerB.id) && (
-                              <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
-                                {getAgeText(partnerB.id).replace('Age: ', '')}
-                              </span>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <div 
-                          onClick={() => openAddMemberModal('spouse', partnerA.id)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1.5px dashed rgba(196, 149, 58, 0.3)',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            minWidth: '85px',
-                            cursor: 'pointer',
-                            color: 'var(--text-muted)',
-                            fontSize: '11px',
-                            fontWeight: '500',
-                            backgroundColor: 'rgba(196, 149, 58, 0.02)',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-gold)'; e.currentTarget.style.backgroundColor = 'rgba(196, 149, 58, 0.08)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(196, 149, 58, 0.3)'; e.currentTarget.style.backgroundColor = 'rgba(196, 149, 58, 0.02)'; }}
-                          title="Add Spouse"
-                        >
-                          + Add Spouse
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Add Child Button (appears below the couple card on hover) */}
-                    {hoveredCoupleId === partnerA.id && (
-                      <button
-                        onClick={() => openAddMemberModal('child', partnerA.id)}
-                        style={{
-                          position: 'absolute',
-                          bottom: '-12px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: '24px',
-                          height: '24px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--color-gold)',
-                          color: '#FFFFFF',
-                          border: 'none',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 8px rgba(196, 149, 58, 0.4)',
-                          zIndex: 10,
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          transition: 'transform 0.15s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(-50%) scale(1.15)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(-50%) scale(1.0)'}
-                        title="Add Child"
-                      >
-                        +
-                      </button>
-                    )}
-
-                    {/* Outgoing vertical line going down to children */}
-                    {gIdx < treeGenerations.length - 1 && couple.children?.length > 0 && (
-                      <div style={{
-                        width: '2px',
-                        height: '26px',
-                        backgroundColor: 'var(--color-gold)',
-                        position: 'relative',
-                        zIndex: 1
-                      }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))
+          renderCoupleNode(rootCouple, true)
         )}
       </div>
 
       {/* Tree Statistics Card */}
-      {treeGenerations.length > 0 && (
+      {rootCouple && (
         <div className="card" style={{ margin: '20px 16px', padding: '20px' }}>
           <h3 className="serif-font" style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', borderBottom: 'var(--border-light)', paddingBottom: '8px', marginBottom: '16px' }}>
             Tree Statistics
@@ -584,7 +567,7 @@ export default function FamilyTreePage() {
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '120px', padding: '12px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: 'var(--border-card)', textAlign: 'center' }}>
               <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>Generations</span>
-              <span className="serif-font" style={{ fontSize: '24px', color: 'var(--color-sage)', fontWeight: '700' }}>{treeGenerations.length}</span>
+              <span className="serif-font" style={{ fontSize: '24px', color: 'var(--color-sage)', fontWeight: '700' }}>3</span>
             </div>
             <div style={{ flex: 1, minWidth: '120px', padding: '12px', borderRadius: '12px', backgroundColor: 'var(--bg-primary)', border: 'var(--border-card)', textAlign: 'center' }}>
               <span style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '4px' }}>Marriages</span>
