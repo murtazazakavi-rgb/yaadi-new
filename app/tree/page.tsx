@@ -326,6 +326,7 @@ export default function FamilyTreePage() {
         <div 
           onMouseEnter={() => setHoveredCoupleId(partnerA.id)}
           onMouseLeave={() => setHoveredCoupleId(null)}
+          className="hover-card-lift"
           style={{
             display: 'flex',
             alignItems: 'stretch',
@@ -337,7 +338,6 @@ export default function FamilyTreePage() {
             boxShadow: 'var(--shadow-soft)',
             position: 'relative',
             zIndex: 2,
-            transition: 'border-color 0.2s',
             borderColor: hoveredCoupleId === partnerA.id ? 'var(--color-gold)' : 'rgba(196, 149, 58, 0.15)'
           }}
         >
@@ -506,7 +506,7 @@ export default function FamilyTreePage() {
   }
 
   return (
-    <div style={{ padding: '20px 0', minHeight: '100vh', position: 'relative' }} className="page-transition">
+    <div style={{ padding: '20px 0', minHeight: '100vh', position: 'relative' }} className="page-transition animate-fade-in-up">
       {/* Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -593,23 +593,26 @@ export default function FamilyTreePage() {
 
       {/* Side Details Drawer */}
       {selectedContact && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          width: '380px',
-          maxWidth: '100%',
-          height: '100vh',
-          backgroundColor: 'var(--bg-card)',
-          borderLeft: 'var(--border-thin)',
-          boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
-          zIndex: 100,
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-          overflowY: 'auto'
-        }}>
+        <div 
+          className="drawer-slide-in"
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: '380px',
+            maxWidth: '100%',
+            height: '100vh',
+            backgroundColor: 'var(--bg-card)',
+            borderLeft: 'var(--border-thin)',
+            boxShadow: '-4px 0 24px rgba(0,0,0,0.15)',
+            zIndex: 100,
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px',
+            overflowY: 'auto'
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'var(--border-light)', paddingBottom: '12px' }}>
             <h3 className="serif-font" style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Contact Details</h3>
             <button 
@@ -737,24 +740,25 @@ export default function FamilyTreePage() {
 
       {/* Unified Add Family Member Modal */}
       {showAddMemberModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 110
-        }}>
-          <div className="card" style={{
+        <div 
+          className="backdrop-glass"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 110
+          }}
+        >
+          <div className="card modal-spring-entry" style={{
             width: '450px',
-            maxWidth: '90%',
+            maxWidth: '95%',
             padding: '24px',
-            boxShadow: 'var(--shadow-lg)',
+            boxShadow: 'var(--shadow-hover)',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
@@ -775,40 +779,27 @@ export default function FamilyTreePage() {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: '8px', borderBottom: 'var(--border-light)', paddingBottom: '8px' }}>
+            <div className="segmented-control" style={{ marginBottom: '8px' }}>
+              <div 
+                className="segmented-control-indicator"
+                style={{
+                  width: 'calc(50% - 2px)',
+                  transform: `translateX(${modalTab === 'link' ? '0%' : '100%'})`
+                }}
+              />
               <button
                 type="button"
                 onClick={() => setModalTab('link')}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: modalTab === 'link' ? 'rgba(196, 149, 58, 0.1)' : 'transparent',
-                  color: modalTab === 'link' ? 'var(--color-gold)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '13px'
-                }}
+                className={`segmented-control-item ${modalTab === 'link' ? 'active' : ''}`}
               >
-                Link Existing Contact
+                Link Existing
               </button>
               <button
                 type="button"
                 onClick={() => setModalTab('create')}
-                style={{
-                  flex: 1,
-                  padding: '8px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: modalTab === 'create' ? 'rgba(196, 149, 58, 0.1)' : 'transparent',
-                  color: modalTab === 'create' ? 'var(--color-gold)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '13px'
-                }}
+                className={`segmented-control-item ${modalTab === 'create' ? 'active' : ''}`}
               >
-                Create New Contact
+                Create New
               </button>
             </div>
 

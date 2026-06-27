@@ -219,7 +219,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }} className="page-transition">
+    <div style={{ padding: '20px 0' }} className="page-transition animate-fade-in-up">
       {/* Title Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px' }}>
         <h2 className="serif-font page-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -238,6 +238,13 @@ export default function AdminPage() {
 
       {/* Segmented Tab Control */}
       <div className="segmented-control" style={{ margin: '0 20px 20px 20px', width: 'calc(100% - 40px)' }}>
+        <div 
+          className="segmented-control-indicator"
+          style={{
+            width: 'calc(50% - 2px)',
+            transform: `translateX(${activeTab === 'spaces' ? '0%' : '100%'})`
+          }}
+        />
         <button 
           type="button" 
           onClick={() => setActiveTab('spaces')} 

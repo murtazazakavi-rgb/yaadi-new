@@ -1030,7 +1030,7 @@ export default function ContactsPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }} className="page-transition">
+    <div style={{ padding: '20px 0' }} className="page-transition animate-fade-in-up">
       {/* Page Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -1242,6 +1242,18 @@ export default function ContactsPage() {
 
       {/* Segmented Filter Control */}
       <div className="segmented-control" style={{ margin: '0 16px 16px 16px', width: 'calc(100% - 32px)' }}>
+        <div 
+          className="segmented-control-indicator"
+          style={{
+            width: 'calc(25% - 2px)',
+            transform: `translateX(${
+              filterTab === 'all' ? '0%' :
+              filterTab === 'withEvents' ? '100%' :
+              filterTab === 'familyTree' ? '200%' :
+              '300%'
+            })`
+          }}
+        />
         <button 
           type="button"
           onClick={() => setFilterTab('all')} 

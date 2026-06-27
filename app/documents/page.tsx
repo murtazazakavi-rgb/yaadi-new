@@ -458,7 +458,7 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div style={{ padding: '20px 0' }} className="page-transition">
+    <div style={{ padding: '20px 0' }} className="page-transition animate-fade-in-up">
       {/* Page Header */}
       <div style={{ padding: '0 20px 16px 20px', borderBottom: 'var(--border-light)', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -532,6 +532,13 @@ export default function DocumentsPage() {
 
       {/* Segmented Tab Control */}
       <div className="segmented-control" style={{ margin: '0 16px 16px 16px', width: 'calc(100% - 32px)' }}>
+        <div 
+          className="segmented-control-indicator"
+          style={{
+            width: 'calc(50% - 2px)',
+            transform: `translateX(${filterTab === 'active' ? '0%' : '100%'})`
+          }}
+        />
         <button 
           type="button"
           onClick={() => setFilterTab('active')} 
